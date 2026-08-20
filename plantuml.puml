@@ -1,0 +1,26 @@
+@startuml Led
+title ESP32 LED Testprojekt
+
+actor User
+participant "ESP32" as ESP32
+participant "LED-Module" as LED
+participant "PlatformIO" as PIO
+
+User -> PIO: Projekt öffnen
+PIO -> ESP32: Code kompilieren
+PIO -> ESP32: Firmware hochladen
+ESP32 -> LED: Datenpin (GPIO 5)
+ESP32 -> LED: Stromversorgung (VCC/GND)
+ESP32 -> LED: LED ansteuern
+LED --> User: Licht sichtbar
+
+note right of LED
+  Voraussetzung:
+  - richtige LED-Art (z.B. WS2812B / NeoPixel)
+  - GND gemeinsam
+  - VCC korrekt
+  - Datenleitung an GPIO 5
+  - ggf. 330Ω Widerstand
+end note
+
+@enduml
