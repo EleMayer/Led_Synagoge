@@ -1,8 +1,4 @@
-#pragma once
 
-#include <Arduino.h>
-
-const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html lang="de">
 
@@ -14,7 +10,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 
 <title>LED-Fassade</title>
 
-<link rel="manifest" href="/manifest.json">
+
 
 <meta name="theme-color" content="#12171d">
 <meta name="mobile-web-app-capable" content="yes">
@@ -23,8 +19,8 @@ const char index_html[] PROGMEM = R"rawliteral(
       content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fassade">
 
-<link rel="apple-touch-icon" href="/icon.svg">
-<link rel="icon" type="image/svg+xml" href="/icon.svg">
+
+
 
 <style>
 
@@ -161,6 +157,65 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 </head>
 
 <body>
+
+<script>
+(function(){
+  const state = {
+    mode:3, left:80, right:80, logo:80, global:80, autoBrightness:0,
+    rtc:true, ntp:true, ip:'Demo', rssi:-55, wifi:true, ap:false,
+    ssid:'Demo (ohne ESP32)', firmware:'Demo',
+    sched:{tMorning:6,tDay:8,tEvening:18,tNight:23,bMorning:90,bDay:90,bEveStart:60,bEveEnd:25},
+    presets:[]
+  };
+  let overrideActive=false, overrideWindow=-1;
+  const clamp=(v,lo,hi)=>{v=parseInt(v);if(isNaN(v))return lo;return v<lo?lo:(v>hi?hi:v);};
+  function win(){const d=new Date();const t=d.getHours()*60+d.getMinutes();const s=state.sched;
+    if(t>=s.tNight*60||t<s.tMorning*60)return 0;if(t<s.tDay*60)return 1;if(t<s.tEvening*60)return 2;return 3;}
+  function autoB(){const d=new Date();const t=d.getHours()*60+d.getMinutes();const s=state.sched;
+    if(t>=s.tNight*60||t<s.tMorning*60)return 0;
+    if(t<s.tDay*60){let p=(t-s.tMorning*60)/(s.tDay*60-s.tMorning*60);return Math.round(Math.max(0,Math.min(1,p))*s.bMorning);}
+    if(t<s.tEvening*60)return s.bDay;
+    let p=(t-s.tEvening*60)/(s.tNight*60-s.tEvening*60);p=Math.max(0,Math.min(1,p));
+    return Math.round(s.bEveStart+(s.bEveEnd-s.bEveStart)*p);}
+  const two=n=>String(n).padStart(2,'0');
+  function status(){const d=new Date();state.autoBrightness=autoB();const s=Object.assign({},state);
+    s.time=two(d.getHours())+':'+two(d.getMinutes())+':'+two(d.getSeconds());
+    s.date=two(d.getDate())+'.'+two(d.getMonth()+1)+'.'+d.getFullYear();return JSON.stringify(s);}
+  function overrideAuto(){if(state.mode===3){state.mode=1;overrideActive=true;overrideWindow=win();}}
+  function handle(msg){let doc;try{doc=JSON.parse(msg);}catch(e){return;}
+    if(typeof doc.wifiSsid==='string'){if(doc.wifiSsid)state.ssid=doc.wifiSsid;return;}
+    if(typeof doc.mode==='number'&&doc.mode>=0&&doc.mode<=12){state.mode=doc.mode;
+      if(doc.mode===3){overrideActive=false;}else{overrideActive=true;overrideWindow=win();}}
+    if(doc.left!==undefined){state.left=clamp(doc.left,0,100);overrideAuto();}
+    if(doc.right!==undefined){state.right=clamp(doc.right,0,100);overrideAuto();}
+    if(doc.logo!==undefined){state.logo=clamp(doc.logo,0,100);overrideAuto();}
+    if(doc.global!==undefined)state.global=clamp(doc.global,0,100);
+    ['tMorning','tDay','tEvening','tNight'].forEach(k=>{if(doc[k]!==undefined)state.sched[k]=clamp(doc[k],0,23);});
+    ['bMorning','bDay','bEveStart','bEveEnd'].forEach(k=>{if(doc[k]!==undefined)state.sched[k]=clamp(doc[k],0,100);});
+    if(typeof doc.savePreset==='string'&&doc.savePreset){let p=state.presets.find(x=>x.name===doc.savePreset);
+      if(!p&&state.presets.length<6){p={slot:state.presets.length,name:doc.savePreset};state.presets.push(p);}
+      if(p){p.left=state.left;p.right=state.right;p.logo=state.logo;}}
+    if(typeof doc.applyPreset==='number'){const p=state.presets.find(x=>x.slot===doc.applyPreset);
+      if(p){state.left=p.left;state.right=p.right;state.logo=p.logo;state.mode=1;overrideActive=true;overrideWindow=win();}}
+    if(typeof doc.deletePreset==='number'){state.presets=state.presets.filter(x=>x.slot!==doc.deletePreset);
+      state.presets.forEach((x,i)=>x.slot=i);}
+  }
+  class FakeWebSocket{
+    constructor(){this.readyState=0;const self=this;
+      setTimeout(()=>{self.readyState=1;if(self.onopen)self.onopen();
+        if(self.onmessage)self.onmessage({data:status()});},50);
+      this._t=setInterval(()=>{if(self.readyState===1&&self.onmessage){
+        if(overrideActive&&state.mode!==3){const w=win();
+          if(w>=0&&overrideWindow>=0&&w!==overrideWindow){state.mode=3;overrideActive=false;}}
+        self.onmessage({data:status()});}},1000);}
+    send(msg){handle(msg);if(this.onmessage)this.onmessage({data:status()});}
+    close(){this.readyState=3;clearInterval(this._t);}
+  }
+  FakeWebSocket.CONNECTING=0;FakeWebSocket.OPEN=1;FakeWebSocket.CLOSING=2;FakeWebSocket.CLOSED=3;
+  window.WebSocket=FakeWebSocket;
+})();
+</script>
+
 
 <header class="top">
   <div class="brand">
@@ -824,43 +879,3 @@ window.addEventListener("load", renderScheduleCurve);
 
 </body>
 </html>
-)rawliteral";
-
-const char manifest_json[] PROGMEM = R"rawliteral(
-{
-    "name": "LED-Fassade",
-    "short_name": "Fassade",
-    "description": "Bedienung der LED-Fassadenbeleuchtung",
-    "start_url": "/",
-    "scope": "/",
-    "display": "standalone",
-    "orientation": "portrait",
-    "background_color": "#12171d",
-    "theme_color": "#12171d",
-    "icons": [
-        {
-            "src": "/icon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
-            "purpose": "any maskable"
-        }
-    ]
-}
-)rawliteral";
-
-const char icon_svg[] PROGMEM = R"rawliteral(
-<svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 512 512">
-
-<rect width="512" height="512" rx="96" fill="#12171d"/>
-
-<circle cx="256" cy="212" r="118" fill="#6f8494"/>
-
-<rect x="204" y="316" width="104" height="66" rx="18" fill="#6f8494"/>
-<rect x="220" y="384" width="72"  height="34" rx="14" fill="#6f8494"/>
-
-<rect x="236" y="150" width="40"  height="120" rx="20" fill="#12171d"/>
-<rect x="196" y="192" width="120" height="40"  rx="20" fill="#12171d"/>
-
-</svg>
-)rawliteral";

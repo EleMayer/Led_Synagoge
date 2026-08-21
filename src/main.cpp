@@ -1,19 +1,3 @@
-// ============================================================================
-//  Fassadenbeleuchtung - ESP32 Controller
-//
-//  Einfache, gut lesbare Fassung: eine Anweisung pro Zeile, klare if/else,
-//  sprechende Namen, kurze Kommentare.
-//
-//  Ablauf grob:
-//    1) Konfiguration  -> include/config.h (Pins, Werte, thematische Modi)
-//    2) Zustand (Variablen)
-//    3) Hilfsfunktionen (Helligkeit, Speicher, Zeit)
-//    4) Licht (Automatik, Effekte, thematische Modi)
-//    5) Netzwerk (WLAN, WebSocket, Webserver)
-//    6) setup() / loop()
-//
-//  WICHTIG: bleibt auf Arduino-ESP32-Core 2.x (alte LEDC-PWM-API).
-// ============================================================================
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ESPmDNS.h>
@@ -26,24 +10,19 @@
 #include <Update.h>
 #include <time.h>
 
-#include "config.h"          // 1) Konfiguration (Pins, Grenzwerte, Modi)
+#include "config.h"
 #include "web_page.h"
 
-// ===========================================================================
-//  2) Zustand
-// ===========================================================================
 OperatingMode currentMode = MODE_AUTOMATIC;
 
-bool overrideActive = false;            // laeuft gerade ein manueller Eingriff?
-int  overrideWindow = -1;               // in welchem Automatik-Fenster begann er?
+bool overrideActive = false;
+int  overrideWindow = -1;
 
-// Helligkeiten (Prozent 0..100)
 int brightnessLeft  = 80;
 int brightnessRight = 80;
 int brightnessLogo  = 80;
-int globalBrightness = 80;              // fuer die Effekte (Lauflicht/Pulsieren/Atmen)
+int globalBrightness = 80;
 
-// Automatik-Zeitfenster (Stunden)
 int nightStartHour   = 23;
 int nightEndHour     = 6;
 int morningStartHour = 6;
@@ -53,31 +32,27 @@ int dayEndHour       = 18;
 int eveningStartHour = 18;
 int eveningEndHour   = 23;
 
-// Automatik-Helligkeiten (Prozent)
 int morningBrightness      = 90;
 int dayBrightness          = 90;
 int eveningStartBrightness = 60;
 int eveningEndBrightness   = 25;
-int currentAutoBrightness  = 0;         // aktuell berechneter Automatik-Wert
+int currentAutoBrightness  = 0;
 
-// Ziel- und Ist-Werte fuer das weiche Ueberblenden (Off/Static/Automatik)
 int   targetLeft  = 0;
 int   targetRight = 0;
 int   targetLogo  = 0;
 float shownLeft   = 0;
 float shownRight  = 0;
 float shownLogo   = 0;
-const float FADE_STEP = 2.0f;           // Schrittweite pro Frame
+const float FADE_STEP = 2.0f;
 
 unsigned long lastRender = 0;
-const uint32_t RENDER_INTERVAL = 20;    // ~50 FPS
-bool prevFrameEffect = false;           // war der letzte Frame ein Effekt-/Themen-Modus?
+const uint32_t RENDER_INTERVAL = 20;
+bool prevFrameEffect = false;
 
-// LED-Puffer
 CRGB ledsLinks[NUM_LEDS_LINKS];
 CRGB ledsRechts[NUM_LEDS_RECHTS];
 
-// Eigene Szenen (Presets)
 #define MAX_PRESETS 6
 #define PRESET_NAME_LEN 16
 struct Preset {
@@ -89,13 +64,11 @@ struct Preset {
 };
 Preset presets[MAX_PRESETS];
 
-// Hardware/Netz-Objekte
 RTC_DS3231 rtc;
 Preferences preferences;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-// Status-Flags
 bool rtcAvailable  = false;
 bool wifiConnected = false;
 bool ntpSynced     = false;
@@ -103,12 +76,10 @@ bool apMode        = false;
 char wifiSsid[33];
 char wifiPass[65];
 
-// Zeit-Server
 const char *NTP_SERVER_1 = "pool.ntp.org";
 const char *NTP_SERVER_2 = "time.nist.gov";
 const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0";
 
-// Timer (Zeitpunkte des letzten Ereignisses)
 uint16_t      effectStep = 0;
 unsigned long lastEffectUpdate = 0;
 const uint32_t EFFECT_INTERVAL = 40;
@@ -119,40 +90,28 @@ const uint32_t STATUS_INTERVAL = 2000;
 unsigned long lastNtpCheck = 0;
 const uint32_t NTP_CHECK_INTERVAL = 60000;
 
-// Entprelltes Speichern: erst schreiben, wenn eine Weile keine Aenderung mehr
-// kam (schont den Flash beim Slider-Ziehen).
 bool settingsDirty = false;
 unsigned long lastSettingsChange = 0;
 const uint32_t SAVE_DEBOUNCE_MS = 1500;
 
-// Vorwaerts-Deklarationen
 void broadcastStatus();
 void applyHardware();
 void applyAutomatic();
 
-// ===========================================================================
-//  3a) Hilfsfunktionen Helligkeit
-// ===========================================================================
-// Auf 0..100 begrenzen.
 int clampBrightness(int value) {
     return constrain(value, 0, 100);
 }
 
-// Prozent (0..100) in 8-Bit-Wert (0..255) umrechnen.
 uint8_t brightnessTo8Bit(int brightness) {
     int safe = clampBrightness(brightness);
     return map(safe, 0, 100, 0, 255);
 }
 
-// Weisse Farbe mit einer Helligkeit in Prozent.
 CRGB whiteWithBrightness(int brightness) {
     uint8_t v = brightnessTo8Bit(brightness);
     return CRGB(v, v, v);
 }
 
-// ===========================================================================
-//  3b) Persistenz (NVS-Flash)
-// ===========================================================================
 void saveSettings() {
     preferences.begin("facelight", false);
     preferences.putInt("left", brightnessLeft);
@@ -163,7 +122,7 @@ void saveSettings() {
     preferences.putInt("day", dayBrightness);
     preferences.putInt("eveStart", eveningStartBrightness);
     preferences.putInt("eveEnd", eveningEndBrightness);
-    // Zeitgrenzen der Automatik (Stunden)
+
     preferences.putInt("mStart", morningStartHour);
     preferences.putInt("mEnd", morningEndHour);
     preferences.putInt("dStart", dayStartHour);
@@ -176,7 +135,6 @@ void saveSettings() {
     settingsDirty = false;
 }
 
-// Nur merken, dass gespeichert werden muss. Das Schreiben macht loop() spaeter.
 void markSettingsDirty() {
     settingsDirty = true;
     lastSettingsChange = millis();
@@ -202,7 +160,6 @@ void loadSettings() {
     nightEndHour           = preferences.getInt("nightEnd", 6);
     preferences.end();
 
-    // Sicherheitshalber auf gueltige Bereiche begrenzen.
     brightnessLeft         = clampBrightness(brightnessLeft);
     brightnessRight        = clampBrightness(brightnessRight);
     brightnessLogo         = clampBrightness(brightnessLogo);
@@ -253,7 +210,7 @@ void loadPresets() {
     if (stored == sizeof(presets)) {
         preferences.getBytes("data", presets, sizeof(presets));
     } else {
-        // Noch nichts gespeichert -> leere Szenen anlegen.
+
         for (int i = 0; i < MAX_PRESETS; i++) {
             presets[i].used = false;
             presets[i].name[0] = '\0';
@@ -264,7 +221,6 @@ void loadPresets() {
     }
     preferences.end();
 
-    // Werte absichern.
     for (int i = 0; i < MAX_PRESETS; i++) {
         presets[i].left  = clampBrightness(presets[i].left);
         presets[i].right = clampBrightness(presets[i].right);
@@ -273,7 +229,6 @@ void loadPresets() {
     }
 }
 
-// Sucht eine Szene mit diesem Namen. Gibt den Slot zurueck oder -1.
 int findPresetByName(const char *name) {
     for (int i = 0; i < MAX_PRESETS; i++) {
         if (!presets[i].used) {
@@ -286,11 +241,9 @@ int findPresetByName(const char *name) {
     return -1;
 }
 
-// Speichert die aktuellen Helligkeiten als Szene.
 int storeCurrentAsPreset(const char *name) {
     int slot = findPresetByName(name);
 
-    // Kein gleicher Name da? Dann ersten freien Slot suchen.
     if (slot < 0) {
         for (int i = 0; i < MAX_PRESETS; i++) {
             if (!presets[i].used) {
@@ -300,7 +253,6 @@ int storeCurrentAsPreset(const char *name) {
         }
     }
 
-    // Kein Platz mehr.
     if (slot < 0) {
         return -1;
     }
@@ -324,10 +276,6 @@ void deletePreset(int slot) {
     savePresets();
 }
 
-// ===========================================================================
-//  3c) Zeit (RTC + NTP)
-// ===========================================================================
-// Ist die Uhrzeit der RTC plausibel?
 bool isRTCValid() {
     if (!rtcAvailable) {
         return false;
@@ -336,7 +284,6 @@ bool isRTCValid() {
     return now.year() >= 2024 && now.year() <= 2099;
 }
 
-// Aktuelle Zeit holen: zuerst RTC, sonst Systemzeit (NTP).
 bool getCurrentTime(struct tm &out) {
     if (rtcAvailable && isRTCValid()) {
         DateTime now = rtc.now();
@@ -351,7 +298,6 @@ bool getCurrentTime(struct tm &out) {
     return getLocalTime(&out, 5);
 }
 
-// Zeit als Text "HH:MM:SS".
 String getTimeString() {
     struct tm t;
     if (!getCurrentTime(t)) {
@@ -362,7 +308,6 @@ String getTimeString() {
     return String(buf);
 }
 
-// Datum als Text "TT.MM.JJJJ".
 String getDateString() {
     struct tm t;
     if (!getCurrentTime(t)) {
@@ -373,7 +318,6 @@ String getDateString() {
     return String(buf);
 }
 
-// Aktuelles Automatik-Fenster: 0=Nacht 1=Morgen 2=Tag 3=Abend, -1=keine Zeit.
 int currentAutoWindow() {
     struct tm t;
     if (!getCurrentTime(t)) {
@@ -396,20 +340,17 @@ int currentAutoWindow() {
     return 0;
 }
 
-// Berechnet die Automatik-Helligkeit (Prozent) fuer die aktuelle Uhrzeit.
 int calculateAutomaticBrightness() {
     struct tm t;
     if (!getCurrentTime(t)) {
-        return 25;                         // Fallback ohne gueltige Zeit
+        return 25;
     }
     float m = t.tm_hour * 60.0f + t.tm_min;
 
-    // Nacht: aus.
     if (m >= nightStartHour * 60 || m < nightEndHour * 60) {
         return 0;
     }
 
-    // Morgen: linear hochdimmen bis morningBrightness.
     if (m >= morningStartHour * 60 && m < morningEndHour * 60) {
         float start = morningStartHour * 60.0f;
         float end   = morningEndHour * 60.0f;
@@ -418,12 +359,10 @@ int calculateAutomaticBrightness() {
         return round(p * morningBrightness);
     }
 
-    // Tag: konstante Tageshelligkeit.
     if (m >= dayStartHour * 60 && m < dayEndHour * 60) {
         return dayBrightness;
     }
 
-    // Abend: linear von eveningStart nach eveningEnd dimmen.
     if (m >= eveningStartHour * 60 && m < eveningEndHour * 60) {
         float start = eveningStartHour * 60.0f;
         float end   = eveningEndHour * 60.0f;
@@ -435,17 +374,12 @@ int calculateAutomaticBrightness() {
     return 0;
 }
 
-// ===========================================================================
-//  4a) LED-/PWM-Ausgabe (Grundfunktionen)
-// ===========================================================================
-// Logo-Helligkeit in Prozent setzen (mit demselben Software-Deckel).
 void setLogoBrightness(int brightness) {
     uint32_t duty = brightnessTo8Bit(clampBrightness(brightness));
     duty = duty * GLOBAL_MAX_BRIGHTNESS / 255;
     ledcWrite(LOGO_PWM_CHANNEL, duty);
 }
 
-// Bewegt "current" um FADE_STEP in Richtung "target" (weiches Ueberblenden).
 float approach(float current, int target) {
     if (current < target) {
         current += FADE_STEP;
@@ -461,7 +395,6 @@ float approach(float current, int target) {
     return current;
 }
 
-// Weiche Ausgabe fuer Off/Static/Automatik (gefadet).
 void renderSolid() {
     if (millis() - lastRender < RENDER_INTERVAL) {
         return;
@@ -478,7 +411,6 @@ void renderSolid() {
     setLogoBrightness(round(shownLogo));
 }
 
-// Ziele fuer die drei Grundmodi setzen.
 void allLEDsOff() {
     targetLeft  = 0;
     targetRight = 0;
@@ -499,15 +431,26 @@ void applyAutomatic() {
     targetLogo  = value;
 }
 
-// ===========================================================================
-//  4b) Effekte (Lauflicht, Pulsieren, Atmen)
-// ===========================================================================
-// Lauflicht: ein wanderndes Licht.
-void applyEffect() {
-    if (millis() - lastEffectUpdate < EFFECT_INTERVAL) {
-        return;
+bool frameReady(uint32_t interval) {
+    if (millis() - lastEffectUpdate < interval) {
+        return false;
     }
     lastEffectUpdate = millis();
+    return true;
+}
+
+uint8_t breathLevel(uint32_t periodMs, uint8_t lo, uint8_t hi) {
+    uint8_t s = sin8(millis() / (periodMs / 256));
+    return map(s, 0, 255, lo, hi);
+}
+
+uint8_t flickerLevel(uint16_t speedDiv, uint16_t seed, uint8_t lo, uint8_t hi) {
+    uint8_t n = inoise8(millis() / speedDiv, seed);
+    return map(n, 0, 255, lo, hi);
+}
+
+void applyEffect() {
+    if (!frameReady(EFFECT_INTERVAL)) return;
 
     uint8_t base = brightnessTo8Bit(globalBrightness);
 
@@ -522,14 +465,10 @@ void applyEffect() {
     effectStep++;
 }
 
-// Pulsieren und Atmen teilen sich die Logik (nur Tempo/Amplitude anders).
 void applyWave(uint8_t bpm, uint8_t low) {
-    if (millis() - lastEffectUpdate < RENDER_INTERVAL) {
-        return;
-    }
-    lastEffectUpdate = millis();
+    if (!frameReady(RENDER_INTERVAL)) return;
 
-    uint8_t wave = beatsin8(bpm, low, 255);       // sanfte Sinuswelle
+    uint8_t wave = beatsin8(bpm, low, 255);
     int level = (globalBrightness * wave) / 255;
     CRGB color = whiteWithBrightness(level);
 
@@ -540,34 +479,24 @@ void applyWave(uint8_t bpm, uint8_t low) {
     setLogoBrightness(level);
 }
 
-// ===========================================================================
-//  4c) Thematische Ausstellungs-Modi (aus led_sample3)
-//      Arbeiten direkt in 0..255. Der Software-Deckel wirkt ueber FastLED
-//      bzw. setLogoRaw.
-// ===========================================================================
-// Weisse Farbe aus einem 0..255-Wert.
 CRGB whiteRaw(uint8_t v) {
     return CRGB(v, v, v);
 }
 
-// Logo direkt in 0..255 setzen (mit Software-Deckel).
 void setLogoRaw(uint8_t level) {
     uint32_t duty = (uint32_t)level * GLOBAL_MAX_BRIGHTNESS / 255;
     ledcWrite(LOGO_PWM_CHANNEL, duty);
 }
 
-// Feste Nachtabschaltung 23:00-06:00 (nur bei gueltiger Zeit). Gilt fuer alle
-// thematischen Modi. Die Automatik regelt ihre Nacht ueber die Kurve selbst.
 bool isNightOff() {
     struct tm t;
     if (!getCurrentTime(t)) {
-        return false;                       // Zeit unbekannt -> nicht abschalten
+        return false;
     }
     int m = t.tm_hour * 60 + t.tm_min;
     return m >= nightStartHour * 60 || m < nightEndHour * 60;
 }
 
-// Beide Segmente + Logo gleichmaessig setzen und anzeigen.
 void showAll(uint8_t vLinks, uint8_t vRechts, uint8_t vLogo) {
     fill_solid(ledsLinks,  NUM_LEDS_LINKS,  whiteRaw(vLinks));
     fill_solid(ledsRechts, NUM_LEDS_RECHTS, whiteRaw(vRechts));
@@ -575,158 +504,123 @@ void showAll(uint8_t vLinks, uint8_t vRechts, uint8_t vLogo) {
     setLogoRaw(vLogo);
 }
 
-// Ewiges Licht (Ner Tamid): stetig, ganz langsam atmend.
-void renderNerTamid() {
-    if (millis() - lastEffectUpdate < RENDER_INTERVAL) {
-        return;
-    }
-    lastEffectUpdate = millis();
-
-    uint8_t s = sin8(millis() / (NER_PERIOD_MS / 256));
-    uint8_t v = map(s, 0, 255, NER_MIN, NER_MAX);
-    uint8_t logo = qadd8(v, 20);            // Logo als Flamme etwas heller
-    showAll(v, v, logo);
+void renderDauerlicht() {
+    if (!frameReady(RENDER_INTERVAL)) return;
+    uint8_t v = breathLevel(DAUER_PERIOD_MS, DAUER_MIN, DAUER_MAX);
+    showAll(v, v, qadd8(v, 20));
 }
 
-// Schabbat-Kerzen: zwei unabhaengig sanft flackernde Kerzenlichter (Perlin).
-void renderSchabbat() {
-    if (millis() - lastEffectUpdate < RENDER_INTERVAL) {
-        return;
-    }
-    lastEffectUpdate = millis();
-
-    uint8_t nL = inoise8(millis() / SCHABBAT_SPEED_DIV, 0);
-    uint8_t nR = inoise8(millis() / SCHABBAT_SPEED_DIV, 30000);
-    uint8_t vLinks  = map(nL, 0, 255, SCHABBAT_MIN, SCHABBAT_MAX);
-    uint8_t vRechts = map(nR, 0, 255, SCHABBAT_MIN, SCHABBAT_MAX);
-    showAll(vLinks, vRechts, SCHABBAT_LOGO);
+void renderKerzenlicht() {
+    if (!frameReady(RENDER_INTERVAL)) return;
+    uint8_t vLinks  = flickerLevel(KERZEN_SPEED_DIV, 0,     KERZEN_MIN, KERZEN_MAX);
+    uint8_t vRechts = flickerLevel(KERZEN_SPEED_DIV, 30000, KERZEN_MIN, KERZEN_MAX);
+    showAll(vLinks, vRechts, KERZEN_LOGO);
 }
 
-// Chanukka: zunehmende Lichter - waechst in 8 Schritten, dann von vorne.
-void renderChanukka() {
-    if (millis() - lastEffectUpdate < RENDER_INTERVAL) {
-        return;
-    }
-    lastEffectUpdate = millis();
+void renderStufenlicht() {
+    if (!frameReady(RENDER_INTERVAL)) return;
 
-    // Wie viele Lichter (1..8) sind gerade an?
-    uint32_t cycle = 8UL * CHANUKKA_STEP_MS + CHANUKKA_HOLD_MS;
+    uint32_t cycle = 8UL * STUFEN_STEP_MS + STUFEN_HOLD_MS;
     uint32_t t = millis() % cycle;
     uint8_t lights;
-    if (t < 8UL * CHANUKKA_STEP_MS) {
-        lights = t / CHANUKKA_STEP_MS + 1;
+    if (t < 8UL * STUFEN_STEP_MS) {
+        lights = t / STUFEN_STEP_MS + 1;
     } else {
         lights = 8;
     }
 
-    // Wie viele LEDs je Segment leuchten dementsprechend?
     uint16_t litLinks  = (uint32_t)NUM_LEDS_LINKS  * lights / 8;
     uint16_t litRechts = (uint32_t)NUM_LEDS_RECHTS * lights / 8;
 
-    // Linkes Segment: von hinten nach vorne fuellen.
     for (uint16_t i = 0; i < NUM_LEDS_LINKS; i++) {
         if (i >= NUM_LEDS_LINKS - litLinks) {
-            ledsLinks[i] = whiteRaw(CHANUKKA_LEVEL);
+            ledsLinks[i] = whiteRaw(STUFEN_LEVEL);
         } else {
             ledsLinks[i] = whiteRaw(0);
         }
     }
 
-    // Rechtes Segment: von vorne nach hinten fuellen.
     for (uint16_t i = 0; i < NUM_LEDS_RECHTS; i++) {
         if (i < litRechts) {
-            ledsRechts[i] = whiteRaw(CHANUKKA_LEVEL);
+            ledsRechts[i] = whiteRaw(STUFEN_LEVEL);
         } else {
             ledsRechts[i] = whiteRaw(0);
         }
     }
 
     FastLED.show();
-    setLogoRaw(CHANUKKA_LEVEL);              // Schamasch (Diener) ruhig an
+    setLogoRaw(STUFEN_LEVEL);
 }
 
-// Gedenken: sehr niedrig, minutenlanges sanftes Auf-/Abschwellen.
-void renderGedenken() {
-    if (millis() - lastEffectUpdate < RENDER_INTERVAL) {
-        return;
+void renderDaemmerlicht() {
+    if (!frameReady(RENDER_INTERVAL)) return;
+    uint8_t v = breathLevel(DAEMMER_PERIOD_MS, DAEMMER_MIN, DAEMMER_MAX);
+    showAll(v, v, (uint16_t)v * DAEMMER_LOGO_PCT / 100);
+}
+
+void renderWave() {
+    if (!frameReady(RENDER_INTERVAL)) return;
+
+    uint8_t base = brightnessTo8Bit(globalBrightness);
+    uint16_t phase = millis() / 8;
+
+    for (uint16_t i = 0; i < NUM_LEDS_LINKS; i++) {
+        uint8_t w = sin8(i * 16 + phase);
+        ledsLinks[i] = whiteRaw(scale8(base, w));
     }
-    lastEffectUpdate = millis();
-
-    uint8_t s = sin8(millis() / (GEDENKEN_PERIOD_MS / 256));
-    uint8_t v = map(s, 0, 255, GEDENKEN_MIN, GEDENKEN_MAX);
-    uint8_t logo = (uint16_t)v * GEDENKEN_LOGO_PCT / 100;
-    showAll(v, v, logo);
+    for (uint16_t i = 0; i < NUM_LEDS_RECHTS; i++) {
+        uint8_t w = sin8(i * 16 + phase);
+        ledsRechts[i] = whiteRaw(scale8(base, w));
+    }
+    FastLED.show();
+    setLogoBrightness(globalBrightness);
 }
 
-// ===========================================================================
-//  4d) Modus-Verteiler
-// ===========================================================================
-// Modi, die jeden Frame neu gerechnet werden (Animation), statt gefadet.
+void renderFeuerschein() {
+    if (!frameReady(RENDER_INTERVAL)) return;
+    uint8_t v = flickerLevel(FEUER_SPEED_DIV, 0, FEUER_MIN, FEUER_MAX);
+    showAll(v, v, FEUER_LOGO);
+}
+
+void renderNachtlicht() {
+    if (!frameReady(RENDER_INTERVAL)) return;
+    uint8_t v = flickerLevel(NACHT_SPEED_DIV, 40000, NACHT_MIN, NACHT_MAX);
+    showAll(v, v, NACHT_LOGO);
+}
+
 bool isEffectMode(OperatingMode m) {
-    if (m == MODE_EFFECT)    return true;
-    if (m == MODE_PULSE)     return true;
-    if (m == MODE_BREATH)    return true;
-    if (m == MODE_NER_TAMID) return true;
-    if (m == MODE_SCHABBAT)  return true;
-    if (m == MODE_CHANUKKA)  return true;
-    if (m == MODE_GEDENKEN)  return true;
-    return false;
+    return m != MODE_OFF && m != MODE_STATIC && m != MODE_AUTOMATIC;
+}
+
+bool isThematic(OperatingMode m) {
+    return m == MODE_DAUERLICHT || m == MODE_KERZENLICHT ||
+           m == MODE_STUFENLICHT || m == MODE_DAEMMERLICHT ||
+           m == MODE_FEUERSCHEIN || m == MODE_NACHTLICHT;
 }
 
 void applyHardware() {
-    switch (currentMode) {
-        case MODE_OFF:
-            allLEDsOff();
-            break;
-        case MODE_STATIC:
-            applyStatic();
-            break;
-        case MODE_EFFECT:
-            applyEffect();
-            break;
-        case MODE_PULSE:
-            applyWave(50, 15);
-            break;
-        case MODE_BREATH:
-            applyWave(8, 3);
-            break;
-        case MODE_AUTOMATIC:
-            applyAutomatic();
-            break;
+    if (isThematic(currentMode) && isNightOff()) {
+        showAll(0, 0, 0);
+        return;
+    }
 
-        // Thematische Modi: nachts fest aus, sonst der jeweilige Effekt.
-        case MODE_NER_TAMID:
-            if (isNightOff()) {
-                showAll(0, 0, 0);
-            } else {
-                renderNerTamid();
-            }
-            break;
-        case MODE_SCHABBAT:
-            if (isNightOff()) {
-                showAll(0, 0, 0);
-            } else {
-                renderSchabbat();
-            }
-            break;
-        case MODE_CHANUKKA:
-            if (isNightOff()) {
-                showAll(0, 0, 0);
-            } else {
-                renderChanukka();
-            }
-            break;
-        case MODE_GEDENKEN:
-            if (isNightOff()) {
-                showAll(0, 0, 0);
-            } else {
-                renderGedenken();
-            }
-            break;
+    switch (currentMode) {
+        case MODE_OFF:          allLEDsOff();         break;
+        case MODE_STATIC:       applyStatic();        break;
+        case MODE_EFFECT:       applyEffect();        break;
+        case MODE_PULSE:        applyWave(50, 15);    break;
+        case MODE_BREATH:       applyWave(8, 3);      break;
+        case MODE_AUTOMATIC:    applyAutomatic();     break;
+        case MODE_WAVE:         renderWave();         break;
+        case MODE_DAUERLICHT:   renderDauerlicht();   break;
+        case MODE_KERZENLICHT:  renderKerzenlicht();  break;
+        case MODE_STUFENLICHT:  renderStufenlicht();  break;
+        case MODE_DAEMMERLICHT: renderDaemmerlicht(); break;
+        case MODE_FEUERSCHEIN:  renderFeuerschein();  break;
+        case MODE_NACHTLICHT:   renderNachtlicht();   break;
     }
 }
 
-// Manueller Eingriff waehrend der Automatik -> auf Statik + Override merken.
 void enterOverrideIfAutomatic() {
     if (currentMode == MODE_AUTOMATIC) {
         currentMode = MODE_STATIC;
@@ -735,7 +629,6 @@ void enterOverrideIfAutomatic() {
     }
 }
 
-// Rueckkehr in die Automatik beim naechsten Zeitfenster-Wechsel.
 void updateOverrideReturn() {
     if (!overrideActive) {
         return;
@@ -755,10 +648,6 @@ void updateOverrideReturn() {
     }
 }
 
-// ===========================================================================
-//  5a) Status-JSON + WebSocket
-// ===========================================================================
-// Baut die Status-Nachricht fuer die App.
 String createStatusJson() {
     JsonDocument doc;
     doc["mode"]  = (int)currentMode;
@@ -784,18 +673,16 @@ String createStatusJson() {
     doc["ssid"] = wifiSsid;
     doc["firmware"] = FIRMWARE_VERSION;
 
-    // Automatik-Zeitprofil (zum Anzeigen/Vorbelegen in der App).
     JsonObject sched = doc["sched"].to<JsonObject>();
-    sched["tMorning"]  = morningStartHour;    // Beginn Hochfahren
-    sched["tDay"]      = dayStartHour;         // Beginn Tag
-    sched["tEvening"]  = eveningStartHour;     // Beginn Abend
-    sched["tNight"]    = nightStartHour;       // Nachtabschaltung
-    sched["bMorning"]  = morningBrightness;    // Ziel beim Hochfahren
-    sched["bDay"]      = dayBrightness;        // Tageshelligkeit
+    sched["tMorning"]  = morningStartHour;
+    sched["tDay"]      = dayStartHour;
+    sched["tEvening"]  = eveningStartHour;
+    sched["tNight"]    = nightStartHour;
+    sched["bMorning"]  = morningBrightness;
+    sched["bDay"]      = dayBrightness;
     sched["bEveStart"] = eveningStartBrightness;
     sched["bEveEnd"]   = eveningEndBrightness;
 
-    // Belegte Szenen anhaengen.
     JsonArray array = doc["presets"].to<JsonArray>();
     for (int i = 0; i < MAX_PRESETS; i++) {
         if (!presets[i].used) {
@@ -818,10 +705,9 @@ void broadcastStatus() {
     ws.textAll(createStatusJson());
 }
 
-// Verarbeitet Nachrichten der App (Modus, Helligkeit, Szenen, WLAN).
 void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
                       AwsEventType type, void *arg, uint8_t *data, size_t len) {
-    // Neuer Client -> aktuellen Status schicken.
+
     if (type == WS_EVT_CONNECT) {
         client->text(createStatusJson());
         return;
@@ -830,7 +716,6 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         return;
     }
 
-    // Nachricht in JSON umwandeln.
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, data, len);
     if (err) {
@@ -838,7 +723,6 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         return;
     }
 
-    // WLAN setzen: speichern + Neustart (zuerst behandelt).
     if (doc["wifiSsid"].is<const char *>()) {
         const char *s = doc["wifiSsid"].as<const char *>();
         const char *p = doc["wifiPass"] | "";
@@ -856,7 +740,6 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
 
     bool changed = false;
 
-    // Modus wechseln.
     if (doc["mode"].is<int>()) {
         int mode = doc["mode"].as<int>();
         if (mode >= MODE_OFF && mode <= MODE_LAST) {
@@ -872,7 +755,6 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         }
     }
 
-    // Helligkeitsregler.
     if (doc["left"].is<int>()) {
         brightnessLeft = clampBrightness(doc["left"].as<int>());
         enterOverrideIfAutomatic();
@@ -893,34 +775,31 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         changed = true;
     }
 
-    // Automatik-Zeitprofil einstellen (Zeiten in Stunden 0..23).
-    // Die Grenzstunden sind paarweise gekoppelt, damit die Kurve luekenlos bleibt.
     if (doc["tMorning"].is<int>()) {
         int h = constrain(doc["tMorning"].as<int>(), 0, 23);
-        morningStartHour = h;     // Beginn Hochfahren
-        nightEndHour     = h;     // zugleich Ende der Nacht
+        morningStartHour = h;
+        nightEndHour     = h;
         changed = true;
     }
     if (doc["tDay"].is<int>()) {
         int h = constrain(doc["tDay"].as<int>(), 0, 23);
-        morningEndHour = h;       // Ende Hochfahren
-        dayStartHour   = h;       // zugleich Beginn Tag
+        morningEndHour = h;
+        dayStartHour   = h;
         changed = true;
     }
     if (doc["tEvening"].is<int>()) {
         int h = constrain(doc["tEvening"].as<int>(), 0, 23);
-        dayEndHour       = h;     // Ende Tag
-        eveningStartHour = h;     // zugleich Beginn Abend
+        dayEndHour       = h;
+        eveningStartHour = h;
         changed = true;
     }
     if (doc["tNight"].is<int>()) {
         int h = constrain(doc["tNight"].as<int>(), 0, 23);
-        eveningEndHour = h;       // Ende Abend
-        nightStartHour = h;       // zugleich Nachtabschaltung
+        eveningEndHour = h;
+        nightStartHour = h;
         changed = true;
     }
 
-    // Automatik-Helligkeiten einstellen (Prozent 0..100).
     if (doc["bMorning"].is<int>()) {
         morningBrightness = clampBrightness(doc["bMorning"].as<int>());
         changed = true;
@@ -938,7 +817,6 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         changed = true;
     }
 
-    // Szene speichern.
     if (doc["savePreset"].is<const char *>()) {
         const char *name = doc["savePreset"].as<const char *>();
         if (name && strlen(name) > 0) {
@@ -947,7 +825,6 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         }
     }
 
-    // Szene anwenden.
     if (doc["applyPreset"].is<int>()) {
         int slot = doc["applyPreset"].as<int>();
         if (slot >= 0 && slot < MAX_PRESETS && presets[slot].used) {
@@ -961,13 +838,11 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         }
     }
 
-    // Szene loeschen.
     if (doc["deletePreset"].is<int>()) {
         deletePreset(doc["deletePreset"].as<int>());
         changed = true;
     }
 
-    // Bei Aenderung: entprellt speichern, Hardware setzen, Status senden.
     if (changed) {
         markSettingsDirty();
         applyHardware();
@@ -975,9 +850,6 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
     }
 }
 
-// ===========================================================================
-//  5b) WLAN / NTP
-// ===========================================================================
 void startAccessPoint() {
     WiFi.mode(WIFI_AP);
     WiFi.softAP(SETUP_AP_SSID, SETUP_AP_PASS);
@@ -993,7 +865,6 @@ void connectWiFi() {
     WiFi.begin(wifiSsid, wifiPass);
     Serial.printf("WLAN verbinde mit \"%s\" ", wifiSsid);
 
-    // Bis zu 12 Sekunden auf die Verbindung warten.
     unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - start < 12000) {
         delay(250);
@@ -1021,7 +892,7 @@ void setupNTP() {
     struct tm timeinfo;
     if (getLocalTime(&timeinfo, 5000)) {
         ntpSynced = true;
-        // NTP-Zeit in die RTC schreiben (falls vorhanden).
+
         if (rtcAvailable) {
             time_t now;
             time(&now);
@@ -1045,7 +916,7 @@ void updateNTP() {
     struct tm timeinfo;
     if (getLocalTime(&timeinfo, 1000)) {
         ntpSynced = true;
-        // RTC periodisch nachfuehren (Sommer-/Winterzeit ueber TZ_INFO).
+
         if (rtcAvailable) {
             time_t now;
             time(&now);
@@ -1057,9 +928,6 @@ void updateNTP() {
     }
 }
 
-// ===========================================================================
-//  5c) Setup-Bausteine
-// ===========================================================================
 void setupRTC() {
     Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
     if (rtc.begin()) {
@@ -1101,7 +969,7 @@ void ledSelfTest() {
 void setupLEDs() {
     FastLED.addLeds<LED_TYPE, PIN_LED_LINKS,  LED_COLOR_ORDER>(ledsLinks,  NUM_LEDS_LINKS);
     FastLED.addLeds<LED_TYPE, PIN_LED_RECHTS, LED_COLOR_ORDER>(ledsRechts, NUM_LEDS_RECHTS);
-    FastLED.setBrightness(GLOBAL_MAX_BRIGHTNESS);          // Software-Deckel
+    FastLED.setBrightness(GLOBAL_MAX_BRIGHTNESS);
     FastLED.setMaxPowerInVoltsAndMilliamps(LED_VOLTS, LED_MAX_MILLIAMPS);
 
     ledSelfTest();
@@ -1110,7 +978,6 @@ void setupLEDs() {
     fill_solid(ledsRechts, NUM_LEDS_RECHTS, CRGB::Black);
     FastLED.show();
 
-    // Logo-PWM einrichten (Core-2.x-API).
     pinMode(PIN_LOGO_PWM, OUTPUT);
     ledcSetup(LOGO_PWM_CHANNEL, LOGO_PWM_FREQ, LOGO_PWM_RES);
     ledcAttachPin(PIN_LOGO_PWM, LOGO_PWM_CHANNEL);
@@ -1121,23 +988,22 @@ void setupWebServer() {
     ws.onEvent(onWebSocketEvent);
     server.addHandler(&ws);
 
-    // Startseite.
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *r) {
         r->send(200, "text/html", index_html);
     });
-    // PWA-Manifest.
+
     server.on("/manifest.json", HTTP_GET, [](AsyncWebServerRequest *r) {
         r->send(200, "application/manifest+json", manifest_json);
     });
-    // App-Icon.
+
     server.on("/icon.svg", HTTP_GET, [](AsyncWebServerRequest *r) {
         r->send(200, "image/svg+xml", icon_svg);
     });
-    // Status als JSON (Fallback ohne WebSocket).
+
     server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *r) {
         r->send(200, "application/json", createStatusJson());
     });
-    // Automatik-Zeitprofil lesen (Schreiben erfolgt ueber den WebSocket).
+
     server.on("/api/schedule", HTTP_GET, [](AsyncWebServerRequest *r) {
         JsonDocument doc;
         doc["tMorning"]  = morningStartHour;
@@ -1154,7 +1020,6 @@ void setupWebServer() {
         r->send(200, "application/json", out);
     });
 
-    // Firmware-Update per Browser (OTA).
     server.on("/update", HTTP_POST,
         [](AsyncWebServerRequest *request) {
             bool ok = !Update.hasError();
@@ -1203,26 +1068,20 @@ void setupWebServer() {
     Serial.println("Webserver gestartet.");
 }
 
-// ===========================================================================
-//  6) setup() / loop()
-// ===========================================================================
 void setup() {
     Serial.begin(115200);
     delay(300);
     Serial.printf("\n=== Fassadenbeleuchtung ESP32 - Firmware %s ===\n", FIRMWARE_VERSION);
 
-    // Gespeicherte Werte laden.
     loadSettings();
     loadPresets();
     loadWifi();
 
-    // Licht + Zeit stehen sofort, unabhaengig vom WLAN.
     setupRTC();
     setupLEDs();
-    currentMode = MODE_AUTOMATIC;      // definierter Zustand nach dem Einschalten
+    currentMode = MODE_AUTOMATIC;
     applyAutomatic();
 
-    // Netz danach (blockiert nur den Webserver, nicht das Licht).
     connectWiFi();
     setupNTP();
     setupWebServer();
@@ -1235,18 +1094,13 @@ void loop() {
     ws.cleanupClients();
     updateNTP();
 
-    // In der Automatik regelmaessig die Helligkeit neu berechnen.
     if (currentMode == MODE_AUTOMATIC && millis() - lastAutoUpdate >= AUTO_UPDATE_INTERVAL) {
         lastAutoUpdate = millis();
         applyAutomatic();
     }
 
-    // Effekte jeden Frame rechnen, sonst weich ueberblenden.
     bool nowEffect = isEffectMode(currentMode);
 
-    // Wechsel Effekt -> Solid: sauber aus dem Dunkeln einblenden, statt kurz
-    // den eingefrorenen alten Solid-Wert aufblitzen zu lassen (der Effekt hat
-    // die LEDs zuletzt direkt angesteuert, ohne shown* nachzufuehren).
     if (prevFrameEffect && !nowEffect) {
         shownLeft  = 0;
         shownRight = 0;
@@ -1262,12 +1116,10 @@ void loop() {
 
     updateOverrideReturn();
 
-    // Entprelltes Speichern: erst schreiben, wenn eine Weile Ruhe war.
     if (settingsDirty && millis() - lastSettingsChange >= SAVE_DEBOUNCE_MS) {
         saveSettings();
     }
 
-    // Regelmaessig den Status an alle Clients senden.
     if (millis() - lastStatusBroadcast >= STATUS_INTERVAL) {
         lastStatusBroadcast = millis();
         broadcastStatus();

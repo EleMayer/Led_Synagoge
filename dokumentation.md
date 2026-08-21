@@ -10,7 +10,7 @@
 **Zeitsteuerung:** Echtzeituhr (DS3231) mit NTP-Abgleich und NTP-Fallback  
 **LED-Steuerung:** Adressierbare LEDs (WS2812/WS2811), ausschließlich Weiß  
 **Betriebsmodi:** Grundmodi, Effekte (Lauflicht/Pulsieren/Atmen) und feste
-thematische Ausstellungs-Modi (Ewiges Licht, Schabbat, Chanukka, Gedenken)  
+feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)  
 **Netzwerk:** WLAN per App konfigurierbar, Setup-Accesspoint als Fallback,
 Zugriff auch über `http://led-fassade.local` (mDNS)  
 **Sicherheit:** Software-Helligkeits- und Strombegrenzung, entprelltes Speichern  
@@ -38,7 +38,7 @@ Die wesentlichen Funktionen sind:
 - Steuerung eines zusätzlichen LED-Elements (Logo)
 - Automatische zeitabhängige Beleuchtung
 - Verschiedene Beleuchtungseffekte (Lauflicht, Pulsieren, Atmen)
-- Feste thematische Ausstellungs-Modi (Ewiges Licht, Schabbat, Chanukka, Gedenken)
+- Feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)
 - Echtzeituhr zur Zeitsteuerung mit NTP-Abgleich
 - Speicherung von Einstellungen und eigenen Szenen
 - WLAN-Kommunikation, per App konfigurierbar (Setup-AP als Fallback)
@@ -166,13 +166,16 @@ hat eine feste Nummer, die über `mode` im JSON übertragen wird.
 | 3   | Automatik     | Grundmodus   | tageszeitabhängige Helligkeit                |
 | 4   | Pulsieren     | Effekt       | zügiges Auf-/Abschwellen                      |
 | 5   | Atmen         | Effekt       | langsames, ruhiges Auf-/Abschwellen          |
-| 6   | Ewiges Licht  | thematisch   | stetig, ganz langsam atmend (Ner Tamid)      |
-| 7   | Schabbat      | thematisch   | zwei sanft flackernde Kerzenlichter          |
-| 8   | Chanukka      | thematisch   | zunehmende Lichter in acht Schritten         |
-| 9   | Gedenken      | thematisch   | sehr gedämpftes, minutenlanges Schwellen     |
+| 6   | Dauerlicht    | Stimmung     | stetig, ganz langsam atmend                  |
+| 7   | Kerzenlicht   | Stimmung     | zwei sanft flackernde Lichter                |
+| 8   | Stufenlicht   | Stimmung     | Lichter bauen sich in acht Schritten auf     |
+| 9   | Dämmerlicht   | Stimmung     | sehr gedämpftes, minutenlanges Schwellen     |
+| 10  | Welle         | Effekt       | räumliche Sinuswelle wandert über den Streifen |
+| 11  | Feuerschein   | Stimmung     | eine kräftige, ruhig flackernde Flamme        |
+| 12  | Nachtlicht    | Stimmung     | ruhige, stetig brennende Kerze                |
 
-Die **Effekte** (2, 4, 5) verwenden eine gemeinsame Effekt-Helligkeit
-(`global`, per Regler einstellbar). Die **thematischen Modi** (6–9) sind
+Die **Effekte** (2, 4, 5, 10) verwenden eine gemeinsame Effekt-Helligkeit
+(`global`, per Regler einstellbar). Die **Stimmungs-Modi** (6–9, 11, 12) sind
 bewusst fest hinterlegt und nicht über die Regler verstellbar
 (Ausstellungsbetrieb); sie schalten sich zwischen 23:00 und 06:00
 automatisch ab.
@@ -274,32 +277,31 @@ Nacht       → 0 %
 
 ---
 
-## 4.5 Thematische Ausstellungs-Modi
+## 4.5 Stimmungs-Modi
 
-Zusätzlich zu den Grundmodi und Effekten gibt es vier feste, thematische
+Zusätzlich zu den Grundmodi und Effekten gibt es sechs feste
 Lichtstimmungen für den Ausstellungsbetrieb. Ihre Werte (Helligkeit, Tempo)
 sind **fest im Code hinterlegt** und werden nicht über die Regler verändert.
-Alle vier schalten sich zwischen **23:00 und 06:00** automatisch ab.
+Alle sechs schalten sich zwischen **23:00 und 06:00** automatisch ab.
 
-**Ewiges Licht (Ner Tamid, Nr. 6)** – ein stetiges, ganz langsam „atmendes"
-Licht auf hohem Grundniveau. Es steht sinnbildlich für das ewige Licht und
-geht (außer nachts) nie ganz aus.
+**Dauerlicht (Nr. 6)** – ein stetiges, ganz langsam „atmendes"
+Licht auf hohem Grundniveau. Es geht (außer nachts) nie ganz aus.
 
 ```text
 Helligkeit: ~73 % … ~82 %   ein Atemzug ≈ 18 Sekunden
 ```
 
-**Schabbat (Nr. 7)** – zwei unabhängig voneinander sanft flackernde
-Kerzenlichter (über eine Rauschfunktion erzeugt), je eines pro Segment.
+**Kerzenlicht (Nr. 7)** – zwei unabhängig voneinander sanft flackernde
+Lichter (über eine Rauschfunktion erzeugt), je eines pro Segment.
 
 ```text
-Segment Links  ≈ Kerze 1   (sanftes Flackern)
-Segment Rechts ≈ Kerze 2   (sanftes Flackern)
+Segment Links  ≈ Flamme 1   (sanftes Flackern)
+Segment Rechts ≈ Flamme 2   (sanftes Flackern)
 ```
 
-**Chanukka (Nr. 8)** – zunehmende Lichter: In acht Schritten werden nach und
-nach mehr LEDs hell, danach beginnt der Zyklus von vorn. Das Logo (Schamasch)
-bleibt ruhig an.
+**Stufenlicht (Nr. 8)** – die Lichter bauen sich in acht Schritten auf: erst
+eines, dann immer mehr, bis alle acht leuchten; danach beginnt der Aufbau von
+vorn. Ein langsamer, gleichmäßiger Effekt.
 
 ```text
 Schritt 1: ▮▯▯▯▯▯▯▯
@@ -308,11 +310,25 @@ Schritt 2: ▮▮▯▯▯▯▯▯
 Schritt 8: ▮▮▮▮▮▮▮▮   → kurz halten, dann von vorne
 ```
 
-**Gedenken (Nr. 9)** – sehr gedämpftes Licht, das über Minuten ganz sanft
+**Dämmerlicht (Nr. 9)** – sehr gedämpftes Licht, das über Minuten ganz sanft
 auf- und abschwillt. Ruhige, stille Stimmung.
 
 ```text
 Helligkeit: ~5 % … ~18 %   ein Durchlauf ≈ 2,5 Minuten
+```
+
+**Feuerschein (Nr. 11)** – eine kräftige, ruhig flackernde Flamme, heller als
+das Kerzenlicht und über beide Segmente gemeinsam.
+
+```text
+Helligkeit: ~59 % … ~90 %   ruhiges Flackern (eine Flamme)
+```
+
+**Nachtlicht (Nr. 12)** – eine ruhige, stetig brennende Kerze, sehr niedrig mit
+nur leisem Flackern.
+
+```text
+Helligkeit: ~12 % … ~21 %   stetig, kaum bewegt
 ```
 
 ---
@@ -620,16 +636,18 @@ Beispielhafte Oberfläche:
 
 ```text
 +------------------------------------------+
-| ● LED-Fassade        14:32   [ Chanukka ]|
+| ● LED-Fassade     14:32   [ Stufenlicht ]|
 +------------------------------------------+
 
  MODUS
- [ Aus       ] [ Statisch  ]
- [ Lauflicht ] [ Automatik ]
- [ Pulsieren ] [ Atmen     ]
- [ Ew. Licht ] [ Schabbat  ]
- [ Chanukka  ] [ Gedenken  ]
- Zunehmende Lichter, wächst in acht Schritten …
+ [ Aus         ] [ Statisch    ]
+ [ Lauflicht   ] [ Automatik   ]
+ [ Pulsieren   ] [ Atmen       ]
+ [ Welle       ] [ Dauerlicht  ]
+ [ Kerzenlicht ] [ Stufenlicht ]
+ [ Dämmerlicht ] [ Feuerschein ]
+ [ Nachtlicht  ]
+ Lichter bauen sich in acht Schritten auf …
 
  SEGMENT LINKS      [=========-------] 70 %
  SEGMENT RECHTS     [======----------] 45 %
@@ -976,8 +994,9 @@ stateDiagram-v2
 
 Zur besseren Übersicht sind hier nur die Grundzustände dargestellt.
 `EFFECT` steht dabei stellvertretend für **alle** dynamischen Modi: die
-Effekte (Lauflicht, Pulsieren, Atmen) und die thematischen Modi (Ewiges
-Licht, Schabbat, Chanukka, Gedenken). Sie verhalten sich beim Wechsel
+Effekte (Lauflicht, Pulsieren, Atmen, Welle) und die Stimmungs-Modi
+(Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht).
+Sie verhalten sich beim Wechsel
 gleich – aus jedem dieser Modi kann direkt in jeden anderen gewechselt
 werden, und jeder gilt (außer Automatik) als manueller Eingriff.
 
@@ -1208,7 +1227,7 @@ Bereits umgesetzt (siehe oben):
 
 * eigene Beleuchtungsszenen (Presets)
 * mehrere Effekte (Lauflicht, Pulsieren, Atmen)
-* feste thematische Ausstellungs-Modi (Ewiges Licht, Schabbat, Chanukka, Gedenken)
+* feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)
 * Zeitserver (NTP) inkl. automatischer Sommer-/Winterzeit
 * installierbare Bedien-App (PWA)
 * WLAN per App konfigurierbar, Setup-Accesspoint als Fallback
@@ -1353,4 +1372,69 @@ In der Dokumentation sind bereits mehrere UML-/UML-nahe Diagramme enthalten:
 - **Aktivitäts-/Ablaufdiagramme** – Automatik und Fehlerbehandlung
 
 Die Diagramme sind in **Mermaid** geschrieben. Das ist praktisch, weil du die Markdown-Datei direkt in Editoren wie GitHub/GitLab oder mit Mermaid-fähigen Markdown-Tools verwenden kannst.
+
+---
+
+# Anhang A – Pflichtenheft-Abgleich
+
+Gegenüberstellung der Anforderungen aus dem Pflichtenheft (MAW – LED-Fassaden­beleuchtung)
+und ihrer Umsetzung in dieser Firmware (Version 2.4.0).
+
+## A.1 Funktionale Anforderungen
+
+| ID | Anforderung (Pflichtenheft Kap. 6) | Status | Umsetzung |
+| -- | ---------------------------------- | ------ | --------- |
+| F1 | Drei Leuchtbereiche (Links, Rechts, Logo) getrennt und gemeinsam ansteuerbar | erfüllt | Getrennte Helligkeiten `brightnessLeft/Right/Logo`; Regler in der App |
+| F2 | Mehrere Betriebsmodi per App auswählbar | erfüllt | 13 Modi (Aus, Statisch, Automatik, 4 Effekte, 6 thematische Modi) |
+| F3 | Automatik tageszeitabhängig inkl. Nachtabschaltung ab 23:00 | erfüllt | `calculateAutomaticBrightness`, feste Nachtgrenze über `isNightOff` |
+| F4 | Helligkeit je Bereich manuell einstellbar | erfüllt | WebSocket-Befehle `left`/`right`/`logo` |
+| F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): Helligkeiten, Zeitprofil, Szenen, WLAN |
+| F6 | Nach Stromausfall definierter Zustand selbsttätig | erfüllt | `setup()` startet immer im Automatik-Modus, Zustand nach Uhrzeit |
+| F7 | Netzunabhängige Zeitbasis (RTC), NTP-Abgleich wenn online | erfüllt | DS3231 sofort nach Boot; periodischer NTP-Abgleich inkl. Sommer-/Winterzeit |
+| F8 | OTA-Firmware-Update über das lokale Netz | erfüllt | `POST /update` (Browser-Upload), danach Neustart |
+| F9 | Bedienung ausschließlich im lokalen WLAN, kein Fernzugriff | erfüllt | Reiner STA-/AP-Betrieb, kein Cloud-Dienst, keine Portfreigabe |
+
+## A.2 Abnahmekriterien
+
+| Nr. | Kriterium (Pflichtenheft Kap. 12) | Status | Nachweis |
+| --- | --------------------------------- | ------ | -------- |
+| A1 | Links, Rechts, Logo einzeln und gemeinsam ansteuerbar | erfüllt | Getrennte Zielwerte, gemeinsames Rendern in `applyHardware`/`renderSolid` |
+| A2 | Automatik-Kurve korrekt; Abschaltung 23:00 zuverlässig | erfüllt | Morgen-Rampe, Tag, Abend-Rampe, Nacht = 0; Kurven-Vorschau in der App |
+| A3 | Manuelle Helligkeitsänderung ohne spürbare Verzögerung | erfüllt | WebSocket → sofort `applyHardware` (< 500 ms, NFR Kap. 5) |
+| A4 | Nach Stromausfall Zustand nach Uhrzeit selbsttätig | erfüllt | Definierter Power-On-State + RTC-Zeit unmittelbar nach Boot |
+| A5 | Konfiguration bleibt nach Stromausfall erhalten | erfüllt | NVS (`loadSettings`/`loadPresets`/`loadWifi`) |
+| A6 | Helligkeits-/Strombegrenzung greift | erfüllt | `FastLED.setMaxPowerInVoltsAndMilliamps` + Software-Deckel `GLOBAL_MAX_BRIGHTNESS` |
+| A7 | Bedienung ausschließlich lokal | erfüllt | siehe F9 |
+| A8 | OTA-Update durchführbar | erfüllt | siehe F8 |
+
+## A.3 Betriebsmodi & Override (Kap. 7)
+
+- **Automatik** als Standardmodus mit weichen Übergängen (Fade) – entspricht Kap. 7.1.
+- **Statisch** und **Effekte** (Lauflicht, Pulsieren/„Welle", Atmen) – entspricht Kap. 7.2.
+- **Aus**: Bereiche aus, Controller bleibt im WLAN erreichbar – entspricht Kap. 7.3.
+- **Override-Rückkehr**: umgesetzt als **Variante (a)** – Rückkehr in die Automatik beim
+  nächsten Zeitfenster-Wechsel. Das ist die im Pflichtenheft (Kap. 7.4) empfohlene Variante.
+
+## A.4 Offene Punkte (Hardware, Pflichtenheft Kap. 13)
+
+Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und daher in
+`include/config.h` als anpassbare Parameter hinterlegt:
+
+| Punkt | Aktueller Wert (`config.h`) | Zu klären |
+| ----- | --------------------------- | --------- |
+| LED-Anzahl je Segment | `NUM_LEDS_LINKS 60`, `NUM_LEDS_RECHTS 60` | Bei Bedarf an reale Segmentlängen anpassen (Kap. 13) |
+| LED-Typ | `WS2812` | Pflichtenheft schlägt WS2811 / 12 V vor (Kap. 4.1) |
+| Strombegrenzung | `LED_VOLTS 5`, `LED_MAX_MILLIAMPS 2000` | Bei 120 LEDs (60+60) ist 2000 mA zu niedrig – FastLED dimmt sonst herunter; nach Netzteil-/Einspeisekonzept erhöhen (Kap. 4.2) |
+| Sonnenstand-Kopplung | nicht umgesetzt | Optional (Kap. 7.1 `[OPTION]`) |
+
+## A.5 Zusätzlich umgesetzt (über das Pflichtenheft hinaus)
+
+Eigene Szenen (Presets), sechs feste Stimmungs-Modi (Dauerlicht, Kerzenlicht,
+Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht), Setup-Accesspoint zur
+WLAN-Einrichtung, Erreichbarkeit über `led-fassade.local` (mDNS) sowie eine
+24-Stunden-Kurven-Vorschau des Automatik-Profils.
+
+**Ergebnis:** Alle funktionalen Anforderungen (F1–F9) und Abnahmekriterien (A1–A8) sind
+umgesetzt. Offen sind ausschließlich die im Pflichtenheft als „zu klären" gekennzeichneten
+Hardware-Parameter (Kap. 13).
 

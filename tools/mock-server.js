@@ -13,8 +13,24 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
 
 const PORT = 5598;
+const HOST = '0.0.0.0';          // auf allen Netzwerk-Schnittstellen lauschen (nicht nur localhost)
+
+// Alle IPv4-Adressen dieses Rechners im lokalen Netz ermitteln (zum Teilen).
+function localIPv4Addresses() {
+    const nets = os.networkInterfaces();
+    const list = [];
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+            if (net.family === 'IPv4' && !net.internal) {
+                list.push(net.address);
+            }
+        }
+    }
+    return list;
+}
 const WEB_PAGE_H = path.join(__dirname, '..', 'src', 'web_page.h');
 
 // ---------------------------------------------------------------------------
@@ -138,7 +154,7 @@ function handleCommand(msg, socket) {
         return;
     }
 
-    if (typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 9) {
+    if (typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 12) {
         state.mode = doc.mode;
         if (state.mode === 3) {
             overrideActive = false;
@@ -335,7 +351,16 @@ function parseFrames(buf, socket) {
     return buf;
 }
 
-server.listen(PORT, () => {
-    console.log('LED-Fassade Mock laeuft auf http://localhost:' + PORT);
-    console.log('(liefert die Seite aus src/web_page.h und simuliert die ESP32-API)');
+server.listen(PORT, HOST, () => {
+    console.log('LED-Fassade Mock laeuft (liefert src/web_page.h + simuliert die ESP32-API)');
+    console.log('  Lokal:            http://localhost:' + PORT);
+    const ips = localIPv4Addresses();
+    if (ips.length === 0) {
+        console.log('  Im WLAN:          (keine Netzwerkadresse gefunden)');
+    } else {
+        for (const ip of ips) {
+            console.log('  Im WLAN teilen:   http://' + ip + ':' + PORT);
+        }
+    }
+    console.log('Hinweis: bei Windows ggf. die Firewall-Abfrage fuer node.js erlauben.');
 });

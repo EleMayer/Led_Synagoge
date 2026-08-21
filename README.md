@@ -10,8 +10,8 @@ espressif32@7.0.1 → Arduino-Core 2.0.17, alte LEDC-API)
 ## Funktionen
 
 - Grundmodi: Aus, Statisch, Automatik (tageszeitabhängig, mit RTC + NTP)
-- Effekte: Lauflicht, Pulsieren, Atmen
-- Thematische Ausstellungs-Modi: Ewiges Licht, Schabbat, Chanukka, Gedenken
+- Effekte: Lauflicht, Pulsieren, Atmen, Welle
+- Stimmungs-Modi: Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht
   (feste Werte, Nachtabschaltung 23:00–06:00)
 - Eigene Szenen (Presets), im NVS gespeichert
 - Automatik-Zeitprofil einstellbar, mit 24-Stunden-Kurven-Vorschau in der App
