@@ -643,6 +643,92 @@ void renderNachtlicht() {
     showAll(v, v, NACHT_LOGO);
 }
 
+// Sternenfunkeln: dezenter Grundglanz, auf dem einzelne Funken kurz aufleuchten
+// und langsam verglimmen. Nutzt die Effekt-Helligkeit.
+void renderSternenfunkeln() {
+    if (!frameReady(RENDER_INTERVAL)) return;
+
+    uint8_t base = brightnessTo8Bit(globalBrightness);
+    uint8_t floorLevel = (uint16_t)base * TWINKLE_BASE_PCT / 100;
+
+    fadeToBlackBy(ledsLinks,  NUM_LEDS_LINKS,  TWINKLE_FADE);
+    fadeToBlackBy(ledsRechts, NUM_LEDS_RECHTS, TWINKLE_FADE);
+
+    // Grundglanz halten (nichts faellt unter das Grundniveau).
+    for (uint16_t i = 0; i < NUM_LEDS_LINKS; i++) {
+        if (ledsLinks[i].r < floorLevel) ledsLinks[i] = whiteRaw(floorLevel);
+    }
+    for (uint16_t i = 0; i < NUM_LEDS_RECHTS; i++) {
+        if (ledsRechts[i].r < floorLevel) ledsRechts[i] = whiteRaw(floorLevel);
+    }
+
+    // Gelegentlich einen neuen Funken auf voller Effekt-Helligkeit setzen.
+    if (random8() < TWINKLE_CHANCE) ledsLinks[random16(NUM_LEDS_LINKS)]   = whiteRaw(base);
+    if (random8() < TWINKLE_CHANCE) ledsRechts[random16(NUM_LEDS_RECHTS)] = whiteRaw(base);
+
+    FastLED.show();
+    setLogoBrightness(globalBrightness * TWINKLE_BASE_PCT / 100);
+}
+
+// Treffpunkt: je ein Lichtschweif laeuft von aussen nach innen; beide treffen
+// sich in der Mitte (beim Logo/Eingang) und beginnen dann von vorn.
+void renderTreffpunkt() {
+    if (!frameReady(EFFECT_INTERVAL)) return;
+
+    uint8_t base = brightnessTo8Bit(globalBrightness);
+
+    fadeToBlackBy(ledsLinks,  NUM_LEDS_LINKS,  55);
+    fadeToBlackBy(ledsRechts, NUM_LEDS_RECHTS, 55);
+
+    ledsLinks[effectStep % NUM_LEDS_LINKS] = CRGB(base, base, base);
+    uint16_t posR = (NUM_LEDS_RECHTS - 1) - (effectStep % NUM_LEDS_RECHTS);
+    ledsRechts[posR] = CRGB(base, base, base);
+
+    FastLED.show();
+    setLogoBrightness(globalBrightness);
+    effectStep++;
+}
+
+// Kurze, dreieckige Helligkeitsspitze um 'center' mit Breite 'width' (fuer den
+// Herzschlag). Ergibt am Zentrum 'peak', an den Raendern 0.
+uint8_t heartBump(uint32_t t, uint32_t center, uint32_t width, uint8_t peak) {
+    uint32_t d = (t > center) ? (t - center) : (center - t);
+    if (d >= width) return 0;
+    return peak - (uint32_t)peak * d / width;
+}
+
+// Herzschlag: zwei kurze Schlaege je Zyklus, dazwischen ruhiges Grundniveau.
+void renderHerzschlag() {
+    if (!frameReady(RENDER_INTERVAL)) return;
+
+    uint8_t base = brightnessTo8Bit(globalBrightness);
+    uint8_t low  = (uint16_t)base * HEART_LOW_PCT / 100;
+    uint32_t t   = millis() % HEART_PERIOD_MS;
+
+    int level = low;
+    int b1 = heartBump(t, 120, 170, base);          // erster Schlag
+    int b2 = heartBump(t, 430, 210, base * 4 / 5);  // zweiter, etwas schwaecher
+    if (b1 > level) level = b1;
+    if (b2 > level) level = b2;
+
+    showAll(level, level, level);
+}
+
+// Wechsellicht: Segmente Links/Rechts schwellen langsam gegenlaeufig - waehrend
+// die eine Seite heller wird, dimmt die andere ab.
+void renderWechsellicht() {
+    if (!frameReady(RENDER_INTERVAL)) return;
+
+    uint8_t base = brightnessTo8Bit(globalBrightness);
+    uint8_t low  = (uint16_t)base * WECHSEL_LOW_PCT / 100;
+
+    uint8_t phase   = sin8(millis() / (WECHSEL_PERIOD_MS / 256));
+    uint8_t vLinks  = map(phase, 0, 255, low, base);
+    uint8_t vRechts = map(phase, 0, 255, base, low);
+
+    showAll(vLinks, vRechts, (vLinks + vRechts) / 2);
+}
+
 // Modus ist animiert (alles ausser Aus, Statisch, Automatik) -> Frame pro loop.
 bool isEffectMode(OperatingMode m) {
     return m != MODE_OFF && m != MODE_STATIC && m != MODE_AUTOMATIC;
@@ -679,6 +765,10 @@ void applyHardware() {
         case MODE_DAEMMERLICHT: renderDaemmerlicht(); break;
         case MODE_FEUERSCHEIN:  renderFeuerschein();  break;
         case MODE_NACHTLICHT:   renderNachtlicht();   break;
+        case MODE_STERNEN:      renderSternenfunkeln(); break;
+        case MODE_TREFFPUNKT:   renderTreffpunkt();   break;
+        case MODE_HERZSCHLAG:   renderHerzschlag();   break;
+        case MODE_WECHSEL:      renderWechsellicht(); break;
     }
 }
 

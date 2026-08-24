@@ -223,6 +223,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
     <button class="mode" data-mode="9" onclick="sendMode(9)">Dämmerlicht</button>
     <button class="mode" data-mode="11" onclick="sendMode(11)">Feuerschein</button>
     <button class="mode" data-mode="12" onclick="sendMode(12)">Nachtlicht</button>
+    <button class="mode" data-mode="13" onclick="sendMode(13)">Sternenfunkeln</button>
+    <button class="mode" data-mode="14" onclick="sendMode(14)">Treffpunkt</button>
+    <button class="mode" data-mode="15" onclick="sendMode(15)">Herzschlag</button>
+    <button class="mode" data-mode="16" onclick="sendMode(16)">Wechsellicht</button>
   </div>
 </section>
 
@@ -284,10 +288,12 @@ let reconnectTimer = null;
 const MODE_LABEL = {
   de:{0:"Aus",1:"Statisch",2:"Lauflicht",3:"Automatik",4:"Pulsieren",5:"Atmen",
       6:"Dauerlicht",7:"Kerzenlicht",8:"Stufenlicht",9:"Dämmerlicht",10:"Welle",
-      11:"Feuerschein",12:"Nachtlicht"},
+      11:"Feuerschein",12:"Nachtlicht",13:"Sternenfunkeln",14:"Treffpunkt",
+      15:"Herzschlag",16:"Wechsellicht"},
   en:{0:"Off",1:"Static",2:"Running light",3:"Automatic",4:"Pulse",5:"Breathe",
       6:"Steady",7:"Candle",8:"Steps",9:"Dusk",10:"Wave",
-      11:"Fire",12:"Night light"}
+      11:"Fire",12:"Night light",13:"Starlight",14:"Meeting",
+      15:"Heartbeat",16:"Alternating"}
 };
 
 // Alle uebrigen Texte je Sprache.

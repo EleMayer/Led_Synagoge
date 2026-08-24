@@ -159,6 +159,9 @@ flowchart TB
 Die Beleuchtungssteuerung verfügt über mehrere Betriebsarten. Jeder Modus
 hat eine feste Nummer, die über `mode` im JSON übertragen wird.
 
+> Eine kompakte, eigenständige Erklärung **aller** Modi (inkl. Parameter und
+> Fassaden-Abstimmung) steht in [`modi.md`](modi.md).
+
 | Nr. | Modus         | Art          | Beschreibung (Kurz)                         |
 | --- | ------------- | ------------ | ------------------------------------------- |
 | 0   | Aus           | Grundmodus   | alles aus                                   |
@@ -174,8 +177,12 @@ hat eine feste Nummer, die über `mode` im JSON übertragen wird.
 | 10  | Welle         | Effekt       | langsam wandernde Hell-Dunkel-Bänder         |
 | 11  | Feuerschein   | Stimmung     | ruhiges, warmes Lodern                        |
 | 12  | Nachtlicht    | Stimmung     | ruhiger, niedriger Grundglanz                |
+| 13  | Sternenfunkeln| Effekt       | dezenter Grundglanz mit verglimmenden Funken |
+| 14  | Treffpunkt    | Effekt       | zwei Lichter laufen zur Mitte und treffen sich |
+| 15  | Herzschlag    | Effekt       | ruhiger Doppelschlag der ganzen Fassade       |
+| 16  | Wechsellicht  | Effekt       | Links/Rechts schwellen langsam gegenläufig    |
 
-Die **Effekte** (2, 4, 5, 10) verwenden eine gemeinsame Effekt-Helligkeit
+Die **Effekte** (2, 4, 5, 10, 13–16) verwenden eine gemeinsame Effekt-Helligkeit
 (`global`, per Regler einstellbar). Die **Stimmungs-Modi** (6–9, 11, 12) sind
 bewusst fest hinterlegt und nicht über die Regler verstellbar
 (Ausstellungsbetrieb); sie schalten sich zwischen 23:00 und 06:00
@@ -624,7 +631,7 @@ Der Controller liefert dazu selbst aus:
 
 Funktionen:
 
-* Betriebsmodus auswählen (alle 13 Modi als Kacheln)
+* Betriebsmodus auswählen (alle 17 Modi als Kacheln)
 * Helligkeit je Bereich einstellen (Links, Rechts, Logo)
 * Effekt-Helligkeit einstellen (für Lauflicht/Pulsieren/Atmen)
 * eigene Szenen speichern, abrufen und löschen
@@ -1436,7 +1443,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 | ID | Anforderung (Pflichtenheft Kap. 6) | Status | Umsetzung |
 | -- | ---------------------------------- | ------ | --------- |
 | F1 | Drei Leuchtbereiche (Links, Rechts, Logo) getrennt und gemeinsam ansteuerbar | erfüllt | Getrennte Helligkeiten `brightnessLeft/Right/Logo`; Regler in der App |
-| F2 | Mehrere Betriebsmodi per App auswählbar | erfüllt | 13 Modi (Aus, Statisch, Automatik, 4 Effekte, 6 thematische Modi) |
+| F2 | Mehrere Betriebsmodi per App auswählbar | erfüllt | 17 Modi (Aus, Statisch, Automatik, 8 Effekte, 6 thematische Modi) |
 | F3 | Automatik tageszeitabhängig inkl. Nachtabschaltung ab 23:00 | erfüllt | `calculateAutomaticBrightness`, feste Nachtgrenze über `isNightOff` |
 | F4 | Helligkeit je Bereich manuell einstellbar | erfüllt | WebSocket-Befehle `left`/`right`/`logo` |
 | F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): manuelle Helligkeiten, Szenen (WLAN und das gesamte Automatik-Profil dagegen fest in `config.h`) |

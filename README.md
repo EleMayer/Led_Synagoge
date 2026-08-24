@@ -10,11 +10,14 @@ espressif32@7.0.1 → Arduino-Core 2.0.17, alte LEDC-API)
 ## Funktionen
 
 - Grundmodi: Aus, Statisch, Automatik (tageszeitabhängig, mit RTC + NTP)
-- Effekte: Lauflicht, Pulsieren, Atmen, Welle
+- Effekte: Lauflicht, Pulsieren, Atmen, Welle, Sternenfunkeln, Treffpunkt,
+  Herzschlag, Wechsellicht
 - Stimmungs-Modi: Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht
   (feste Werte, Nachtabschaltung 23:00–06:00)
 - Alle Modi außer Automatik sind auf **ruhige Fassadenwirkung** abgestimmt (wenig
   Kontrast, langsame Bewegung, angehobene Grundhelligkeit)
+
+Ausführliche Erklärung aller Modi: siehe [modi.md](modi.md).
 - Eigene Szenen (Presets), im NVS gespeichert
 - Automatik-Profil (Uhrzeiten **und** Helligkeiten) fest in `config.h`, nur dort
   änderbar; die App zeigt es schreibgeschützt als Phasen-Übersicht
@@ -36,6 +39,7 @@ tools/mock-server.js  PC-Testserver (simuliert die ESP32-API)
 tools/build-demo.js   erzeugt src/web_page_demo.html aus src/web_page.h
 tools/build-icons.js  erzeugt include/icons.h aus tools/icons/*.png
 tools/icons/          Home-Screen-Icons (icon-180/192/512.png)
+modi.md               Erklärung aller Betriebsmodi
 dokumentation.md      Technische Dokumentation
 ```
 

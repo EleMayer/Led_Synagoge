@@ -145,7 +145,7 @@ function handleCommand(msg, socket) {
     let doc;
     try { doc = JSON.parse(msg); } catch { return; }
 
-    if (typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 12) {
+    if (typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 16) {
         state.mode = doc.mode;
         if (state.mode === 3) {
             overrideActive = false;

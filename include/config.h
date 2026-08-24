@@ -88,7 +88,13 @@ enum OperatingMode {
     MODE_WAVE         = 10,  // raeumliche Sinuswelle
     MODE_FEUERSCHEIN  = 11,
     MODE_NACHTLICHT   = 12,
-    MODE_LAST         = MODE_NACHTLICHT
+
+    // Weitere Fassaden-Effekte (nutzen die Effekt-Helligkeit, keine Nachtabschaltung).
+    MODE_STERNEN      = 13,  // Sternenfunkeln
+    MODE_TREFFPUNKT   = 14,  // zwei Lichter treffen sich in der Mitte
+    MODE_HERZSCHLAG   = 15,  // ruhiger Doppelschlag der ganzen Fassade
+    MODE_WECHSEL      = 16,  // Segmente Links/Rechts gegenlaeufig
+    MODE_LAST         = MODE_WECHSEL
 };
 
 // Feste Parameter der Stimmungs-Modi (8-Bit-Helligkeitsgrenzen, Perioden bzw.
@@ -133,3 +139,19 @@ enum OperatingMode {
 #define NACHT_MAX          80
 #define NACHT_SPEED_DIV    40
 #define NACHT_LOGO         60
+
+// Zusaetzliche Fassaden-Effekte. Ihre Helligkeit richtet sich nach der
+// Effekt-Helligkeit (globalBrightness), die Prozentwerte sind Anteile davon.
+
+// Sternenfunkeln: dezenter Grundglanz mit einzelnen, langsam verglimmenden Funken.
+#define TWINKLE_CHANCE     16     // Wahrscheinlichkeit je Frame (0-255) fuer einen neuen Funken
+#define TWINKLE_FADE       10     // Abkling-Geschwindigkeit der Funken
+#define TWINKLE_BASE_PCT   18     // Grundglanz in % der Effekt-Helligkeit
+
+// Herzschlag: zwei kurze Schlaege je Zyklus, dazwischen ruhiges Grundniveau.
+#define HEART_PERIOD_MS    2200UL
+#define HEART_LOW_PCT      25     // Grundniveau in % der Effekt-Helligkeit
+
+// Wechsellicht: Segmente Links/Rechts schwellen langsam gegenlaeufig.
+#define WECHSEL_PERIOD_MS  9000UL
+#define WECHSEL_LOW_PCT    35     // dunklere Seite in % der Effekt-Helligkeit
