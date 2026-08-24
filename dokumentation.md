@@ -14,9 +14,10 @@ feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuers
 **Netzwerk:** WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback,
 Zugriff auch über `http://led-fassade.local` (mDNS)  
 **Sicherheit:** Software-Helligkeits- und Strombegrenzung, entprelltes Speichern  
-**Konfiguration:** Persistenter Speicher (NVS) inkl. eigener Szenen und WLAN
+**Konfiguration:** Persistenter Speicher (NVS) inkl. eigener Szenen;
+WLAN-Zugangsdaten dagegen fest im Code (`config.h`)
 
-**Firmware-Version:** 2.4.0
+**Firmware-Version:** 2.4.1
 
 ---
 
@@ -657,7 +658,7 @@ Beispielhafte Oberfläche:
  [ Abend · 40 / 40 / 30 ] [Entf.]
 
  WLAN & SYSTEM
-  Firmware 2.4.0 · RTC OK · NTP synchron.
+  Firmware 2.4.1 · RTC OK · NTP synchron.
  WLAN verbunden · IP 192.168.x.x
 ```
 
@@ -759,7 +760,7 @@ Beispiel:
     "wifi": true,
     "ap": false,
     "ssid": "Museum-Arbeitswelt",
-    "firmware": "2.4.0",
+    "firmware": "2.4.1",
     "presets": [
         { "slot": 0, "name": "Abend", "left": 40, "right": 40, "logo": 30 }
     ]
@@ -1095,6 +1096,31 @@ Im normalen WLAN ist der Controller zusätzlich unter dem Namen
 `http://led-fassade.local` erreichbar (mDNS), sodass die IP-Adresse
 nicht bekannt sein muss.
 
+## 23.1 WLAN einstellen (`config.h`)
+
+Die WLAN-Zugangsdaten sind **fest im Code hinterlegt** und werden **nicht**
+im NVS gespeichert und **nicht** über die App geändert (Pflichtenheft: rein
+lokale Bedienung, feste Zugangsdaten). Geändert werden sie in
+`include/config.h`:
+
+```c
+#define WIFI_SSID     "Museum-Arbeitswelt"   // WLAN-Name
+#define WIFI_PASS     "willkommen"           // WLAN-Passwort
+#define SETUP_AP_SSID "Fassade-Setup"        // Notfall-Accesspoint (nur Zugriff)
+#define SETUP_AP_PASS "fassade2026"
+```
+
+Nach einer Änderung muss die Firmware neu aufgespielt werden:
+
+```text
+pio run -t upload
+```
+
+Der Setup-Accesspoint (`SETUP_AP_*`) dient nur dazu, den Controller bei
+WLAN-Ausfall lokal zu erreichen; er bietet **keine** Eingabe neuer
+Zugangsdaten. Ein WLAN-Wechsel im Betrieb (Setup-Portal mit Speicherung im
+NVS) ist bewusst nicht umgesetzt und wäre eine mögliche Erweiterung.
+
 ---
 
 # 24. Verhalten bei RTC-Ausfall
@@ -1248,22 +1274,33 @@ Konfiguration, Steuerlogik und Bedienoberfläche sind voneinander getrennt:
 ```text
 include/
 │
-└── config.h      Zentrale Konfiguration: Pins, LED-Anzahl,
-                  Grenzwerte, Betriebsmodi, Werte der
-                  thematischen Modi
+├── config.h      Zentrale Konfiguration: WLAN, Pins, LED-Anzahl,
+│                 Grenzwerte, Betriebsmodi, Werte der
+│                 thematischen Modi
+│
+└── icons.h       PNG-Home-Screen-Icons als Byte-Arrays (generiert)
 
 src/
 │
-├── main.cpp      C++-Logik (Modi, Automatik, Szenen,
-│                 WLAN, Webserver, WebSocket, OTA)
+├── main.cpp             C++-Logik (Modi, Automatik, Szenen,
+│                        WLAN, Webserver, WebSocket, OTA)
 │
-└── web_page.h    Bedien-App: HTML, CSS, JavaScript,
-                  App-Manifest und Icon (PWA)
+├── web_page.h           Bedien-App: HTML, CSS, JavaScript,
+│                        App-Manifest und Icons (PWA)
+│
+└── web_page_demo.html   zweite Variante: läuft ohne ESP32/Server
+                         (aus web_page.h generiert)
 
 tools/
 │
-└── mock-server.js  Test-Server (Node.js), simuliert die
-                     ESP32-API zum Bedienen der Seite am PC
+├── mock-server.js   Test-Server (Node.js), simuliert die
+│                    ESP32-API zum Bedienen der Seite am PC
+│
+├── build-demo.js    erzeugt web_page_demo.html aus web_page.h
+│
+├── build-icons.js   erzeugt icons.h aus tools/icons/*.png
+│
+└── icons/           Home-Screen-Icons (icon-180/192/512.png)
 ```
 
 Dadurch lässt sich die Anlage an neue Hardware anpassen (`config.h`) und
@@ -1273,7 +1310,7 @@ Steuerlogik (`main.cpp`) bearbeiten.
 **Testen ohne ESP32:** Der Mock-Server bildet die komplette API nach
 (WebSocket + `/api/status` + `/api/schedule`) und liefert die Seite direkt
 aus `web_page.h` aus. So ist die Bedienoberfläche mit allen Funktionen
-(Modi, Regler, Szenen, Zeitprofil, WLAN) am PC bedienbar:
+(Modi, Regler, Szenen, Zeitprofil) am PC bedienbar:
 
 ```text
 node tools/mock-server.js      →  http://localhost:5598
@@ -1373,7 +1410,7 @@ Die Diagramme sind in **Mermaid** geschrieben. Das ist praktisch, weil du die Ma
 # Anhang A – Pflichtenheft-Abgleich
 
 Gegenüberstellung der Anforderungen aus dem Pflichtenheft (MAW – LED-Fassaden­beleuchtung)
-und ihrer Umsetzung in dieser Firmware (Version 2.4.0).
+und ihrer Umsetzung in dieser Firmware (Version 2.4.1).
 
 ## A.1 Funktionale Anforderungen
 
@@ -1383,7 +1420,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.0).
 | F2 | Mehrere Betriebsmodi per App auswählbar | erfüllt | 13 Modi (Aus, Statisch, Automatik, 4 Effekte, 6 thematische Modi) |
 | F3 | Automatik tageszeitabhängig inkl. Nachtabschaltung ab 23:00 | erfüllt | `calculateAutomaticBrightness`, feste Nachtgrenze über `isNightOff` |
 | F4 | Helligkeit je Bereich manuell einstellbar | erfüllt | WebSocket-Befehle `left`/`right`/`logo` |
-| F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): Helligkeiten, Zeitprofil, Szenen, WLAN |
+| F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): Helligkeiten, Zeitprofil, Szenen (WLAN dagegen fest in `config.h`) |
 | F6 | Nach Stromausfall definierter Zustand selbsttätig | erfüllt | `setup()` startet immer im Automatik-Modus, Zustand nach Uhrzeit |
 | F7 | Netzunabhängige Zeitbasis (RTC), NTP-Abgleich wenn online | erfüllt | DS3231 sofort nach Boot; periodischer NTP-Abgleich inkl. Sommer-/Winterzeit |
 | F8 | OTA-Firmware-Update über das lokale Netz | erfüllt | `POST /update` (Browser-Upload), danach Neustart |
@@ -1397,7 +1434,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.0).
 | A2 | Automatik-Kurve korrekt; Abschaltung 23:00 zuverlässig | erfüllt | Morgen-Rampe, Tag, Abend-Rampe, Nacht = 0; Kurven-Vorschau in der App |
 | A3 | Manuelle Helligkeitsänderung ohne spürbare Verzögerung | erfüllt | WebSocket → sofort `applyHardware` (< 500 ms, NFR Kap. 5) |
 | A4 | Nach Stromausfall Zustand nach Uhrzeit selbsttätig | erfüllt | Definierter Power-On-State + RTC-Zeit unmittelbar nach Boot |
-| A5 | Konfiguration bleibt nach Stromausfall erhalten | erfüllt | NVS (`loadSettings`/`loadPresets`/`loadWifi`) |
+| A5 | Konfiguration bleibt nach Stromausfall erhalten | erfüllt | NVS (`loadSettings`/`loadPresets`) |
 | A6 | Helligkeits-/Strombegrenzung greift | erfüllt | `FastLED.setMaxPowerInVoltsAndMilliamps` + Software-Deckel `GLOBAL_MAX_BRIGHTNESS` |
 | A7 | Bedienung ausschließlich lokal | erfüllt | siehe F9 |
 | A8 | OTA-Update durchführbar | erfüllt | siehe F8 |
@@ -1425,9 +1462,9 @@ Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und da
 ## A.5 Zusätzlich umgesetzt (über das Pflichtenheft hinaus)
 
 Eigene Szenen (Presets), sechs feste Stimmungs-Modi (Dauerlicht, Kerzenlicht,
-Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht), Setup-Accesspoint zur
-WLAN-Einrichtung, Erreichbarkeit über `led-fassade.local` (mDNS) sowie eine
-24-Stunden-Kurven-Vorschau des Automatik-Profils.
+Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht), Setup-Accesspoint für den
+lokalen Zugriff bei WLAN-Ausfall, Erreichbarkeit über `led-fassade.local`
+(mDNS) sowie eine 24-Stunden-Kurven-Vorschau des Automatik-Profils.
 
 **Ergebnis:** Alle funktionalen Anforderungen (F1–F9) und Abnahmekriterien (A1–A8) sind
 umgesetzt. Offen sind ausschließlich die im Pflichtenheft als „zu klären" gekennzeichneten

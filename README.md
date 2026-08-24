@@ -48,6 +48,30 @@ node tools/build-demo.js       # erzeugt/aktualisiert src/web_page_demo.html
 Nach jeder Aenderung an `src/web_page.h` das Skript erneut ausfuehren, damit die
 Demo mit der echten App synchron bleibt.
 
+## WLAN einstellen
+
+Die WLAN-Zugangsdaten stehen **fest im Code** in [`include/config.h`](include/config.h)
+und werden nicht über die App geändert (rein lokale Bedienung, feste
+Zugangsdaten – Pflichtenheft Kap. 2/9):
+
+```c
+#define WIFI_SSID     "Museum-Arbeitswelt"   // WLAN-Name
+#define WIFI_PASS     "willkommen"           // WLAN-Passwort
+#define SETUP_AP_SSID "Fassade-Setup"        // Notfall-Accesspoint (nur Zugriff)
+#define SETUP_AP_PASS "fassade2026"
+```
+
+SSID/Passwort dort ändern und die Firmware neu aufspielen:
+
+```bash
+pio run -t upload
+```
+
+Findet der Controller das WLAN nicht, öffnet er selbst den Accesspoint
+`Fassade-Setup`, über den die Oberfläche lokal erreichbar bleibt. Dieser AP
+dient nur dem Zugriff – ein Eingeben neuer Zugangsdaten (Setup-Portal mit
+Speicherung im NVS) ist bewusst nicht umgesetzt.
+
 ## Anschlüsse (Pinbelegung)
 
 Definiert in `include/config.h`. Der ESP32 gibt nur kleine Steuersignale nach
