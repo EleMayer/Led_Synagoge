@@ -77,7 +77,7 @@ enum OperatingMode {
     MODE_STATIC    = 1,   // feste Helligkeit je Bereich
     MODE_EFFECT    = 2,   // Lauflicht
     MODE_AUTOMATIC = 3,   // tageszeitabhaengig (Standardmodus)
-    MODE_PULSE     = 4,   // schnelles Pulsieren
+    MODE_PULSE     = 4,   // ruhiges Pulsieren (fassadentauglich)
     MODE_BREATH    = 5,   // langsames Atmen
 
     // Stimmungs-Modi mit festen Werten, Nachtabschaltung greift.
@@ -94,37 +94,42 @@ enum OperatingMode {
 // Feste Parameter der Stimmungs-Modi (8-Bit-Helligkeitsgrenzen, Perioden bzw.
 // Flacker-Geschwindigkeiten). Werden von den render*-Funktionen in main.cpp
 // genutzt; MIN/MAX begrenzen die Helligkeit, PERIOD/SPEED die Dynamik.
+//
+// FASSADEN-ABSTIMMUNG: Die Werte sind auf eine Aussenwand ausgelegt, die aus
+// Distanz ruhig und gleichmaessig wirken soll - also enge Helligkeitsbereiche
+// (wenig Kontrast), langsame Bewegungen (grosse PERIOD / grosser SPEED_DIV) und
+// angehobene Grundhelligkeit (kein nervoeses Flackern, keine tiefen Dunkelphasen).
 
-// Dauerlicht: ruhiges Atmen auf hohem Niveau.
-#define DAUER_MIN            186
-#define DAUER_MAX            208
-#define DAUER_PERIOD_MS      18000UL
+// Dauerlicht: gleichmaessiges, sehr langsam atmendes Licht auf hohem Niveau.
+#define DAUER_MIN            190
+#define DAUER_MAX            214
+#define DAUER_PERIOD_MS      24000UL
 
-// Kerzenlicht: sanftes, unabhaengiges Flackern beider Segmente.
-#define KERZEN_MIN       108
-#define KERZEN_MAX       172
-#define KERZEN_SPEED_DIV 20
-#define KERZEN_LOGO      100
+// Kerzenlicht: langsames, wuerdevolles Schimmern (statt nervoesem Flackern).
+#define KERZEN_MIN       165
+#define KERZEN_MAX       200
+#define KERZEN_SPEED_DIV 34
+#define KERZEN_LOGO      175
 
-// Stufenlicht: Aufbau in acht Schritten (STEP) mit Haltezeit (HOLD).
+// Stufenlicht: langsamer, ruhiger Aufbau in acht Schritten mit langer Haltezeit.
 #define STUFEN_LEVEL     220
-#define STUFEN_STEP_MS   1500
-#define STUFEN_HOLD_MS   3000
+#define STUFEN_STEP_MS   2200
+#define STUFEN_HOLD_MS   5000
 
-// Daemmerlicht: sehr gedaempftes, langsames Schwingen; Logo anteilig (LOGO_PCT).
-#define DAEMMER_MIN       14
-#define DAEMMER_MAX       46
-#define DAEMMER_PERIOD_MS 150000UL
-#define DAEMMER_LOGO_PCT  60
+// Daemmerlicht: sanfter, niedriger Abendglanz - noch aus Distanz sichtbar.
+#define DAEMMER_MIN       55
+#define DAEMMER_MAX       95
+#define DAEMMER_PERIOD_MS 180000UL
+#define DAEMMER_LOGO_PCT  70
 
-// Feuerschein: kraeftiges, ruhiges Lodern.
-#define FEUER_MIN        150
-#define FEUER_MAX        230
-#define FEUER_SPEED_DIV  12
-#define FEUER_LOGO       190
+// Feuerschein: warmes, ruhiges Lodern - langsam und wenig kontrastreich.
+#define FEUER_MIN        175
+#define FEUER_MAX        215
+#define FEUER_SPEED_DIV  24
+#define FEUER_LOGO       200
 
-// Nachtlicht: ruhige, niedrige Kerze.
-#define NACHT_MIN          30
-#define NACHT_MAX          54
-#define NACHT_SPEED_DIV    28
-#define NACHT_LOGO         44
+// Nachtlicht: ruhiger, niedriger Grundglanz (sehr langsam).
+#define NACHT_MIN          55
+#define NACHT_MAX          80
+#define NACHT_SPEED_DIV    40
+#define NACHT_LOGO         60

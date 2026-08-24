@@ -112,7 +112,7 @@ const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0";
 
 uint16_t      effectStep = 0;
 unsigned long lastEffectUpdate = 0;
-const uint32_t EFFECT_INTERVAL = 40;
+const uint32_t EFFECT_INTERVAL = 80;
 unsigned long lastAutoUpdate = 0;
 const uint32_t AUTO_UPDATE_INTERVAL = 1000;
 unsigned long lastStatusBroadcast = 0;
@@ -480,14 +480,17 @@ uint8_t flickerLevel(uint16_t speedDiv, uint16_t seed, uint8_t lo, uint8_t hi) {
     return map(n, 0, 255, lo, hi);
 }
 
-// Lauflicht: ein einzelner heller Punkt wandert ueber beide Segmente.
+// Lauflicht: ein weiches Licht gleitet ueber beide Segmente. Statt eines harten
+// Einzelpunkts klingt der bestehende Streifen langsam ab (fadeToBlackBy) und der
+// Kopf wird neu gesetzt - so entsteht ein ruhig gleitender Lichtschweif, der auf
+// einer Fassade deutlich eleganter wirkt als ein blinkender Punkt.
 void applyEffect() {
     if (!frameReady(EFFECT_INTERVAL)) return;
 
     uint8_t base = brightnessTo8Bit(globalBrightness);
 
-    fill_solid(ledsLinks,  NUM_LEDS_LINKS,  CRGB::Black);
-    fill_solid(ledsRechts, NUM_LEDS_RECHTS, CRGB::Black);
+    fadeToBlackBy(ledsLinks,  NUM_LEDS_LINKS,  60);
+    fadeToBlackBy(ledsRechts, NUM_LEDS_RECHTS, 60);
 
     ledsLinks[effectStep % NUM_LEDS_LINKS]   = CRGB(base, base, base);
     ledsRechts[effectStep % NUM_LEDS_RECHTS] = CRGB(base, base, base);
@@ -604,19 +607,23 @@ void renderDaemmerlicht() {
 }
 
 // Welle: eine Sinuswelle laeuft raeumlich ueber die Streifen (pixelbasiert).
+// Fuer die Fassade wandert sie langsam (grosser Teiler) und die Wellentaeler
+// bleiben mit ca. 45 % der Helligkeit erhalten - so entstehen sanfte Hell-Dunkel-
+// Baender statt harter dunkler Luecken.
 void renderWave() {
     if (!frameReady(RENDER_INTERVAL)) return;
 
     uint8_t base = brightnessTo8Bit(globalBrightness);
-    uint16_t phase = millis() / 8;
+    uint8_t floorLevel = base * 45 / 100;   // untere Grenze der Welle
+    uint16_t phase = millis() / 16;
 
     for (uint16_t i = 0; i < NUM_LEDS_LINKS; i++) {
         uint8_t w = sin8(i * 16 + phase);
-        ledsLinks[i] = whiteRaw(scale8(base, w));
+        ledsLinks[i] = whiteRaw(map(w, 0, 255, floorLevel, base));
     }
     for (uint16_t i = 0; i < NUM_LEDS_RECHTS; i++) {
         uint8_t w = sin8(i * 16 + phase);
-        ledsRechts[i] = whiteRaw(scale8(base, w));
+        ledsRechts[i] = whiteRaw(map(w, 0, 255, floorLevel, base));
     }
     FastLED.show();
     setLogoBrightness(globalBrightness);
@@ -662,8 +669,8 @@ void applyHardware() {
         case MODE_OFF:          allLEDsOff();         break;
         case MODE_STATIC:       applyStatic();        break;
         case MODE_EFFECT:       applyEffect();        break;
-        case MODE_PULSE:        applyWave(50, 15);    break;
-        case MODE_BREATH:       applyWave(8, 3);      break;
+        case MODE_PULSE:        applyWave(20, 120);   break;
+        case MODE_BREATH:       applyWave(6, 100);    break;
         case MODE_AUTOMATIC:    applyAutomatic();     break;
         case MODE_WAVE:         renderWave();         break;
         case MODE_DAUERLICHT:   renderDauerlicht();   break;

@@ -13,10 +13,13 @@ espressif32@7.0.1 → Arduino-Core 2.0.17, alte LEDC-API)
 - Effekte: Lauflicht, Pulsieren, Atmen, Welle
 - Stimmungs-Modi: Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht
   (feste Werte, Nachtabschaltung 23:00–06:00)
+- Alle Modi außer Automatik sind auf **ruhige Fassadenwirkung** abgestimmt (wenig
+  Kontrast, langsame Bewegung, angehobene Grundhelligkeit)
 - Eigene Szenen (Presets), im NVS gespeichert
 - Automatik-Profil (Uhrzeiten **und** Helligkeiten) fest in `config.h`, nur dort
-  änderbar; die App zeigt es schreibgeschützt als Phasen-Übersicht mit
-  24-Stunden-Kurve
+  änderbar; die App zeigt es schreibgeschützt als Phasen-Übersicht
+- App-Oberfläche mit **Hell-/Dunkel-Umschalter** und **Deutsch/Englisch**
+  (Auswahl wird im Browser gespeichert)
 - WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback für lokalen Zugriff
 - Erreichbar über `http://led-fassade.local` (mDNS)
 - Firmware-Update über den Browser (OTA)
@@ -137,13 +140,27 @@ Worker) ist nicht möglich, da Browser diesen nur über HTTPS/localhost erlauben
 der ESP32 aber über HTTP im WLAN ausliefert — Installieren und App-Start
 funktionieren davon unabhängig.
 
+## Design & Codestil
+
+- **Oberfläche:** klinisch-reduziertes Design ohne erklärende Zusatztexte –
+  bewusst schlicht und übersichtlich. Über den Kopfzeilen-Knopf zwischen
+  **dunkel** (Standard, schwarz) und **hell** umschaltbar; ein zweiter Knopf
+  schaltet die Sprache zwischen **Deutsch und Englisch**. Beide Einstellungen
+  werden im Browser gespeichert.
+- **Codestil:** bewusst einfach und anfängerfreundlich gehalten – benannte
+  Funktionen statt anonymer Funktionen (Lambdas), klare `for`-Schleifen statt
+  Array-Kniffe (`map`/`forEach`), kurze Funktionen und durchgehende Kommentare.
+
 ## Bauen & Flashen
 
 ```bash
 pio run                 # kompilieren
-pio run -t upload       # auf den ESP32 flashen
+pio run -t upload       # auf den ESP32 flashen (Board per USB angeschlossen)
 pio device monitor      # serielle Ausgabe (115200 Baud)
 ```
+
+Der Build ist geprüft und läuft fehlerfrei durch. Aktuelle Größe (esp32dev):
+**Flash ≈ 74,5 %** (inkl. eingebetteter App und PNG-Icons), **RAM ≈ 15 %**.
 
 ## Bedienoberfläche am PC testen (ohne ESP32)
 

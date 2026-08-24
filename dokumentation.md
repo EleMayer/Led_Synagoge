@@ -163,23 +163,30 @@ hat eine feste Nummer, die über `mode` im JSON übertragen wird.
 | --- | ------------- | ------------ | ------------------------------------------- |
 | 0   | Aus           | Grundmodus   | alles aus                                   |
 | 1   | Statisch      | Grundmodus   | feste Helligkeit je Bereich (Regler)        |
-| 2   | Lauflicht     | Effekt       | wandernder Lichtpunkt                        |
+| 2   | Lauflicht     | Effekt       | weicher, langsam gleitender Lichtschweif      |
 | 3   | Automatik     | Grundmodus   | tageszeitabhängige Helligkeit                |
-| 4   | Pulsieren     | Effekt       | zügiges Auf-/Abschwellen                      |
-| 5   | Atmen         | Effekt       | langsames, ruhiges Auf-/Abschwellen          |
-| 6   | Dauerlicht    | Stimmung     | stetig, ganz langsam atmend                  |
-| 7   | Kerzenlicht   | Stimmung     | zwei sanft flackernde Lichter                |
-| 8   | Stufenlicht   | Stimmung     | Lichter bauen sich in acht Schritten auf     |
-| 9   | Dämmerlicht   | Stimmung     | sehr gedämpftes, minutenlanges Schwellen     |
-| 10  | Welle         | Effekt       | räumliche Sinuswelle wandert über den Streifen |
-| 11  | Feuerschein   | Stimmung     | eine kräftige, ruhig flackernde Flamme        |
-| 12  | Nachtlicht    | Stimmung     | ruhige, stetig brennende Kerze                |
+| 4   | Pulsieren     | Effekt       | ruhiges Auf-/Abschwellen, bleibt präsent      |
+| 5   | Atmen         | Effekt       | sehr langsames, sanftes Ein-/Ausatmen        |
+| 6   | Dauerlicht    | Stimmung     | gleichmäßig, kaum merklich atmend            |
+| 7   | Kerzenlicht   | Stimmung     | zwei langsam schimmernde Lichter             |
+| 8   | Stufenlicht   | Stimmung     | langsamer Aufbau in acht Schritten           |
+| 9   | Dämmerlicht   | Stimmung     | sanfter, niedriger Abendglanz                |
+| 10  | Welle         | Effekt       | langsam wandernde Hell-Dunkel-Bänder         |
+| 11  | Feuerschein   | Stimmung     | ruhiges, warmes Lodern                        |
+| 12  | Nachtlicht    | Stimmung     | ruhiger, niedriger Grundglanz                |
 
 Die **Effekte** (2, 4, 5, 10) verwenden eine gemeinsame Effekt-Helligkeit
 (`global`, per Regler einstellbar). Die **Stimmungs-Modi** (6–9, 11, 12) sind
 bewusst fest hinterlegt und nicht über die Regler verstellbar
 (Ausstellungsbetrieb); sie schalten sich zwischen 23:00 und 06:00
 automatisch ab.
+
+**Fassaden-Abstimmung:** Alle Modi außer Automatik sind auf die Wirkung an
+einer Außenwand ausgelegt – enge Helligkeitsbereiche (wenig Kontrast),
+langsame Bewegungen und angehobene Grundhelligkeit, damit die Fassade aus
+Distanz ruhig und gleichmäßig wirkt (kein nervöses Flackern, keine tiefen
+Dunkelphasen). Die konkreten Werte stehen in `include/config.h` (Stimmungs-Modi)
+bzw. in den `applyWave(...)`-Aufrufen in `main.cpp` (Pulsieren/Atmen).
 
 ## 4.1 Aus
 
@@ -230,26 +237,23 @@ MODE_PULSE    (4)  Pulsieren
 MODE_BREATH   (5)  Atmen
 ```
 
-**Lauflicht** – ein wandernder Lichtpunkt läuft über die Kette:
+**Lauflicht** – ein weicher Lichtschweif gleitet langsam über die Kette. Statt
+eines harten Einzelpunkts klingt der bestehende Streifen leicht ab und der Kopf
+wird neu gesetzt, sodass ein ruhig gleitender Schweif entsteht:
 
 ```text
-LED 1
-LED 2
-LED 3
-LED 4
-LED 5
-...
-
-   ●
+Fahrtrichtung  ───────────►
+··▁▂▃▅▇█            (heller Kopf mit ausklingendem Schweif)
 ```
 
 **Pulsieren** und **Atmen** lassen alle LEDs gemeinsam heller und dunkler
-werden – Pulsieren zügig, Atmen langsam und ruhig. Beide nutzen eine weiche
-Sinuswelle:
+werden – beide ruhig und fassadentauglich: Pulsieren mäßig, Atmen sehr langsam.
+Die Helligkeit sackt dabei **nicht ins Dunkle** ab, sondern bleibt präsent
+(Pulsieren ≥ ~47 %, Atmen ≥ ~39 % der Effekt-Helligkeit):
 
 ```text
-Atmen:   dunkel → hell → dunkel → hell   (langsam)
-Pulsieren: dunkel → hell → dunkel → hell (schneller)
+Atmen:     hell → etwas gedimmt → hell   (sehr langsam)
+Pulsieren: hell → etwas gedimmt → hell   (mäßig)
 ```
 
 Die Effekte werden jeden Frame (ca. 50-mal pro Sekunde) neu berechnet.
@@ -283,53 +287,55 @@ Nacht       → 0 %
 Zusätzlich zu den Grundmodi und Effekten gibt es sechs feste
 Lichtstimmungen für den Ausstellungsbetrieb. Ihre Werte (Helligkeit, Tempo)
 sind **fest im Code hinterlegt** und werden nicht über die Regler verändert.
-Alle sechs schalten sich zwischen **23:00 und 06:00** automatisch ab.
+Alle sechs schalten sich zwischen **23:00 und 06:00** automatisch ab. Die Werte
+sind auf eine ruhige Fassadenwirkung abgestimmt (siehe Hinweis in Kap. 4).
 
-**Dauerlicht (Nr. 6)** – ein stetiges, ganz langsam „atmendes"
+**Dauerlicht (Nr. 6)** – ein gleichmäßiges, ganz langsam „atmendes"
 Licht auf hohem Grundniveau. Es geht (außer nachts) nie ganz aus.
 
 ```text
-Helligkeit: ~73 % … ~82 %   ein Atemzug ≈ 18 Sekunden
+Helligkeit: ~75 % … ~84 %   ein Atemzug ≈ 24 Sekunden
 ```
 
-**Kerzenlicht (Nr. 7)** – zwei unabhängig voneinander sanft flackernde
+**Kerzenlicht (Nr. 7)** – zwei unabhängig voneinander **langsam schimmernde**
 Lichter (über eine Rauschfunktion erzeugt), je eines pro Segment.
 
 ```text
-Segment Links  ≈ Flamme 1   (sanftes Flackern)
-Segment Rechts ≈ Flamme 2   (sanftes Flackern)
+Segment Links  ≈ Licht 1   (langsames Schimmern)
+Segment Rechts ≈ Licht 2   (langsames Schimmern)
+Helligkeit: ~65 % … ~78 %
 ```
 
 **Stufenlicht (Nr. 8)** – die Lichter bauen sich in acht Schritten auf: erst
 eines, dann immer mehr, bis alle acht leuchten; danach beginnt der Aufbau von
-vorn. Ein langsamer, gleichmäßiger Effekt.
+vorn. Ein langsamer, ruhiger Effekt (Schritt ≈ 2,2 s, Halten ≈ 5 s).
 
 ```text
 Schritt 1: ▮▯▯▯▯▯▯▯
 Schritt 2: ▮▮▯▯▯▯▯▯
 ...
-Schritt 8: ▮▮▮▮▮▮▮▮   → kurz halten, dann von vorne
+Schritt 8: ▮▮▮▮▮▮▮▮   → halten, dann von vorne
 ```
 
-**Dämmerlicht (Nr. 9)** – sehr gedämpftes Licht, das über Minuten ganz sanft
-auf- und abschwillt. Ruhige, stille Stimmung.
+**Dämmerlicht (Nr. 9)** – sanfter, niedriger Abendglanz, der über Minuten ganz
+langsam auf- und abschwillt. Noch aus Distanz sichtbar.
 
 ```text
-Helligkeit: ~5 % … ~18 %   ein Durchlauf ≈ 2,5 Minuten
+Helligkeit: ~22 % … ~37 %   ein Durchlauf ≈ 3 Minuten
 ```
 
-**Feuerschein (Nr. 11)** – eine kräftige, ruhig flackernde Flamme, heller als
-das Kerzenlicht und über beide Segmente gemeinsam.
+**Feuerschein (Nr. 11)** – ein ruhiges, warmes Lodern über beide Segmente
+gemeinsam – langsam und wenig kontrastreich.
 
 ```text
-Helligkeit: ~59 % … ~90 %   ruhiges Flackern (eine Flamme)
+Helligkeit: ~69 % … ~84 %   ruhiges, langsames Lodern
 ```
 
-**Nachtlicht (Nr. 12)** – eine ruhige, stetig brennende Kerze, sehr niedrig mit
-nur leisem Flackern.
+**Nachtlicht (Nr. 12)** – ein ruhiger, niedriger Grundglanz, sehr langsam und
+kaum bewegt.
 
 ```text
-Helligkeit: ~12 % … ~21 %   stetig, kaum bewegt
+Helligkeit: ~22 % … ~31 %   stetig, sehr langsam
 ```
 
 ---
@@ -618,21 +624,24 @@ Der Controller liefert dazu selbst aus:
 
 Funktionen:
 
-* Betriebsmodus auswählen (alle 10 Modi als Kacheln)
+* Betriebsmodus auswählen (alle 13 Modi als Kacheln)
 * Helligkeit je Bereich einstellen (Links, Rechts, Logo)
 * Effekt-Helligkeit einstellen (für Lauflicht/Pulsieren/Atmen)
 * eigene Szenen speichern, abrufen und löschen
 * Automatik-Profil (Uhrzeiten und Helligkeiten) als schreibgeschützte
   Phasen-Übersicht anzeigen – fest in `config.h`, in der App nicht editierbar
-* Tagesverlauf der Automatik als 24-Stunden-Kurve mit „jetzt"-Markierung
-  vorschauen
-* aktuellen Modus samt Kurzbeschreibung anzeigen
+* zwischen hellem und dunklem Design sowie zwischen Deutsch und Englisch
+  umschalten (Auswahl wird im Browser gespeichert)
+* aktuellen Modus anzeigen
 * Uhrzeit, RTC-/NTP-Status, WLAN-Status und IP anzeigen
 
-Die Oberfläche ist in einem dunklen, klinisch-reduzierten Design gehalten
-(schwarzer Hintergrund, dezent abgesetzte Karten, schlichte Linien, ein
-zurückhaltender Akzent, ohne erklärende Zusatztexte). Kopfzeile mit
-Verbindungspunkt, Uhr und aktuellem Modus; darunter Karten für Modus-Auswahl,
+Die Oberfläche ist in einem klinisch-reduzierten Design gehalten (dezent
+abgesetzte Karten, schlichte Linien, ein zurückhaltender Akzent, ohne
+erklärende Zusatztexte). Standard ist ein **dunkles (schwarzes)** Design; über
+einen Knopf in der Kopfzeile lässt sich auf **hell** umschalten, ein zweiter
+Knopf schaltet die **Sprache (Deutsch/Englisch)** um – beide Einstellungen
+werden im Browser gespeichert. Kopfzeile mit Verbindungspunkt, Uhr, aktuellem
+Modus und den beiden Umschaltern; darunter Karten für Modus-Auswahl,
 Helligkeiten, Szenen, Automatik-Übersicht und System.
 
 Beispielhafte Oberfläche:
@@ -723,7 +732,7 @@ Das komplette Automatik-Profil – **Uhrzeiten** (`tMorning`, `tDay`, `tEvening`
 `tNight`) **und Helligkeiten** (`bMorning`, `bDay`, `bEveStart`, `bEveEnd`) – ist
 **fest im Code** (`config.h`) hinterlegt und wird vom Controller **nicht** über
 die App entgegengenommen. Diese Felder erscheinen nur im Status (Kap. 14) zur
-Anzeige und für die Kurvenvorschau.
+Anzeige in der Phasen-Übersicht.
 
 Eine Änderung von `left`, `right` oder `logo` während der Automatik wechselt
 automatisch in den statischen Modus (manueller Eingriff, siehe Kap. 21).
@@ -1343,6 +1352,22 @@ src/
 Dadurch können die einzelnen Funktionen unabhängig voneinander
 bearbeitet und getestet werden.
 
+## 29.1 Codestil
+
+Der Code ist bewusst **einfach und gut nachvollziehbar** gehalten:
+
+- **Benannte Funktionen** statt anonymer Funktionen (Lambdas). Jede
+  Webserver-Adresse hat z. B. eine eigene Handler-Funktion (`handleRoot`,
+  `handleApiStatus`, `handleUpdateDone` …), die bei der Registrierung nur noch
+  eingetragen wird.
+- **Klare `for`-Schleifen** statt Array-Kniffe wie `map`/`forEach`/`find` –
+  sowohl in der Firmware als auch im JavaScript der App.
+- **Kurze Funktionen** mit sprechenden Namen und durchgehende Kommentare.
+- Werte werden explizit geprüft und begrenzt (z. B. Helligkeit 0–100 %,
+  WebSocket-Nachrichtenlänge), statt auf trickreiche Kurzformen zu setzen.
+
+Ziel ist, dass der Code auch mit Grundkenntnissen lesbar und wartbar bleibt.
+
 ---
 
 # 30. Zusammenfassung
@@ -1425,7 +1450,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 | Nr. | Kriterium (Pflichtenheft Kap. 12) | Status | Nachweis |
 | --- | --------------------------------- | ------ | -------- |
 | A1 | Links, Rechts, Logo einzeln und gemeinsam ansteuerbar | erfüllt | Getrennte Zielwerte, gemeinsames Rendern in `applyHardware`/`renderSolid` |
-| A2 | Automatik-Kurve korrekt; Abschaltung 23:00 zuverlässig | erfüllt | Morgen-Rampe, Tag, Abend-Rampe, Nacht = 0; Kurven-Vorschau in der App |
+| A2 | Automatik-Kurve korrekt; Abschaltung 23:00 zuverlässig | erfüllt | Morgen-Rampe, Tag, Abend-Rampe, Nacht = 0; Phasen-Übersicht in der App |
 | A3 | Manuelle Helligkeitsänderung ohne spürbare Verzögerung | erfüllt | WebSocket → sofort `applyHardware` (< 500 ms, NFR Kap. 5) |
 | A4 | Nach Stromausfall Zustand nach Uhrzeit selbsttätig | erfüllt | Definierter Power-On-State + RTC-Zeit unmittelbar nach Boot |
 | A5 | Konfiguration bleibt nach Stromausfall erhalten | erfüllt | NVS (`loadSettings`/`loadPresets`) |
@@ -1460,7 +1485,8 @@ Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und da
 Eigene Szenen (Presets), sechs feste Stimmungs-Modi (Dauerlicht, Kerzenlicht,
 Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht), Setup-Accesspoint für den
 lokalen Zugriff bei WLAN-Ausfall, Erreichbarkeit über `led-fassade.local`
-(mDNS) sowie eine 24-Stunden-Kurven-Vorschau des Automatik-Profils.
+(mDNS), eine schreibgeschützte Phasen-Übersicht des Automatik-Profils sowie
+umschaltbares Design (hell/dunkel) und Sprache (Deutsch/Englisch).
 
 **Ergebnis:** Alle funktionalen Anforderungen (F1–F9) und Abnahmekriterien (A1–A8) sind
 umgesetzt. Offen sind ausschließlich die im Pflichtenheft als „zu klären" gekennzeichneten
