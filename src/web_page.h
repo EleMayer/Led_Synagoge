@@ -23,7 +23,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fassade">
 
-<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 
 <style>
@@ -174,6 +174,15 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 </header>
 
 <main>
+
+<section class="card" id="installCard" style="display:none">
+  <h2>Als App installieren</h2>
+  <p class="hint" id="installHint" style="margin-top:0">Diese Seite als App auf
+    dem Startbildschirm ablegen &ndash; sie &ouml;ffnet dann randlos wie eine
+    gewohnte App.</p>
+  <button class="primary" id="installBtn" onclick="installApp()"
+          style="margin-top:12px">Installieren</button>
+</section>
 
 <section class="card">
   <h2>Modus</h2>
@@ -771,6 +780,85 @@ for(let i = 0; i < schedFields.length; i++)
     }
 }
 
+// --- PWA-Installation ------------------------------------------------------
+// Die App laesst sich auf Handy/Tablet/Desktop als eigenstaendige App ablegen.
+// Android/Desktop-Browser liefern dafuer das Event "beforeinstallprompt", das
+// wir aufheben und hinter dem Installieren-Button ausloesen. iOS/Safari kennt
+// das Event nicht und braucht stattdessen einen manuellen Hinweis.
+
+let deferredInstallPrompt = null;
+
+function isStandalone()
+{
+    return window.matchMedia("(display-mode: standalone)").matches ||
+           window.navigator.standalone === true;
+}
+
+function isIOS()
+{
+    return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function showInstallCard(iosMode)
+{
+    if(isStandalone())
+    {
+        return;
+    }
+    const card = document.getElementById("installCard");
+    if(!card)
+    {
+        return;
+    }
+    card.style.display = "";
+
+    if(iosMode)
+    {
+        document.getElementById("installBtn").style.display = "none";
+        document.getElementById("installHint").innerHTML =
+            "Zum Installieren in Safari auf <b>Teilen</b> tippen und " +
+            "<b>&bdquo;Zum Home-Bildschirm&ldquo;</b> w&auml;hlen.";
+    }
+}
+
+function installApp()
+{
+    if(!deferredInstallPrompt)
+    {
+        return;
+    }
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(function()
+    {
+        deferredInstallPrompt = null;
+    });
+}
+
+window.addEventListener("beforeinstallprompt", function(event)
+{
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    showInstallCard(false);
+});
+
+window.addEventListener("appinstalled", function()
+{
+    deferredInstallPrompt = null;
+    const card = document.getElementById("installCard");
+    if(card)
+    {
+        card.style.display = "none";
+    }
+});
+
+window.addEventListener("load", function()
+{
+    if(!isStandalone() && isIOS())
+    {
+        showInstallCard(true);
+    }
+});
+
 window.addEventListener("load", connect);
 window.addEventListener("load", renderScheduleCurve);
 
@@ -782,21 +870,38 @@ window.addEventListener("load", renderScheduleCurve);
 
 const char manifest_json[] PROGMEM = R"rawliteral(
 {
+    "id": "/",
     "name": "LED-Fassade",
     "short_name": "Fassade",
     "description": "Bedienung der LED-Fassadenbeleuchtung",
+    "lang": "de",
+    "dir": "ltr",
+    "categories": ["utilities"],
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
+    "display_override": ["standalone", "minimal-ui"],
     "orientation": "portrait",
     "background_color": "#12171d",
     "theme_color": "#12171d",
     "icons": [
         {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
             "src": "/icon.svg",
             "sizes": "any",
             "type": "image/svg+xml",
-            "purpose": "any maskable"
+            "purpose": "maskable"
         }
     ]
 }

@@ -5,7 +5,7 @@
 //  die komplette ESP32-API nach: WebSocket (/ws) mit denselben JSON-Befehlen wie
 //  die Firmware sowie die REST-Endpunkte /api/status und /api/schedule. Dadurch
 //  laesst sich die Seite ohne echten ESP32 voll bedienen (Modi, Regler, Szenen,
-//  Zeitprofil, WLAN).
+//  Zeitprofil).
 //
 //  Start:  node tools/mock-server.js     ->  http://localhost:5598
 // ============================================================================
@@ -240,6 +240,22 @@ const server = http.createServer((req, res) => {
     if (u.pathname === '/icon.svg') {
         res.setHeader('Content-Type', 'image/svg+xml');
         return res.end(pages.icon_svg || '');
+    }
+    // PNG-Home-Screen-Icons wie auf dem ESP32 (aus tools/icons/).
+    const pngIcons = {
+        '/apple-touch-icon.png': 'icon-180.png',
+        '/icon-192.png': 'icon-192.png',
+        '/icon-512.png': 'icon-512.png',
+    };
+    if (pngIcons[u.pathname]) {
+        try {
+            const buf = fs.readFileSync(path.join(__dirname, 'icons', pngIcons[u.pathname]));
+            res.setHeader('Content-Type', 'image/png');
+            return res.end(buf);
+        } catch {
+            res.statusCode = 404;
+            return res.end('icon fehlt - erst "node tools/build-icons.js" bzw. Icons erzeugen');
+        }
     }
     res.statusCode = 404;
     res.end('404');

@@ -23,11 +23,14 @@ espressif32@7.0.1 → Arduino-Core 2.0.17, alte LEDC-API)
 
 ```text
 include/config.h    Konfiguration (Pins, LED-Anzahl, Grenzwerte, Modi)
+include/icons.h       PNG-Home-Screen-Icons als Byte-Arrays (generiert)
 src/main.cpp        Steuerlogik (Modi, Automatik, Netzwerk, OTA)
 src/web_page.h        Bedien-App (HTML/CSS/JS, PWA-Manifest, Icon) - Quelle der Wahrheit
 src/web_page_demo.html  zweite Variante der App: laeuft ohne ESP32/Server (generiert)
 tools/mock-server.js  PC-Testserver (simuliert die ESP32-API)
 tools/build-demo.js   erzeugt src/web_page_demo.html aus src/web_page.h
+tools/build-icons.js  erzeugt include/icons.h aus tools/icons/*.png
+tools/icons/          Home-Screen-Icons (icon-180/192/512.png)
 dokumentation.md      Technische Dokumentation
 ```
 
@@ -44,6 +47,67 @@ node tools/build-demo.js       # erzeugt/aktualisiert src/web_page_demo.html
 
 Nach jeder Aenderung an `src/web_page.h` das Skript erneut ausfuehren, damit die
 Demo mit der echten App synchron bleibt.
+
+## Anschlüsse (Pinbelegung)
+
+Definiert in `include/config.h`. Der ESP32 gibt nur kleine Steuersignale nach
+außen; die LED-Hochstromversorgung wird separat direkt am Streifen eingespeist.
+
+| Signal | GPIO | Beschreibung |
+|---|---|---|
+| Segment Links (Daten) | 23 | Datenleitung zum linken Streifen (über Pegelwandler 3,3 V → 5 V) |
+| Segment Rechts (Daten) | 13 | Datenleitung zum rechten Streifen (über Pegelwandler) |
+| Logo (PWM) | 14 | dimmbares Logo über externen MOSFET-Treiber |
+| RTC SDA | 21 | I²C-Datenleitung zum DS3231 |
+| RTC SCL | 22 | I²C-Taktleitung zum DS3231 |
+
+Streifen: je 60 LEDs, Typ WS2812 (GRB). Die endgültige LED-Wahl (laut
+Pflichtenheft WS2811, 12 V) sowie Netzteil und Strombegrenzung
+(`LED_MAX_MILLIAMPS`) sind vor dem Einsatz an die reale Hardware anzupassen.
+
+## Verhalten bei Stromausfall (Failsafe)
+
+Das System läuft nach einem Stromausfall ohne Eingriff vor Ort wieder an:
+
+1. Der Controller startet **immer im Automatik-Modus**, unabhängig vom zuletzt
+   aktiven Modus. Ein nächtlicher Ausfall führt so nicht zu ungewolltem
+   Hellschalten.
+2. Die Uhrzeit kommt sofort aus dem batteriegepufferten RTC-Modul (DS3231) –
+   ohne WLAN/Internet. Der passende Helligkeitszustand wird direkt berechnet.
+3. Ist keine gültige Zeit verfügbar (leere RTC-Batterie, noch kein NTP), fährt
+   die Automatik in einen sicheren, gedimmten Grundzustand
+   (`SAFE_DEFAULT_BRIGHTNESS`) und korrigiert sich, sobald NTP synchronisiert.
+4. Bei Internetverbindung wird die RTC periodisch per NTP nachgeführt
+   (Sommer-/Winterzeit berücksichtigt).
+5. Die Benutzerkonfiguration (Zeitprofil, Helligkeiten, Szenen) liegt im NVS und
+   übersteht den Stromausfall.
+
+## Bedienung (Kurzüberblick)
+
+- **Modus** wählen, **Helligkeit** je Bereich (Links, Rechts, Logo) im Modus
+  *Statisch* regeln, eigene **Szenen** speichern und das **Zeitprofil** der
+  Automatik anpassen.
+- Ein manueller Eingriff übersteuert die Automatik. Das System kehrt beim
+  nächsten Zeitfenster-Übergang (z. B. Tag → Abend) selbsttätig in die Automatik
+  zurück.
+
+## Installation als App (PWA)
+
+Die Bedienoberfläche ist eine PWA und lässt sich auf Handy/Tablet als
+eigenständige App auf dem Startbildschirm ablegen (öffnet dann randlos, ohne
+Browserleiste):
+
+- **Android/Desktop (Chrome):** In der App erscheint oben die Karte *„Als App
+  installieren"* mit einem Button; alternativ das Browser-Menü → *Installieren*.
+- **iOS (Safari):** *Teilen* → *Zum Home-Bildschirm*.
+
+Das App-Icon wird als PNG ausgeliefert (`/apple-touch-icon.png` für iOS,
+`/icon-192.png` und `/icon-512.png` für Android). Diese PNGs liegen in
+`tools/icons/` und werden per `node tools/build-icons.js` in `include/icons.h`
+eingebettet, das die Firmware ausliefert. Ein echter Offline-Cache (Service
+Worker) ist nicht möglich, da Browser diesen nur über HTTPS/localhost erlauben,
+der ESP32 aber über HTTP im WLAN ausliefert — Installieren und App-Start
+funktionieren davon unabhängig.
 
 ## Bauen & Flashen
 
