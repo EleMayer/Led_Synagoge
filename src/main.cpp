@@ -48,19 +48,22 @@ int brightnessLogo  = 80;
 int globalBrightness = 80;
 
 // Zeitprofil der Automatik (Stunden der Uebergaenge). Parametrierbar per App.
-int nightStartHour   = 23;
-int nightEndHour     = 6;
-int morningStartHour = 6;
-int morningEndHour   = 8;
-int dayStartHour     = 8;
-int dayEndHour       = 18;
-int eveningStartHour = 18;
-int eveningEndHour   = 23;
+// Zeitfenster der Automatik: fest aus config.h abgeleitet, nicht ueber die App
+// aenderbar. Jedes Fenster endet dort, wo das naechste beginnt.
+const int morningStartHour = AUTO_T_MORNING;
+const int morningEndHour   = AUTO_T_DAY;
+const int dayStartHour     = AUTO_T_DAY;
+const int dayEndHour       = AUTO_T_EVENING;
+const int eveningStartHour = AUTO_T_EVENING;
+const int eveningEndHour   = AUTO_T_NIGHT;
+const int nightStartHour   = AUTO_T_NIGHT;
+const int nightEndHour     = AUTO_T_MORNING;
 
-int morningBrightness      = 90;
-int dayBrightness          = 90;
-int eveningStartBrightness = 60;
-int eveningEndBrightness   = 25;
+// Automatik-Helligkeiten: fest aus config.h, nicht ueber die App aenderbar.
+const int morningBrightness      = AUTO_B_MORNING;
+const int dayBrightness          = AUTO_B_DAY;
+const int eveningStartBrightness = AUTO_B_EVE_START;
+const int eveningEndBrightness   = AUTO_B_EVE_END;
 int currentAutoBrightness  = 0;
 
 // Fade-Engine: target* ist der Sollwert des Modus, shown* der aktuell
@@ -152,19 +155,8 @@ void saveSettings() {
     preferences.putInt("right", brightnessRight);
     preferences.putInt("logo", brightnessLogo);
     preferences.putInt("global", globalBrightness);
-    preferences.putInt("morn", morningBrightness);
-    preferences.putInt("day", dayBrightness);
-    preferences.putInt("eveStart", eveningStartBrightness);
-    preferences.putInt("eveEnd", eveningEndBrightness);
-
-    preferences.putInt("mStart", morningStartHour);
-    preferences.putInt("mEnd", morningEndHour);
-    preferences.putInt("dStart", dayStartHour);
-    preferences.putInt("dEnd", dayEndHour);
-    preferences.putInt("eStart", eveningStartHour);
-    preferences.putInt("eEnd", eveningEndHour);
-    preferences.putInt("nightStart", nightStartHour);
-    preferences.putInt("nightEnd", nightEndHour);
+    // Automatik-Zeitprofil (Uhrzeiten und Helligkeiten) ist fest im Code
+    // (config.h) - wird bewusst nicht im NVS gespeichert.
     preferences.end();
     settingsDirty = false;
 }
@@ -183,36 +175,13 @@ void loadSettings() {
     brightnessRight        = preferences.getInt("right", 80);
     brightnessLogo         = preferences.getInt("logo", 80);
     globalBrightness       = preferences.getInt("global", 80);
-    morningBrightness      = preferences.getInt("morn", 90);
-    dayBrightness          = preferences.getInt("day", 90);
-    eveningStartBrightness = preferences.getInt("eveStart", 60);
-    eveningEndBrightness   = preferences.getInt("eveEnd", 25);
-    morningStartHour       = preferences.getInt("mStart", 6);
-    morningEndHour         = preferences.getInt("mEnd", 8);
-    dayStartHour           = preferences.getInt("dStart", 8);
-    dayEndHour             = preferences.getInt("dEnd", 18);
-    eveningStartHour       = preferences.getInt("eStart", 18);
-    eveningEndHour         = preferences.getInt("eEnd", 23);
-    nightStartHour         = preferences.getInt("nightStart", 23);
-    nightEndHour           = preferences.getInt("nightEnd", 6);
+    // Automatik-Zeitprofil steht fest in config.h und wird nicht geladen.
     preferences.end();
 
     brightnessLeft         = clampBrightness(brightnessLeft);
     brightnessRight        = clampBrightness(brightnessRight);
     brightnessLogo         = clampBrightness(brightnessLogo);
     globalBrightness       = clampBrightness(globalBrightness);
-    morningBrightness      = clampBrightness(morningBrightness);
-    dayBrightness          = clampBrightness(dayBrightness);
-    eveningStartBrightness = clampBrightness(eveningStartBrightness);
-    eveningEndBrightness   = clampBrightness(eveningEndBrightness);
-    morningStartHour       = constrain(morningStartHour, 0, 23);
-    morningEndHour         = constrain(morningEndHour, 0, 23);
-    dayStartHour           = constrain(dayStartHour, 0, 23);
-    dayEndHour             = constrain(dayEndHour, 0, 23);
-    eveningStartHour       = constrain(eveningStartHour, 0, 23);
-    eveningEndHour         = constrain(eveningEndHour, 0, 23);
-    nightStartHour         = constrain(nightStartHour, 0, 23);
-    nightEndHour           = constrain(nightEndHour, 0, 23);
 }
 
 // Speichert alle Szenen (Presets) als Block im NVS.
@@ -852,47 +821,9 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         changed = true;
     }
 
-    if (doc["tMorning"].is<int>()) {
-        int h = constrain(doc["tMorning"].as<int>(), 0, 23);
-        morningStartHour = h;
-        nightEndHour     = h;
-        changed = true;
-    }
-    if (doc["tDay"].is<int>()) {
-        int h = constrain(doc["tDay"].as<int>(), 0, 23);
-        morningEndHour = h;
-        dayStartHour   = h;
-        changed = true;
-    }
-    if (doc["tEvening"].is<int>()) {
-        int h = constrain(doc["tEvening"].as<int>(), 0, 23);
-        dayEndHour       = h;
-        eveningStartHour = h;
-        changed = true;
-    }
-    if (doc["tNight"].is<int>()) {
-        int h = constrain(doc["tNight"].as<int>(), 0, 23);
-        eveningEndHour = h;
-        nightStartHour = h;
-        changed = true;
-    }
-
-    if (doc["bMorning"].is<int>()) {
-        morningBrightness = clampBrightness(doc["bMorning"].as<int>());
-        changed = true;
-    }
-    if (doc["bDay"].is<int>()) {
-        dayBrightness = clampBrightness(doc["bDay"].as<int>());
-        changed = true;
-    }
-    if (doc["bEveStart"].is<int>()) {
-        eveningStartBrightness = clampBrightness(doc["bEveStart"].as<int>());
-        changed = true;
-    }
-    if (doc["bEveEnd"].is<int>()) {
-        eveningEndBrightness = clampBrightness(doc["bEveEnd"].as<int>());
-        changed = true;
-    }
+    // Das komplette Automatik-Zeitprofil (Uhrzeiten tMorning/tDay/tEvening/
+    // tNight und Helligkeiten bMorning/bDay/bEveStart/bEveEnd) ist fest im Code
+    // (config.h) und wird bewusst NICHT ueber die App entgegengenommen.
 
     if (doc["savePreset"].is<const char *>()) {
         const char *name = doc["savePreset"].as<const char *>();

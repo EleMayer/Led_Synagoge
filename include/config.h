@@ -3,7 +3,7 @@
 // Zentrale Konfiguration: Netzwerk, Pinbelegung, LED-/PWM-Parameter, Grenzwerte
 // und die Aufzaehlung der Betriebsmodi. Wird von main.cpp eingebunden.
 
-static const char* FIRMWARE_VERSION = "2.4.1";
+static const char* FIRMWARE_VERSION = "2.4.3";
 #define HOSTNAME           "led-fassade"   // mDNS-Name -> http://led-fassade.local
 
 // WLAN-Zugangsdaten - fest im Code, nicht über die App änderbar.
@@ -38,6 +38,27 @@ static const char* FIRMWARE_VERSION = "2.4.1";
 // gedimmten Grundzustand, statt komplett hell oder dunkel zu schalten. Sobald
 // NTP verfuegbar ist, korrigiert sich das System selbst.
 #define SAFE_DEFAULT_BRIGHTNESS  25
+
+// Automatik-Helligkeiten (Prozent) fuer die Tageskurve. Bewusst FEST im Code:
+// nur hier aenderbar, nicht ueber die App. Die Uhrzeiten der Uebergaenge bleiben
+// dagegen in der App einstellbar.
+//   Morgen  = Zielhelligkeit am Ende des Hochfahrens
+//   Tag     = konstante Tageshelligkeit
+//   EveStart/EveEnd = Abend-Rampe (Beginn -> Ende, wird zur Nacht ausgeblendet)
+#define AUTO_B_MORNING     90
+#define AUTO_B_DAY         90
+#define AUTO_B_EVE_START   60
+#define AUTO_B_EVE_END     25
+
+// Automatik-Uhrzeiten (Stunde 0-23) der Zeitfenster-Uebergaenge. Ebenfalls FEST
+// im Code, nicht ueber die App aenderbar. Muessen aufsteigend sein:
+// MORNING < DAY < EVENING < NIGHT.
+//   MORNING = Beginn Hochfahren   DAY     = Beginn Tageshelligkeit
+//   EVENING = Beginn Abendrampe   NIGHT   = Nachtabschaltung (bis MORNING aus)
+#define AUTO_T_MORNING      6
+#define AUTO_T_DAY          8
+#define AUTO_T_EVENING     18
+#define AUTO_T_NIGHT       23
 
 // PWM-Kanal fuer das dimmbare Logo (alte LEDC-API, Arduino-Core 2.x).
 #define LOGO_PWM_CHANNEL   0

@@ -12,11 +12,11 @@
 
 
 
-<meta name="theme-color" content="#12171d">
+<meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent">
+      content="default">
 <meta name="apple-mobile-web-app-title" content="Fassade">
 
 
@@ -26,27 +26,28 @@
 
 :root{
 
-  --bg:#12171d;
-  --card:#1a212a;
-  --line:#28323d;
-  --line-strong:#374350;
-  --fg:#e7ecf2;
-  --muted:#8d9aa9;
-  --accent:#6f8494;
-  --accent-weak:#222c36;
-  --accent-ink:#0f151b;
-  --fill:#566574;
-  --ok:#5a9b74;
-  --bad:#b26b73;
-  --radius:14px;
-  --shadow:0 1px 2px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.22);
+  --bg:#eef2f5;
+  --card:#ffffff;
+  --line:#e6ebf0;
+  --line-strong:#d3dbe2;
+  --fg:#1b2733;
+  --muted:#68737f;
+  --accent:#0e8a94;
+  --accent-weak:#e4f3f4;
+  --accent-ink:#ffffff;
+  --fill:#0e8a94;
+  --ok:#2f8a5b;
+  --warn:#b07d1e;
+  --bad:#c0505a;
+  --radius:12px;
+  --shadow:0 1px 2px rgba(20,40,60,.05);
 }
 
 *{box-sizing:border-box}
 html,body{margin:0}
 body{
   background:var(--bg); color:var(--fg);
-  font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   padding-bottom:env(safe-area-inset-bottom);
   -webkit-font-smoothing:antialiased;
 }
@@ -54,75 +55,62 @@ body{
 .top{
   position:sticky; top:0; z-index:5;
   display:flex; justify-content:space-between; align-items:center;
-  padding:14px 18px; background:rgba(18,23,29,.9); backdrop-filter:blur(8px);
+  padding:16px 20px; background:rgba(255,255,255,.92); backdrop-filter:blur(8px);
   border-bottom:1px solid var(--line);
 }
-.brand{display:flex; align-items:center; gap:10px; font-size:16px; letter-spacing:.01em}
+.brand{display:flex; align-items:center; gap:10px; font-size:16px; font-weight:600; letter-spacing:.01em}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--bad);
-  box-shadow:0 0 0 4px rgba(178,107,115,.16)}
-.dot.on{background:var(--ok);box-shadow:0 0 0 4px rgba(90,155,116,.16)}
-.hstat{display:flex;align-items:center;gap:12px}
+  box-shadow:0 0 0 3px rgba(192,80,90,.14)}
+.dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(47,138,91,.16)}
+.hstat{display:flex;align-items:center;gap:14px}
 #clock{font-variant-numeric:tabular-nums;color:var(--muted)}
-.badge{background:var(--accent-weak);border:1px solid var(--line);border-radius:999px;
-  padding:4px 12px;font-size:12px;font-weight:600;color:var(--fg)}
+.badge{background:var(--accent-weak);border:1px solid var(--accent-weak);border-radius:999px;
+  padding:4px 12px;font-size:12px;font-weight:600;color:var(--accent)}
 
-main{max-width:600px;margin:0 auto;padding:18px;display:grid;gap:16px}
+main{max-width:600px;margin:0 auto;padding:20px;display:grid;gap:18px}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:18px 18px 20px;box-shadow:var(--shadow)}
-.card h2{margin:0 0 14px;font-size:12px;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+  padding:20px;box-shadow:var(--shadow)}
+.card h2{margin:0 0 16px;font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.1em;font-weight:700}
 
 .modes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .modes button{
-  padding:14px;border:1px solid var(--line-strong);border-radius:11px;
-  background:#131a21;color:var(--fg);font-size:15px;cursor:pointer;
-  transition:.15s;font-weight:500}
-.modes button:hover{border-color:var(--accent);color:#cdd8e2}
+  padding:14px;border:1px solid var(--line-strong);border-radius:9px;
+  background:#fff;color:var(--fg);font-size:15px;cursor:pointer;
+  transition:.12s;font-weight:500}
+.modes button:hover{border-color:var(--accent);color:var(--accent)}
 .modes button.active{
   background:var(--accent);color:var(--accent-ink);border-color:var(--accent);
   font-weight:600}
-.modes button:active{transform:scale(.98)}
+.modes button:active{transform:scale(.99)}
 
-.slider{margin:14px 0}
+.slider{margin:16px 0}
 .slider:first-of-type{margin-top:4px}
 .slider label{display:flex;justify-content:space-between;color:var(--muted);
-  font-size:14px;margin-bottom:8px}
+  font-size:14px;margin-bottom:10px}
 .slider .val{color:var(--fg);font-variant-numeric:tabular-nums;font-weight:600}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;
   background:transparent;cursor:pointer}
-input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:#2b3540}
-input[type=range]::-moz-range-track{height:6px;border-radius:6px;background:#2b3540}
-input[type=range]::-moz-range-progress{height:6px;border-radius:6px;background:var(--fill)}
+input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:5px;background:#e1e7ed}
+input[type=range]::-moz-range-track{height:5px;border-radius:5px;background:#e1e7ed}
+input[type=range]::-moz-range-progress{height:5px;border-radius:5px;background:var(--fill)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
-  width:20px;height:20px;border-radius:50%;background:#e7ecf2;border:2px solid var(--accent);
-  margin-top:-7px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--accent);
+  margin-top:-8px;box-shadow:0 1px 2px rgba(20,40,60,.2)}
 input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;
-  background:#e7ecf2;border:2px solid var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  background:#fff;border:2px solid var(--accent);box-shadow:0 1px 2px rgba(20,40,60,.2)}
 
-button.primary{background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;
-  padding:12px 16px;font-weight:600;cursor:pointer;transition:.15s;width:100%}
-button.primary:hover{filter:brightness(1.08)}
-label.field{display:block;color:var(--muted);font-size:13px;margin:12px 0 5px}
-input[type=text],input[type=password]{width:100%;padding:11px;border-radius:10px;
-  border:1px solid var(--line-strong);background:#131a21;color:var(--fg);font-size:15px}
-input[type=text]:focus,input[type=password]:focus{outline:none;border-color:var(--accent);
+button.primary{background:var(--accent);color:var(--accent-ink);border:none;border-radius:9px;
+  padding:12px 16px;font-weight:600;cursor:pointer;transition:.12s;width:100%}
+button.primary:hover{filter:brightness(1.05)}
+input[type=text]{width:100%;padding:11px 12px;border-radius:9px;
+  border:1px solid var(--line-strong);background:#fff;color:var(--fg);font-size:15px}
+input[type=text]:focus{outline:none;border-color:var(--accent);
   box-shadow:0 0 0 3px var(--accent-weak)}
 
-input[type=number]{width:100%;padding:10px;border-radius:10px;
-  border:1px solid var(--line-strong);background:#131a21;color:var(--fg);
-  font-size:15px;text-align:right;font-variant-numeric:tabular-nums}
-input[type=number]:focus{outline:none;border-color:var(--accent);
-  box-shadow:0 0 0 3px var(--accent-weak)}
-.srow{display:grid;grid-template-columns:1fr 88px;gap:12px;align-items:center;
-  padding:8px 0;border-bottom:1px solid var(--line)}
-.srow:last-of-type{border-bottom:none}
-.srow label{color:var(--muted);font-size:14px}
-.subhead{color:var(--muted);font-size:12px;text-transform:uppercase;
-  letter-spacing:.06em;font-weight:700;margin:16px 0 4px}
-
-.curve{background:#131a21;border:1px solid var(--line-strong);border-radius:10px;
-  padding:8px 6px 4px;margin-top:6px}
+.curve{background:#fafbfc;border:1px solid var(--line);border-radius:9px;
+  padding:8px 6px 4px;margin-top:4px}
 .curve svg{display:block;width:100%;height:auto}
 .curve .grid{stroke:var(--line);stroke-width:1}
 .curve .axis{fill:var(--muted);font-size:9px;font-variant-numeric:tabular-nums}
@@ -131,26 +119,35 @@ input[type=number]:focus{outline:none;border-color:var(--accent);
   stroke-linejoin:round;stroke-linecap:round}
 .curve .now{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 3}
 
-.preset{display:flex;gap:8px;margin-top:8px}
-.preset .apply{flex:1;padding:12px;border:1px solid var(--line-strong);border-radius:10px;
-  background:#131a21;color:var(--fg);cursor:pointer;text-align:left;transition:.15s}
+.phases{margin-top:16px}
+.phase{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:baseline;
+  padding:11px 0;border-bottom:1px solid var(--line)}
+.phase:last-child{border-bottom:none}
+.phase .ph-name{color:var(--fg)}
+.phase .ph-time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+.phase .ph-val{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums;
+  text-align:right;min-width:84px}
+
+.preset{display:flex;gap:8px;margin-top:10px}
+.preset .apply{flex:1;padding:12px;border:1px solid var(--line-strong);border-radius:9px;
+  background:#fff;color:var(--fg);cursor:pointer;text-align:left;transition:.12s}
 .preset .apply:hover{border-color:var(--accent)}
-.preset .delete{width:64px;border:1px solid var(--line-strong);border-radius:10px;
-  background:#241a1c;color:#d3a3a8;cursor:pointer}
-.preset .delete:hover{border-color:var(--bad)}
+.preset .delete{width:64px;border:1px solid var(--line-strong);border-radius:9px;
+  background:#fff;color:var(--bad);cursor:pointer;transition:.12s}
+.preset .delete:hover{border-color:var(--bad);background:#fdf3f4}
 
 .sys{display:grid;gap:0}
-.kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);gap:12px}
+.kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);gap:12px}
 .kv:last-child{border-bottom:none}
 .kv span{color:var(--muted)}
 .kv b{font-weight:600;font-variant-numeric:tabular-nums;text-align:right;word-break:break-all}
 .kv b.ok{color:var(--ok)}
-.kv b.warn{color:#d0a86a}
+.kv b.warn{color:var(--warn)}
 
-hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0}
 .hint{color:var(--muted);font-size:13px;margin:12px 0 0}
 .hint b{color:var(--fg);font-weight:600}
-footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 
 </style>
 
@@ -189,8 +186,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
     if(doc.right!==undefined){state.right=clamp(doc.right,0,100);overrideAuto();}
     if(doc.logo!==undefined){state.logo=clamp(doc.logo,0,100);overrideAuto();}
     if(doc.global!==undefined)state.global=clamp(doc.global,0,100);
-    ['tMorning','tDay','tEvening','tNight'].forEach(k=>{if(doc[k]!==undefined)state.sched[k]=clamp(doc[k],0,23);});
-    ['bMorning','bDay','bEveStart','bEveEnd'].forEach(k=>{if(doc[k]!==undefined)state.sched[k]=clamp(doc[k],0,100);});
+    // Automatik-Zeitprofil (Uhrzeiten + Helligkeiten) ist fest (config.h) - die
+    // App sendet es nicht mehr, der Simulator nimmt es entsprechend nicht an.
     if(typeof doc.savePreset==='string'&&doc.savePreset){let p=state.presets.find(x=>x.name===doc.savePreset);
       if(!p&&state.presets.length<6){p={slot:state.presets.length,name:doc.savePreset};state.presets.push(p);}
       if(p){p.left=state.left;p.right=state.right;p.logo=state.logo;}}
@@ -255,7 +252,6 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
     <button class="mode" data-mode="11" onclick="sendMode(11)">Feuerschein</button>
     <button class="mode" data-mode="12" onclick="sendMode(12)">Nachtlicht</button>
   </div>
-  <p class="hint" id="modeDesc">&ndash;</p>
 </section>
 
 <section class="card">
@@ -272,7 +268,6 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
     <label>Logo <span class="val"><span id="logoValue">80</span>%</span></label>
     <input id="logoSlider" type="range" min="0" max="100" value="80">
   </div>
-  <p class="hint">Diese Regler wirken im Modus <b>Statisch</b> und werden als Szene gespeichert.</p>
 </section>
 
 <section class="card">
@@ -281,15 +276,11 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
     <label>Helligkeit <span class="val"><span id="globalValue">80</span>%</span></label>
     <input id="globalSlider" type="range" min="0" max="100" value="80">
   </div>
-  <p class="hint">Für Lauflicht, Pulsieren, Atmen und Welle. Die Stimmungs-Modi
-    (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)
-    sind fest hinterlegt.</p>
 </section>
 
 <section class="card">
   <h2>Eigene Szenen</h2>
-  <p class="hint" style="margin-top:0">Aktuelle Helligkeitseinstellung als Szene speichern.</p>
-  <input id="presetName" type="text" maxlength="15" placeholder="Name der Szene" style="margin:12px 0 0">
+  <input id="presetName" type="text" maxlength="15" placeholder="Name der Szene">
   <button class="primary" onclick="savePreset()" style="margin-top:12px">Aktuelle Einstellung speichern</button>
   <hr>
   <div id="presetList">
@@ -298,51 +289,15 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 </section>
 
 <section class="card">
-  <h2>Zeitprofil (Automatik)</h2>
+  <h2>Automatik</h2>
 
-  <div class="subhead">Uhrzeiten (Stunde)</div>
-  <div class="srow">
-    <label for="tMorning">Beginn Hochfahren</label>
-    <input id="tMorning" type="number" min="0" max="23">
-  </div>
-  <div class="srow">
-    <label for="tDay">Beginn Tag</label>
-    <input id="tDay" type="number" min="0" max="23">
-  </div>
-  <div class="srow">
-    <label for="tEvening">Beginn Abend</label>
-    <input id="tEvening" type="number" min="0" max="23">
-  </div>
-  <div class="srow">
-    <label for="tNight">Nachtabschaltung</label>
-    <input id="tNight" type="number" min="0" max="23">
-  </div>
-
-  <div class="subhead">Helligkeiten (%)</div>
-  <div class="srow">
-    <label for="bMorning">Ziel beim Hochfahren</label>
-    <input id="bMorning" type="number" min="0" max="100">
-  </div>
-  <div class="srow">
-    <label for="bDay">Tageshelligkeit</label>
-    <input id="bDay" type="number" min="0" max="100">
-  </div>
-  <div class="srow">
-    <label for="bEveStart">Abend Beginn</label>
-    <input id="bEveStart" type="number" min="0" max="100">
-  </div>
-  <div class="srow">
-    <label for="bEveEnd">Abend Ende</label>
-    <input id="bEveEnd" type="number" min="0" max="100">
-  </div>
-
-  <div class="subhead">Tagesverlauf (Vorschau)</div>
   <div class="curve">
     <svg id="curveSvg" viewBox="0 0 320 132" preserveAspectRatio="none"
          role="img" aria-label="Helligkeitsverlauf über 24 Stunden"></svg>
   </div>
 
-  <button class="primary" onclick="saveSchedule()" style="margin-top:14px">Zeitprofil speichern</button>
+  <div id="autoPhases" class="phases"></div>
+
   <p class="hint" id="autoStatus">Automatikdaten werden geladen &hellip;</p>
 </section>
 
@@ -376,22 +331,6 @@ const MODE_LABEL = {
   10:"Welle",
   11:"Feuerschein",
   12:"Nachtlicht"
-};
-
-const MODE_DESC = {
-  0:"Alle Bereiche aus. Der Controller bleibt im WLAN erreichbar.",
-  1:"Feste Helligkeit je Segment und Logo (per Regler einstellbar).",
-  2:"Lauflicht – ein wanderndes Licht mit der Effekt-Helligkeit.",
-  3:"Tageszeitabhängige Helligkeit nach fester Kurve, Nachtabschaltung ab 23:00.",
-  4:"Pulsieren – zügiges Auf- und Abschwellen mit der Effekt-Helligkeit.",
-  5:"Atmen – langsames, ruhiges Auf- und Abschwellen.",
-  6:"Dauerlicht – stetiges, ruhig atmendes Licht auf hohem Niveau. Nachtabschaltung ab 23:00 wie alle diese Modi.",
-  7:"Kerzenlicht – zwei sanft und unabhängig flackernde Lichter auf den Segmenten.",
-  8:"Stufenlicht – die Lichter bauen sich in acht Schritten auf und beginnen dann von vorn.",
-  9:"Dämmerlicht – sehr gedämpftes Licht, das über Minuten sanft auf- und abschwillt.",
-  10:"Welle – eine Sinuswelle wandert über den Streifen (Effekt-Helligkeit).",
-  11:"Feuerschein – eine kräftige, ruhig flackernde Flamme. Nachtabschaltung ab 23:00.",
-  12:"Nachtlicht – eine ruhige, stetig brennende Kerze. Nachtabschaltung ab 23:00."
 };
 
 function connect()
@@ -490,7 +429,6 @@ function updateUI(data)
     if(data.mode !== undefined)
     {
         document.getElementById("modeBadge").innerText = MODE_LABEL[data.mode] || "–";
-        document.getElementById("modeDesc").innerText  = MODE_DESC[data.mode]  || "";
     }
     document.getElementById("clock").innerText = data.time || "--:--:--";
 
@@ -546,14 +484,10 @@ function updateUI(data)
 
     if(data.sched)
     {
-        fillSchedField("tMorning",  data.sched.tMorning);
-        fillSchedField("tDay",      data.sched.tDay);
-        fillSchedField("tEvening",  data.sched.tEvening);
-        fillSchedField("tNight",    data.sched.tNight);
-        fillSchedField("bMorning",  data.sched.bMorning);
-        fillSchedField("bDay",      data.sched.bDay);
-        fillSchedField("bEveStart", data.sched.bEveStart);
-        fillSchedField("bEveEnd",   data.sched.bEveEnd);
+        // Das komplette Automatik-Profil (Uhrzeiten und Helligkeiten) ist fest
+        // im Code (config.h) und wird nur angezeigt, nicht editiert.
+        schedule = data.sched;
+        renderAutoPhases();
     }
 
     renderScheduleCurve();
@@ -656,63 +590,42 @@ function savePreset()
     field.value = "";
 }
 
-function fillSchedField(id, value)
+// Komplettes Automatik-Profil (Uhrzeiten + Helligkeiten). Steht fest in
+// config.h und kommt nur ueber den Status - in der App reine Anzeige.
+let schedule = {
+    tMorning: 6, tDay: 8, tEvening: 18, tNight: 23,
+    bMorning: 90, bDay: 90, bEveStart: 60, bEveEnd: 25
+};
+
+function two(n)
 {
-    if(value === undefined)
-    {
-        return;
-    }
-    const field = document.getElementById(id);
-    if(field && document.activeElement !== field)
-    {
-        field.value = value;
-    }
+    return String(n).padStart(2, "0");
 }
 
-function readNumber(id, min, max)
+// Baut die schreibgeschuetzte Phasen-Uebersicht: Name, Zeitfenster, Helligkeit.
+function renderAutoPhases()
 {
-    let n = parseInt(document.getElementById(id).value);
-    if(isNaN(n))
-    {
-        n = min;
-    }
-    if(n < min)
-    {
-        n = min;
-    }
-    if(n > max)
-    {
-        n = max;
-    }
-    return n;
-}
+    const s = schedule;
+    const rows = [
+        ["Hochfahren", s.tMorning, s.tDay,     "&rarr; " + s.bMorning + " %"],
+        ["Tag",        s.tDay,     s.tEvening, s.bDay + " %"],
+        ["Abend",      s.tEvening, s.tNight,   s.bEveStart + " &rarr; " + s.bEveEnd + " %"],
+        ["Nacht",      s.tNight,   s.tMorning, "aus"]
+    ];
 
-function readSchedule()
-{
-    return {
-        tMorning:  readNumber("tMorning",  0, 23),
-        tDay:      readNumber("tDay",      0, 23),
-        tEvening:  readNumber("tEvening",  0, 23),
-        tNight:    readNumber("tNight",    0, 23),
-        bMorning:  readNumber("bMorning",  0, 100),
-        bDay:      readNumber("bDay",      0, 100),
-        bEveStart: readNumber("bEveStart", 0, 100),
-        bEveEnd:   readNumber("bEveEnd",   0, 100)
-    };
-}
-
-function saveSchedule()
-{
-    const s = readSchedule();
-
-    if(!(s.tMorning < s.tDay && s.tDay < s.tEvening && s.tEvening < s.tNight))
+    let html = "";
+    for(let i = 0; i < rows.length; i++)
     {
-        alert("Die Uhrzeiten müssen aufsteigend sein:\n" +
-              "Hochfahren < Tag < Abend < Nachtabschaltung.");
-        return;
+        const r = rows[i];
+        html +=
+            "<div class='phase'>" +
+                "<span class='ph-name'>" + r[0] + "</span>" +
+                "<span class='ph-time'>" + two(r[1]) + ":00–" + two(r[2]) + ":00</span>" +
+                "<span class='ph-val'>" + r[3] + "</span>" +
+            "</div>";
     }
 
-    send(s);
+    document.getElementById("autoPhases").innerHTML = html;
 }
 
 function brightnessAtMinute(m, s)
@@ -748,7 +661,7 @@ function renderScheduleCurve()
         return;
     }
 
-    const s = readSchedule();
+    const s = schedule;
 
     const L = 22, R = 6, T = 6, B = 18;
     const W = 320, H = 132;
@@ -821,17 +734,6 @@ for(let i = 0; i < sliderTypes.length; i++)
     {
         setBrightness(type, this.value);
     });
-}
-
-const schedFields = ["tMorning","tDay","tEvening","tNight",
-                     "bMorning","bDay","bEveStart","bEveEnd"];
-for(let i = 0; i < schedFields.length; i++)
-{
-    const field = document.getElementById(schedFields[i]);
-    if(field)
-    {
-        field.addEventListener("input", renderScheduleCurve);
-    }
 }
 
 // --- PWA-Installation ------------------------------------------------------
@@ -915,6 +817,7 @@ window.addEventListener("load", function()
 
 window.addEventListener("load", connect);
 window.addEventListener("load", renderScheduleCurve);
+window.addEventListener("load", renderAutoPhases);
 
 </script>
 

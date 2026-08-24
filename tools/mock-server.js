@@ -161,14 +161,10 @@ function handleCommand(msg, socket) {
     if (doc.global !== undefined) state.global = clamp(doc.global, 0, 100);
 
     // Automatik-Zeitprofil (Zeiten 0..23, Helligkeiten 0..100)
-    if (doc.tMorning  !== undefined) state.sched.tMorning  = clamp(doc.tMorning, 0, 23);
-    if (doc.tDay      !== undefined) state.sched.tDay      = clamp(doc.tDay, 0, 23);
-    if (doc.tEvening  !== undefined) state.sched.tEvening  = clamp(doc.tEvening, 0, 23);
-    if (doc.tNight    !== undefined) state.sched.tNight    = clamp(doc.tNight, 0, 23);
-    if (doc.bMorning  !== undefined) state.sched.bMorning  = clamp(doc.bMorning, 0, 100);
-    if (doc.bDay      !== undefined) state.sched.bDay      = clamp(doc.bDay, 0, 100);
-    if (doc.bEveStart !== undefined) state.sched.bEveStart = clamp(doc.bEveStart, 0, 100);
-    if (doc.bEveEnd   !== undefined) state.sched.bEveEnd   = clamp(doc.bEveEnd, 0, 100);
+    // Das komplette Automatik-Zeitprofil (Uhrzeiten + Helligkeiten) ist fest im
+    // Code (config.h) und wird - wie in der Firmware - NICHT angenommen.
+    // Automatik-Helligkeiten sind fest im Code (config.h) und werden - wie in
+    // der Firmware - NICHT ueber die App entgegengenommen.
 
     // Szene speichern
     if (typeof doc.savePreset === 'string' && doc.savePreset.length > 0) {

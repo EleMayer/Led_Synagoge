@@ -60,8 +60,8 @@ const simulator = `
     if(doc.right!==undefined){state.right=clamp(doc.right,0,100);overrideAuto();}
     if(doc.logo!==undefined){state.logo=clamp(doc.logo,0,100);overrideAuto();}
     if(doc.global!==undefined)state.global=clamp(doc.global,0,100);
-    ['tMorning','tDay','tEvening','tNight'].forEach(k=>{if(doc[k]!==undefined)state.sched[k]=clamp(doc[k],0,23);});
-    ['bMorning','bDay','bEveStart','bEveEnd'].forEach(k=>{if(doc[k]!==undefined)state.sched[k]=clamp(doc[k],0,100);});
+    // Automatik-Zeitprofil (Uhrzeiten + Helligkeiten) ist fest (config.h) - die
+    // App sendet es nicht mehr, der Simulator nimmt es entsprechend nicht an.
     if(typeof doc.savePreset==='string'&&doc.savePreset){let p=state.presets.find(x=>x.name===doc.savePreset);
       if(!p&&state.presets.length<6){p={slot:state.presets.length,name:doc.savePreset};state.presets.push(p);}
       if(p){p.left=state.left;p.right=state.right;p.logo=state.logo;}}

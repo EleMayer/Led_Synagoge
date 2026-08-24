@@ -17,7 +17,7 @@ Zugriff auch über `http://led-fassade.local` (mDNS)
 **Konfiguration:** Persistenter Speicher (NVS) inkl. eigener Szenen;
 WLAN-Zugangsdaten dagegen fest im Code (`config.h`)
 
-**Firmware-Version:** 2.4.1
+**Firmware-Version:** 2.4.3
 
 ---
 
@@ -613,7 +613,7 @@ Der Controller liefert dazu selbst aus:
 /api/status     Status als JSON (REST)
 /api/schedule   Automatik-Zeitprofil lesen (REST)
 /update         Firmware-Update (OTA, POST)
-/ws             WebSocket (Live-Bedienung, auch Zeitprofil schreiben)
+/ws             WebSocket (Live-Bedienung: Modus, Helligkeiten, Szenen)
 ```
 
 Funktionen:
@@ -622,15 +622,17 @@ Funktionen:
 * Helligkeit je Bereich einstellen (Links, Rechts, Logo)
 * Effekt-Helligkeit einstellen (für Lauflicht/Pulsieren/Atmen)
 * eigene Szenen speichern, abrufen und löschen
-* Automatik-Zeitprofil (Zeiten und Helligkeiten) einstellen
+* Automatik-Profil (Uhrzeiten und Helligkeiten) als schreibgeschützte
+  Phasen-Übersicht anzeigen – fest in `config.h`, in der App nicht editierbar
 * Tagesverlauf der Automatik als 24-Stunden-Kurve mit „jetzt"-Markierung
-  vorschauen (aktualisiert sich live beim Bearbeiten der Werte)
+  vorschauen
 * aktuellen Modus samt Kurzbeschreibung anzeigen
 * Uhrzeit, RTC-/NTP-Status, WLAN-Status und IP anzeigen
 
-Die Oberfläche ist in einem ruhigen, dunklen Design gehalten. Kopfzeile mit
-Verbindungspunkt, Uhr und aktuellem Modus; darunter Karten für Modus-Auswahl,
-Helligkeiten, Szenen, Automatik-Übersicht sowie WLAN & System.
+Die Oberfläche ist in einem hellen, klinisch-reduzierten Design gehalten (weiße
+Karten, schlichte Linien, ein zurückhaltender Akzent, ohne erklärende
+Zusatztexte). Kopfzeile mit Verbindungspunkt, Uhr und aktuellem Modus; darunter
+Karten für Modus-Auswahl, Helligkeiten, Szenen, Automatik-Übersicht und System.
 
 Beispielhafte Oberfläche:
 
@@ -658,7 +660,7 @@ Beispielhafte Oberfläche:
  [ Abend · 40 / 40 / 30 ] [Entf.]
 
  WLAN & SYSTEM
-  Firmware 2.4.1 · RTC OK · NTP synchron.
+  Firmware 2.4.3 · RTC OK · NTP synchron.
  WLAN verbunden · IP 192.168.x.x
 ```
 
@@ -715,24 +717,15 @@ die enthalten sind.
 | `savePreset`   | Text   | aktuelle Helligkeiten als Szene speichern   |
 | `applyPreset`  | Slot   | gespeicherte Szene abrufen                  |
 | `deletePreset` | Slot   | gespeicherte Szene löschen                  |
-| `tMorning`     | 0–23   | Automatik: Beginn Hochfahren (Stunde)       |
-| `tDay`         | 0–23   | Automatik: Beginn Tag (Stunde)              |
-| `tEvening`     | 0–23   | Automatik: Beginn Abend (Stunde)            |
-| `tNight`       | 0–23   | Automatik: Nachtabschaltung (Stunde)        |
-| `bMorning`     | 0–100  | Automatik: Zielhelligkeit beim Hochfahren (%) |
-| `bDay`         | 0–100  | Automatik: Tageshelligkeit (%)              |
-| `bEveStart`    | 0–100  | Automatik: Abend-Starthelligkeit (%)        |
-| `bEveEnd`      | 0–100  | Automatik: Abend-Endhelligkeit (%)          |
+
+Das komplette Automatik-Profil – **Uhrzeiten** (`tMorning`, `tDay`, `tEvening`,
+`tNight`) **und Helligkeiten** (`bMorning`, `bDay`, `bEveStart`, `bEveEnd`) – ist
+**fest im Code** (`config.h`) hinterlegt und wird vom Controller **nicht** über
+die App entgegengenommen. Diese Felder erscheinen nur im Status (Kap. 14) zur
+Anzeige und für die Kurvenvorschau.
 
 Eine Änderung von `left`, `right` oder `logo` während der Automatik wechselt
-automatisch in den statischen Modus (manueller Eingriff, siehe Kap. 21). Die
-`t…`/`b…`-Felder ändern dagegen nur das gespeicherte Zeitprofil und lassen
-den aktiven Modus unberührt – so lässt sich die Automatik-Kurve (Zeiten und
-Helligkeiten) direkt aus der App parametrieren.
-
-Die App prüft das Zeitprofil vor dem Senden: Die Uhrzeiten müssen aufsteigend
-sein (`tMorning < tDay < tEvening < tNight`), damit die Automatik-Kurve
-lückenlos bleibt. Andernfalls weist die App darauf hin und sendet nicht.
+automatisch in den statischen Modus (manueller Eingriff, siehe Kap. 21).
 
 ---
 
@@ -760,7 +753,7 @@ Beispiel:
     "wifi": true,
     "ap": false,
     "ssid": "Museum-Arbeitswelt",
-    "firmware": "2.4.1",
+    "firmware": "2.4.3",
     "presets": [
         { "slot": 0, "name": "Abend", "left": 40, "right": 40, "logo": 30 }
     ]
@@ -1410,7 +1403,7 @@ Die Diagramme sind in **Mermaid** geschrieben. Das ist praktisch, weil du die Ma
 # Anhang A – Pflichtenheft-Abgleich
 
 Gegenüberstellung der Anforderungen aus dem Pflichtenheft (MAW – LED-Fassaden­beleuchtung)
-und ihrer Umsetzung in dieser Firmware (Version 2.4.1).
+und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 
 ## A.1 Funktionale Anforderungen
 
@@ -1420,7 +1413,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.1).
 | F2 | Mehrere Betriebsmodi per App auswählbar | erfüllt | 13 Modi (Aus, Statisch, Automatik, 4 Effekte, 6 thematische Modi) |
 | F3 | Automatik tageszeitabhängig inkl. Nachtabschaltung ab 23:00 | erfüllt | `calculateAutomaticBrightness`, feste Nachtgrenze über `isNightOff` |
 | F4 | Helligkeit je Bereich manuell einstellbar | erfüllt | WebSocket-Befehle `left`/`right`/`logo` |
-| F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): Helligkeiten, Zeitprofil, Szenen (WLAN dagegen fest in `config.h`) |
+| F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): manuelle Helligkeiten, Szenen (WLAN und das gesamte Automatik-Profil dagegen fest in `config.h`) |
 | F6 | Nach Stromausfall definierter Zustand selbsttätig | erfüllt | `setup()` startet immer im Automatik-Modus, Zustand nach Uhrzeit |
 | F7 | Netzunabhängige Zeitbasis (RTC), NTP-Abgleich wenn online | erfüllt | DS3231 sofort nach Boot; periodischer NTP-Abgleich inkl. Sommer-/Winterzeit |
 | F8 | OTA-Firmware-Update über das lokale Netz | erfüllt | `POST /update` (Browser-Upload), danach Neustart |
@@ -1457,6 +1450,8 @@ Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und da
 | LED-Anzahl je Segment | `NUM_LEDS_LINKS 60`, `NUM_LEDS_RECHTS 60` | Bei Bedarf an reale Segmentlängen anpassen (Kap. 13) |
 | LED-Typ | `WS2812` | Pflichtenheft schlägt WS2811 / 12 V vor (Kap. 4.1) |
 | Strombegrenzung | `LED_VOLTS 5`, `LED_MAX_MILLIAMPS 2000` | Bei 120 LEDs (60+60) ist 2000 mA zu niedrig – FastLED dimmt sonst herunter; nach Netzteil-/Einspeisekonzept erhöhen (Kap. 4.2) |
+| Automatik-Uhrzeiten | `AUTO_T_MORNING 6`, `AUTO_T_DAY 8`, `AUTO_T_EVENING 18`, `AUTO_T_NIGHT 23` | Fest im Code (aufsteigend), bewusst nicht über die App verstellbar; hier die Zeitfenster festlegen |
+| Automatik-Helligkeiten | `AUTO_B_MORNING 90`, `AUTO_B_DAY 90`, `AUTO_B_EVE_START 60`, `AUTO_B_EVE_END 25` | Fest im Code, bewusst nicht über die App verstellbar; hier an die gewünschte Lichtwirkung anpassen |
 | Sonnenstand-Kopplung | nicht umgesetzt | Optional (Kap. 7.1 `[OPTION]`) |
 
 ## A.5 Zusätzlich umgesetzt (über das Pflichtenheft hinaus)

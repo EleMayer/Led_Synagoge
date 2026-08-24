@@ -4,7 +4,7 @@ ESP32-Steuerung für eine mehrteilige LED-Fassadenbeleuchtung mit Weiß-LEDs
 (WS2812) und dimmbarem Logo (PWM/MOSFET). Bedienung über eine lokale,
 installierbare Web-App (PWA) per WLAN – kein Cloud-Dienst.
 
-**Firmware-Version:** 2.4.1 · **Plattform:** ESP32 / Arduino (PlatformIO,
+**Firmware-Version:** 2.4.3 · **Plattform:** ESP32 / Arduino (PlatformIO,
 espressif32@7.0.1 → Arduino-Core 2.0.17, alte LEDC-API)
 
 ## Funktionen
@@ -14,7 +14,9 @@ espressif32@7.0.1 → Arduino-Core 2.0.17, alte LEDC-API)
 - Stimmungs-Modi: Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht
   (feste Werte, Nachtabschaltung 23:00–06:00)
 - Eigene Szenen (Presets), im NVS gespeichert
-- Automatik-Zeitprofil einstellbar, mit 24-Stunden-Kurven-Vorschau in der App
+- Automatik-Profil (Uhrzeiten **und** Helligkeiten) fest in `config.h`, nur dort
+  änderbar; die App zeigt es schreibgeschützt als Phasen-Übersicht mit
+  24-Stunden-Kurve
 - WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback für lokalen Zugriff
 - Erreichbar über `http://led-fassade.local` (mDNS)
 - Firmware-Update über den Browser (OTA)
@@ -103,14 +105,16 @@ Das System läuft nach einem Stromausfall ohne Eingriff vor Ort wieder an:
    (`SAFE_DEFAULT_BRIGHTNESS`) und korrigiert sich, sobald NTP synchronisiert.
 4. Bei Internetverbindung wird die RTC periodisch per NTP nachgeführt
    (Sommer-/Winterzeit berücksichtigt).
-5. Die Benutzerkonfiguration (Zeitprofil, Helligkeiten, Szenen) liegt im NVS und
-   übersteht den Stromausfall.
+5. Die Benutzerkonfiguration (manuelle Helligkeiten, Szenen) liegt im NVS und
+   übersteht den Stromausfall. Das Automatik-Profil (Uhrzeiten und
+   Helligkeiten) steht dagegen fest in `config.h`.
 
 ## Bedienung (Kurzüberblick)
 
 - **Modus** wählen, **Helligkeit** je Bereich (Links, Rechts, Logo) im Modus
-  *Statisch* regeln, eigene **Szenen** speichern und das **Zeitprofil** der
-  Automatik anpassen.
+  *Statisch* regeln und eigene **Szenen** speichern. Das **Automatik-Profil**
+  (Uhrzeiten und Helligkeiten) ist fest in `config.h` hinterlegt und in der App
+  nur als schreibgeschützte Übersicht sichtbar.
 - Ein manueller Eingriff übersteuert die Automatik. Das System kehrt beim
   nächsten Zeitfenster-Übergang (z. B. Tag → Abend) selbsttätig in die Automatik
   zurück.
