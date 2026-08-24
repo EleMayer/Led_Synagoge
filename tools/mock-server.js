@@ -160,37 +160,52 @@ function handleCommand(msg, socket) {
     if (doc.logo  !== undefined) { state.logo  = clamp(doc.logo, 0, 100);  enterOverrideIfAutomatic(); }
     if (doc.global !== undefined) state.global = clamp(doc.global, 0, 100);
 
-    // Automatik-Zeitprofil (Zeiten 0..23, Helligkeiten 0..100)
     // Das komplette Automatik-Zeitprofil (Uhrzeiten + Helligkeiten) ist fest im
     // Code (config.h) und wird - wie in der Firmware - NICHT angenommen.
-    // Automatik-Helligkeiten sind fest im Code (config.h) und werden - wie in
-    // der Firmware - NICHT ueber die App entgegengenommen.
 
     // Szene speichern
     if (typeof doc.savePreset === 'string' && doc.savePreset.length > 0) {
-        let p = state.presets.find(x => x.name === doc.savePreset);
+        let p = null;
+        for (let i = 0; i < state.presets.length; i++) {
+            if (state.presets[i].name === doc.savePreset) p = state.presets[i];
+        }
         if (!p && state.presets.length < 6) {
             p = { slot: state.presets.length, name: doc.savePreset };
             state.presets.push(p);
         }
-        if (p) { p.left = state.left; p.right = state.right; p.logo = state.logo; }
+        if (p) {
+            p.left = state.left;
+            p.right = state.right;
+            p.logo = state.logo;
+        }
     }
 
     // Szene anwenden
     if (typeof doc.applyPreset === 'number') {
-        const p = state.presets.find(x => x.slot === doc.applyPreset);
-        if (p) {
-            state.left = p.left; state.right = p.right; state.logo = p.logo;
-            state.mode = 1;
-            overrideActive = true;
-            overrideWindow = currentWindow();
+        for (let i = 0; i < state.presets.length; i++) {
+            if (state.presets[i].slot === doc.applyPreset) {
+                let p = state.presets[i];
+                state.left = p.left;
+                state.right = p.right;
+                state.logo = p.logo;
+                state.mode = 1;
+                overrideActive = true;
+                overrideWindow = currentWindow();
+            }
         }
     }
 
     // Szene loeschen
     if (typeof doc.deletePreset === 'number') {
-        state.presets = state.presets.filter(x => x.slot !== doc.deletePreset);
-        state.presets.forEach((x, i) => x.slot = i);   // Slots neu durchnummerieren
+        let kept = [];
+        for (let i = 0; i < state.presets.length; i++) {
+            if (state.presets[i].slot !== doc.deletePreset) kept.push(state.presets[i]);
+        }
+        state.presets = kept;
+        // Slots neu durchnummerieren
+        for (let i = 0; i < state.presets.length; i++) {
+            state.presets[i].slot = i;
+        }
     }
 
     broadcast();

@@ -27,62 +27,249 @@ html = html.replace(/<link rel="manifest"[^>]*>/g, '');
 html = html.replace(/<link rel="apple-touch-icon"[^>]*>/g, '');
 html = html.replace(/<link rel="icon"[^>]*>/g, '');
 
-// Simulator: ersetzt window.WebSocket, damit die Seite ohne ESP32 lebt.
+// Simulator: ersetzt window.WebSocket, damit die Seite ohne ESP32 laeuft.
+// Er haelt einen einfachen Zustand und schickt ihn - wie der echte Controller -
+// als JSON zurueck. Bewusst schlicht und gut lesbar geschrieben.
 const simulator = `
 <script>
-(function(){
-  const state = {
-    mode:3, left:80, right:80, logo:80, global:80, autoBrightness:0,
-    rtc:true, ntp:true, ip:'Demo', rssi:-55, wifi:true, ap:false,
-    ssid:'Demo (ohne ESP32)', firmware:'Demo',
-    sched:{tMorning:6,tDay:8,tEvening:18,tNight:23,bMorning:90,bDay:90,bEveStart:60,bEveEnd:25},
-    presets:[]
-  };
-  let overrideActive=false, overrideWindow=-1;
-  const clamp=(v,lo,hi)=>{v=parseInt(v);if(isNaN(v))return lo;return v<lo?lo:(v>hi?hi:v);};
-  function win(){const d=new Date();const t=d.getHours()*60+d.getMinutes();const s=state.sched;
-    if(t>=s.tNight*60||t<s.tMorning*60)return 0;if(t<s.tDay*60)return 1;if(t<s.tEvening*60)return 2;return 3;}
-  function autoB(){const d=new Date();const t=d.getHours()*60+d.getMinutes();const s=state.sched;
-    if(t>=s.tNight*60||t<s.tMorning*60)return 0;
-    if(t<s.tDay*60){let p=(t-s.tMorning*60)/(s.tDay*60-s.tMorning*60);return Math.round(Math.max(0,Math.min(1,p))*s.bMorning);}
-    if(t<s.tEvening*60)return s.bDay;
-    let p=(t-s.tEvening*60)/(s.tNight*60-s.tEvening*60);p=Math.max(0,Math.min(1,p));
-    return Math.round(s.bEveStart+(s.bEveEnd-s.bEveStart)*p);}
-  const two=n=>String(n).padStart(2,'0');
-  function status(){const d=new Date();state.autoBrightness=autoB();const s=Object.assign({},state);
-    s.time=two(d.getHours())+':'+two(d.getMinutes())+':'+two(d.getSeconds());
-    s.date=two(d.getDate())+'.'+two(d.getMonth()+1)+'.'+d.getFullYear();return JSON.stringify(s);}
-  function overrideAuto(){if(state.mode===3){state.mode=1;overrideActive=true;overrideWindow=win();}}
-  function handle(msg){let doc;try{doc=JSON.parse(msg);}catch(e){return;}
-    if(typeof doc.mode==='number'&&doc.mode>=0&&doc.mode<=12){state.mode=doc.mode;
-      if(doc.mode===3){overrideActive=false;}else{overrideActive=true;overrideWindow=win();}}
-    if(doc.left!==undefined){state.left=clamp(doc.left,0,100);overrideAuto();}
-    if(doc.right!==undefined){state.right=clamp(doc.right,0,100);overrideAuto();}
-    if(doc.logo!==undefined){state.logo=clamp(doc.logo,0,100);overrideAuto();}
-    if(doc.global!==undefined)state.global=clamp(doc.global,0,100);
-    // Automatik-Zeitprofil (Uhrzeiten + Helligkeiten) ist fest (config.h) - die
-    // App sendet es nicht mehr, der Simulator nimmt es entsprechend nicht an.
-    if(typeof doc.savePreset==='string'&&doc.savePreset){let p=state.presets.find(x=>x.name===doc.savePreset);
-      if(!p&&state.presets.length<6){p={slot:state.presets.length,name:doc.savePreset};state.presets.push(p);}
-      if(p){p.left=state.left;p.right=state.right;p.logo=state.logo;}}
-    if(typeof doc.applyPreset==='number'){const p=state.presets.find(x=>x.slot===doc.applyPreset);
-      if(p){state.left=p.left;state.right=p.right;state.logo=p.logo;state.mode=1;overrideActive=true;overrideWindow=win();}}
-    if(typeof doc.deletePreset==='number'){state.presets=state.presets.filter(x=>x.slot!==doc.deletePreset);
-      state.presets.forEach((x,i)=>x.slot=i);}
-  }
-  class FakeWebSocket{
-    constructor(){this.readyState=0;const self=this;
-      setTimeout(()=>{self.readyState=1;if(self.onopen)self.onopen();
-        if(self.onmessage)self.onmessage({data:status()});},50);
-      this._t=setInterval(()=>{if(self.readyState===1&&self.onmessage){
-        if(overrideActive&&state.mode!==3){const w=win();
-          if(w>=0&&overrideWindow>=0&&w!==overrideWindow){state.mode=3;overrideActive=false;}}
-        self.onmessage({data:status()});}},1000);}
-    send(msg){handle(msg);if(this.onmessage)this.onmessage({data:status()});}
-    close(){this.readyState=3;clearInterval(this._t);}
-  }
-  FakeWebSocket.CONNECTING=0;FakeWebSocket.OPEN=1;FakeWebSocket.CLOSING=2;FakeWebSocket.CLOSED=3;
-  window.WebSocket=FakeWebSocket;
+(function()
+{
+    let state = {
+        mode: 3,
+        left: 80, right: 80, logo: 80, global: 80,
+        autoBrightness: 0,
+        rtc: true, ntp: true,
+        ip: 'Demo', rssi: -55, wifi: true, ap: false,
+        ssid: 'Demo (ohne ESP32)', firmware: 'Demo',
+        sched: { tMorning: 6, tDay: 8, tEvening: 18, tNight: 23,
+                 bMorning: 90, bDay: 90, bEveStart: 60, bEveEnd: 25 },
+        presets: []
+    };
+
+    let overrideActive = false;
+    let overrideWindow = -1;
+
+    // Begrenzt einen Wert auf den Bereich lo..hi.
+    function clamp(value, lo, hi)
+    {
+        value = parseInt(value);
+        if(isNaN(value)) return lo;
+        if(value < lo) return lo;
+        if(value > hi) return hi;
+        return value;
+    }
+
+    // Minuten seit Mitternacht (aktuelle Uhrzeit).
+    function nowMinutes()
+    {
+        let d = new Date();
+        return d.getHours() * 60 + d.getMinutes();
+    }
+
+    // Aktuelles Zeitfenster: 0 = Nacht, 1 = Morgen, 2 = Tag, 3 = Abend.
+    function currentWindow()
+    {
+        let t = nowMinutes();
+        let s = state.sched;
+        if(t >= s.tNight * 60 || t < s.tMorning * 60) return 0;
+        if(t < s.tDay * 60) return 1;
+        if(t < s.tEvening * 60) return 2;
+        return 3;
+    }
+
+    // Automatik-Helligkeit fuer die aktuelle Uhrzeit.
+    function autoBrightness()
+    {
+        let t = nowMinutes();
+        let s = state.sched;
+
+        if(t >= s.tNight * 60 || t < s.tMorning * 60) return 0;
+
+        if(t < s.tDay * 60)
+        {
+            let p = (t - s.tMorning * 60) / (s.tDay * 60 - s.tMorning * 60);
+            return Math.round(clamp01(p) * s.bMorning);
+        }
+
+        if(t < s.tEvening * 60) return s.bDay;
+
+        let q = (t - s.tEvening * 60) / (s.tNight * 60 - s.tEvening * 60);
+        return Math.round(s.bEveStart + (s.bEveEnd - s.bEveStart) * clamp01(q));
+    }
+
+    // Begrenzt einen Wert auf 0..1.
+    function clamp01(p)
+    {
+        if(p < 0) return 0;
+        if(p > 1) return 1;
+        return p;
+    }
+
+    // Zweistellige Zahl (z. B. 7 -> "07").
+    function two(n)
+    {
+        return String(n).padStart(2, '0');
+    }
+
+    // Baut die Statusmeldung als JSON (wie der echte Controller).
+    function buildStatus()
+    {
+        let d = new Date();
+        state.autoBrightness = autoBrightness();
+        state.time = two(d.getHours()) + ':' + two(d.getMinutes()) + ':' + two(d.getSeconds());
+        state.date = two(d.getDate()) + '.' + two(d.getMonth() + 1) + '.' + d.getFullYear();
+        return JSON.stringify(state);
+    }
+
+    // Ein manueller Eingriff waehrend der Automatik schaltet auf Statisch.
+    function enterOverride()
+    {
+        if(state.mode === 3)
+        {
+            state.mode = 1;
+            overrideActive = true;
+            overrideWindow = currentWindow();
+        }
+    }
+
+    // Sucht eine Szene anhand des Namens; null, wenn keine gefunden.
+    function findPresetByName(name)
+    {
+        for(let i = 0; i < state.presets.length; i++)
+        {
+            if(state.presets[i].name === name) return state.presets[i];
+        }
+        return null;
+    }
+
+    // Verarbeitet einen Befehl der App (wie onWebSocketEvent in der Firmware).
+    function handle(msg)
+    {
+        let doc;
+        try { doc = JSON.parse(msg); } catch(e) { return; }
+
+        if(typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 12)
+        {
+            state.mode = doc.mode;
+            if(doc.mode === 3)
+            {
+                overrideActive = false;
+            }
+            else
+            {
+                overrideActive = true;
+                overrideWindow = currentWindow();
+            }
+        }
+
+        if(doc.left !== undefined)  { state.left  = clamp(doc.left, 0, 100);  enterOverride(); }
+        if(doc.right !== undefined) { state.right = clamp(doc.right, 0, 100); enterOverride(); }
+        if(doc.logo !== undefined)  { state.logo  = clamp(doc.logo, 0, 100);  enterOverride(); }
+        if(doc.global !== undefined) state.global = clamp(doc.global, 0, 100);
+
+        // Automatik-Zeitprofil ist fest im Code (config.h) - wird nicht angenommen.
+
+        if(typeof doc.savePreset === 'string' && doc.savePreset)
+        {
+            let p = findPresetByName(doc.savePreset);
+            if(!p && state.presets.length < 6)
+            {
+                p = { slot: state.presets.length, name: doc.savePreset };
+                state.presets.push(p);
+            }
+            if(p)
+            {
+                p.left = state.left;
+                p.right = state.right;
+                p.logo = state.logo;
+            }
+        }
+
+        if(typeof doc.applyPreset === 'number')
+        {
+            for(let i = 0; i < state.presets.length; i++)
+            {
+                if(state.presets[i].slot === doc.applyPreset)
+                {
+                    let found = state.presets[i];
+                    state.left = found.left;
+                    state.right = found.right;
+                    state.logo = found.logo;
+                    state.mode = 1;
+                    overrideActive = true;
+                    overrideWindow = currentWindow();
+                }
+            }
+        }
+
+        if(typeof doc.deletePreset === 'number')
+        {
+            let kept = [];
+            for(let i = 0; i < state.presets.length; i++)
+            {
+                if(state.presets[i].slot !== doc.deletePreset) kept.push(state.presets[i]);
+            }
+            state.presets = kept;
+            for(let i = 0; i < state.presets.length; i++)
+            {
+                state.presets[i].slot = i;
+            }
+        }
+    }
+
+    // Ersatz fuer WebSocket: verbindet sofort und schickt jede Sekunde den Status.
+    class FakeWebSocket
+    {
+        constructor()
+        {
+            let self = this;
+            this.readyState = 0;
+            this.timer = null;
+
+            setTimeout(function()
+            {
+                self.readyState = 1;
+                if(self.onopen) self.onopen();
+                if(self.onmessage) self.onmessage({ data: buildStatus() });
+            }, 50);
+
+            this.timer = setInterval(function()
+            {
+                if(self.readyState !== 1 || !self.onmessage) return;
+
+                // Automatik-Rueckkehr beim naechsten Zeitfensterwechsel.
+                if(overrideActive && state.mode !== 3)
+                {
+                    let w = currentWindow();
+                    if(w >= 0 && overrideWindow >= 0 && w !== overrideWindow)
+                    {
+                        state.mode = 3;
+                        overrideActive = false;
+                    }
+                }
+                self.onmessage({ data: buildStatus() });
+            }, 1000);
+        }
+
+        send(msg)
+        {
+            handle(msg);
+            if(this.onmessage) this.onmessage({ data: buildStatus() });
+        }
+
+        close()
+        {
+            this.readyState = 3;
+            clearInterval(this.timer);
+        }
+    }
+
+    FakeWebSocket.CONNECTING = 0;
+    FakeWebSocket.OPEN = 1;
+    FakeWebSocket.CLOSING = 2;
+    FakeWebSocket.CLOSED = 3;
+
+    window.WebSocket = FakeWebSocket;
 })();
 </script>
 `;

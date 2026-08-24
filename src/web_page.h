@@ -16,11 +16,11 @@ const char index_html[] PROGMEM = R"rawliteral(
 
 <link rel="manifest" href="/manifest.json">
 
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#0a0b0d">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style"
-      content="default">
+      content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fassade">
 
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -109,11 +109,11 @@ button.primary{background:var(--accent);color:var(--accent-ink);border:none;bord
   padding:12px 16px;font-weight:600;cursor:pointer;transition:.12s;width:100%}
 button.primary:hover{filter:brightness(1.05)}
 input[type=text]{width:100%;padding:11px 12px;border-radius:9px;
-  border:1px solid var(--line-strong);background:#fff;color:var(--fg);font-size:15px}
+  border:1px solid var(--line-strong);background:#0e1013;color:var(--fg);font-size:15px}
 input[type=text]:focus{outline:none;border-color:var(--accent);
   box-shadow:0 0 0 3px var(--accent-weak)}
 
-.curve{background:#fafbfc;border:1px solid var(--line);border-radius:9px;
+.curve{background:#0e1013;border:1px solid var(--line);border-radius:9px;
   padding:8px 6px 4px;margin-top:4px}
 .curve svg{display:block;width:100%;height:auto}
 .curve .grid{stroke:var(--line);stroke-width:1}
@@ -134,11 +134,11 @@ input[type=text]:focus{outline:none;border-color:var(--accent);
 
 .preset{display:flex;gap:8px;margin-top:10px}
 .preset .apply{flex:1;padding:12px;border:1px solid var(--line-strong);border-radius:9px;
-  background:#fff;color:var(--fg);cursor:pointer;text-align:left;transition:.12s}
+  background:#171a1f;color:var(--fg);cursor:pointer;text-align:left;transition:.12s}
 .preset .apply:hover{border-color:var(--accent)}
 .preset .delete{width:64px;border:1px solid var(--line-strong);border-radius:9px;
-  background:#fff;color:var(--bad);cursor:pointer;transition:.12s}
-.preset .delete:hover{border-color:var(--bad);background:#fdf3f4}
+  background:#171a1f;color:var(--bad);cursor:pointer;transition:.12s}
+.preset .delete:hover{border-color:var(--bad);background:#221417}
 
 .sys{display:grid;gap:0}
 .kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);gap:12px}
@@ -609,45 +609,71 @@ function renderScheduleCurve()
 
     const s = schedule;
 
+    // Groesse der Zeichenflaeche und Raender.
     const L = 22, R = 6, T = 6, B = 18;
     const W = 320, H = 132;
     const pw = W - L - R;
     const ph = H - T - B;
 
-    const xOf = min => L + (min / 1440) * pw;
-    const yOf = pct => T + (1 - pct / 100) * ph;
-
-    let pts = [];
-    for(let m = 0; m <= 1440; m += 6)
+    // Rechnet Minute in X-Position und Prozent in Y-Position um.
+    function xOf(min)
     {
-        pts.push([xOf(m), yOf(brightnessAtMinute(Math.min(m, 1439), s))]);
+        return L + (min / 1440) * pw;
+    }
+    function yOf(pct)
+    {
+        return T + (1 - pct / 100) * ph;
     }
 
-    let line = "M" + pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" L");
-    let area = line +
+    // Linie der Helligkeitskurve Punkt fuer Punkt zusammenbauen.
+    let line = "";
+    for(let m = 0; m <= 1440; m += 6)
+    {
+        const minute = Math.min(m, 1439);
+        const x = xOf(m).toFixed(1);
+        const y = yOf(brightnessAtMinute(minute, s)).toFixed(1);
+        if(m === 0)
+        {
+            line = "M" + x + "," + y;
+        }
+        else
+        {
+            line += " L" + x + "," + y;
+        }
+    }
+
+    // Flaeche = Linie, unten herum geschlossen.
+    const area = line +
         " L" + xOf(1440).toFixed(1) + "," + yOf(0).toFixed(1) +
         " L" + xOf(0).toFixed(1)   + "," + yOf(0).toFixed(1) + " Z";
 
     let svgParts = "";
 
-    [0, 50, 100].forEach(function(pct)
+    // Waagerechte Hilfslinien mit Prozent-Beschriftung.
+    const pctLines = [0, 50, 100];
+    for(let i = 0; i < pctLines.length; i++)
     {
+        const pct = pctLines[i];
         const y = yOf(pct).toFixed(1);
         svgParts += "<line class='grid' x1='" + L + "' y1='" + y +
                     "' x2='" + (W - R) + "' y2='" + y + "'/>";
         svgParts += "<text class='axis' x='" + (L - 4) + "' y='" +
                     (parseFloat(y) + 3) + "' text-anchor='end'>" + pct + "</text>";
-    });
+    }
 
     svgParts += "<path class='area' d='" + area + "'/>";
     svgParts += "<path class='line' d='" + line + "'/>";
 
-    [0, 6, 12, 18, 24].forEach(function(h)
+    // Stunden-Beschriftung auf der X-Achse.
+    const hourLabels = [0, 6, 12, 18, 24];
+    for(let i = 0; i < hourLabels.length; i++)
     {
+        const h = hourLabels[i];
         svgParts += "<text class='axis' x='" + xOf(h * 60).toFixed(1) +
                     "' y='" + (H - 6) + "' text-anchor='middle'>" + h + "</text>";
-    });
+    }
 
+    // Senkrechte Linie fuer die aktuelle Uhrzeit.
     const now = new Date();
     const nowX = xOf(now.getHours() * 60 + now.getMinutes()).toFixed(1);
     svgParts += "<line class='now' x1='" + nowX + "' y1='" + T +
@@ -785,8 +811,8 @@ const char manifest_json[] PROGMEM = R"rawliteral(
     "display": "standalone",
     "display_override": ["standalone", "minimal-ui"],
     "orientation": "portrait",
-    "background_color": "#eef2f5",
-    "theme_color": "#ffffff",
+    "background_color": "#0a0b0d",
+    "theme_color": "#0a0b0d",
     "icons": [
         {
             "src": "/icon-192.png",

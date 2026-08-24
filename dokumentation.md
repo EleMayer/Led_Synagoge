@@ -629,10 +629,11 @@ Funktionen:
 * aktuellen Modus samt Kurzbeschreibung anzeigen
 * Uhrzeit, RTC-/NTP-Status, WLAN-Status und IP anzeigen
 
-Die Oberfläche ist in einem hellen, klinisch-reduzierten Design gehalten (weiße
-Karten, schlichte Linien, ein zurückhaltender Akzent, ohne erklärende
-Zusatztexte). Kopfzeile mit Verbindungspunkt, Uhr und aktuellem Modus; darunter
-Karten für Modus-Auswahl, Helligkeiten, Szenen, Automatik-Übersicht und System.
+Die Oberfläche ist in einem dunklen, klinisch-reduzierten Design gehalten
+(schwarzer Hintergrund, dezent abgesetzte Karten, schlichte Linien, ein
+zurückhaltender Akzent, ohne erklärende Zusatztexte). Kopfzeile mit
+Verbindungspunkt, Uhr und aktuellem Modus; darunter Karten für Modus-Auswahl,
+Helligkeiten, Szenen, Automatik-Übersicht und System.
 
 Beispielhafte Oberfläche:
 

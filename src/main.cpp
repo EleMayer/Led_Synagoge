@@ -86,6 +86,7 @@ CRGB ledsRechts[NUM_LEDS_RECHTS];
 
 #define MAX_PRESETS 6
 #define PRESET_NAME_LEN 16
+#define MAX_WS_MESSAGE_LEN 512
 struct Preset {
     bool used;
     char name[PRESET_NAME_LEN];
@@ -235,6 +236,10 @@ int findPresetByName(const char *name) {
 // Speichert die aktuellen Helligkeiten unter dem Namen. Existiert der Name,
 // wird er ueberschrieben, sonst der naechste freie Platz belegt (-1 wenn voll).
 int storeCurrentAsPreset(const char *name) {
+    if (!name || name[0] == '\0' || strnlen(name, PRESET_NAME_LEN) >= PRESET_NAME_LEN) {
+        return -1;
+    }
+
     int slot = findPresetByName(name);
 
     if (slot < 0) {
@@ -777,6 +782,11 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         return;
     }
 
+    // Leere oder zu grosse Nachrichten ignorieren.
+    if (len == 0 || len > MAX_WS_MESSAGE_LEN) {
+        return;
+    }
+
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, data, len);
     if (err) {
@@ -1006,97 +1016,122 @@ void setupLEDs() {
     ledcWrite(LOGO_PWM_CHANNEL, 0);
 }
 
-// Registriert WebSocket, App-Seite, Status-/Schedule-REST und den OTA-Upload
-// und startet Webserver samt mDNS (erreichbar unter HOSTNAME.local).
+// --- Handler fuer die einzelnen Webserver-Adressen -------------------------
+// Jede Adresse (URL) bekommt eine eigene, benannte Funktion. Das ist leichter
+// zu lesen als anonyme Funktionen direkt bei der Registrierung.
+
+// Liefert die Bedien-App (HTML-Seite).
+void handleRoot(AsyncWebServerRequest *request) {
+    request->send(200, "text/html", index_html);
+}
+
+// Liefert die PWA-Manifestdatei.
+void handleManifest(AsyncWebServerRequest *request) {
+    request->send(200, "application/manifest+json", manifest_json);
+}
+
+// Liefert das SVG-Icon (fuer Browser-Tab und Desktop).
+void handleIconSvg(AsyncWebServerRequest *request) {
+    request->send(200, "image/svg+xml", icon_svg);
+}
+
+// PNG-Home-Screen-Icons: iOS nutzt apple-touch-icon, Android 192/512.
+void handleIcon180(AsyncWebServerRequest *request) {
+    request->send(200, "image/png", icon_180_png, icon_180_png_len);
+}
+
+void handleIcon192(AsyncWebServerRequest *request) {
+    request->send(200, "image/png", icon_192_png, icon_192_png_len);
+}
+
+void handleIcon512(AsyncWebServerRequest *request) {
+    request->send(200, "image/png", icon_512_png, icon_512_png_len);
+}
+
+// Liefert den aktuellen Systemzustand als JSON.
+void handleApiStatus(AsyncWebServerRequest *request) {
+    request->send(200, "application/json", createStatusJson());
+}
+
+// Liefert das Automatik-Zeitprofil als JSON.
+void handleApiSchedule(AsyncWebServerRequest *request) {
+    JsonDocument doc;
+    doc["tMorning"]  = morningStartHour;
+    doc["tDay"]      = dayStartHour;
+    doc["tEvening"]  = eveningStartHour;
+    doc["tNight"]    = nightStartHour;
+    doc["bMorning"]  = morningBrightness;
+    doc["bDay"]      = dayBrightness;
+    doc["bEveStart"] = eveningStartBrightness;
+    doc["bEveEnd"]   = eveningEndBrightness;
+    doc["autoBrightness"] = currentAutoBrightness;
+    String out;
+    serializeJson(doc, out);
+    request->send(200, "application/json", out);
+}
+
+// OTA-Update: wird aufgerufen, wenn der Upload fertig ist (Pflichtenheft F8).
+void handleUpdateDone(AsyncWebServerRequest *request) {
+    bool ok = !Update.hasError();
+
+    String msg;
+    if (ok) {
+        msg = "Update erfolgreich. Neustart...";
+    } else {
+        msg = "Update fehlgeschlagen.";
+    }
+
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", msg);
+    response->addHeader("Connection", "close");
+    request->send(response);
+
+    if (ok) {
+        if (settingsDirty) {
+            saveSettings();
+        }
+        delay(500);
+        ESP.restart();
+    }
+}
+
+// OTA-Update: wird waehrend des Uploads Stueck fuer Stueck aufgerufen und
+// schreibt die Daten ins Flash.
+void handleUpdateUpload(AsyncWebServerRequest *request, String filename,
+                        size_t index, uint8_t *data, size_t len, bool final) {
+    if (index == 0) {
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+            Update.printError(Serial);
+        }
+    }
+
+    if (Update.write(data, len) != len) {
+        Update.printError(Serial);
+    }
+
+    if (final) {
+        if (Update.end(true)) {
+            Serial.println("OTA fertig.");
+        } else {
+            Update.printError(Serial);
+        }
+    }
+}
+
+// Registriert alle Adressen mit ihren Handler-Funktionen und startet den
+// Webserver samt mDNS (erreichbar unter HOSTNAME.local).
 void setupWebServer() {
     ws.onEvent(onWebSocketEvent);
     server.addHandler(&ws);
 
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *r) {
-        r->send(200, "text/html", index_html);
-    });
-
-    server.on("/manifest.json", HTTP_GET, [](AsyncWebServerRequest *r) {
-        r->send(200, "application/manifest+json", manifest_json);
-    });
-
-    server.on("/icon.svg", HTTP_GET, [](AsyncWebServerRequest *r) {
-        r->send(200, "image/svg+xml", icon_svg);
-    });
-
-    // PNG-Home-Screen-Icons der installierbaren App (aus include/icons.h).
-    // iOS nutzt /apple-touch-icon.png, Android die Manifest-Icons 192/512.
-    server.on("/apple-touch-icon.png", HTTP_GET, [](AsyncWebServerRequest *r) {
-        r->send_P(200, "image/png", icon_180_png, icon_180_png_len);
-    });
-    server.on("/icon-192.png", HTTP_GET, [](AsyncWebServerRequest *r) {
-        r->send_P(200, "image/png", icon_192_png, icon_192_png_len);
-    });
-    server.on("/icon-512.png", HTTP_GET, [](AsyncWebServerRequest *r) {
-        r->send_P(200, "image/png", icon_512_png, icon_512_png_len);
-    });
-
-    server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *r) {
-        r->send(200, "application/json", createStatusJson());
-    });
-
-    server.on("/api/schedule", HTTP_GET, [](AsyncWebServerRequest *r) {
-        JsonDocument doc;
-        doc["tMorning"]  = morningStartHour;
-        doc["tDay"]      = dayStartHour;
-        doc["tEvening"]  = eveningStartHour;
-        doc["tNight"]    = nightStartHour;
-        doc["bMorning"]  = morningBrightness;
-        doc["bDay"]      = dayBrightness;
-        doc["bEveStart"] = eveningStartBrightness;
-        doc["bEveEnd"]   = eveningEndBrightness;
-        doc["autoBrightness"] = currentAutoBrightness;
-        String out;
-        serializeJson(doc, out);
-        r->send(200, "application/json", out);
-    });
-
-    // OTA-Firmware-Update ueber den Browser: der Upload wird ins Flash
-    // geschrieben, bei Erfolg speichert der Controller offene Einstellungen
-    // und startet neu (Pflichtenheft F8).
-    server.on("/update", HTTP_POST,
-        [](AsyncWebServerRequest *request) {
-            bool ok = !Update.hasError();
-            String msg;
-            if (ok) {
-                msg = "Update erfolgreich. Neustart...";
-            } else {
-                msg = "Update fehlgeschlagen.";
-            }
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", msg);
-            response->addHeader("Connection", "close");
-            request->send(response);
-            if (ok) {
-                if (settingsDirty) {
-                    saveSettings();
-                }
-                delay(500);
-                ESP.restart();
-            }
-        },
-        [](AsyncWebServerRequest *request, String filename, size_t index,
-           uint8_t *data, size_t len, bool final) {
-            if (!index) {
-                if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
-                    Update.printError(Serial);
-                }
-            }
-            if (Update.write(data, len) != len) {
-                Update.printError(Serial);
-            }
-            if (final) {
-                if (Update.end(true)) {
-                    Serial.println("OTA fertig.");
-                } else {
-                    Update.printError(Serial);
-                }
-            }
-        });
+    server.on("/", HTTP_GET, handleRoot);
+    server.on("/manifest.json", HTTP_GET, handleManifest);
+    server.on("/icon.svg", HTTP_GET, handleIconSvg);
+    server.on("/apple-touch-icon.png", HTTP_GET, handleIcon180);
+    server.on("/icon-192.png", HTTP_GET, handleIcon192);
+    server.on("/icon-512.png", HTTP_GET, handleIcon512);
+    server.on("/api/status", HTTP_GET, handleApiStatus);
+    server.on("/api/schedule", HTTP_GET, handleApiSchedule);
+    server.on("/update", HTTP_POST, handleUpdateDone, handleUpdateUpload);
 
     server.begin();
 
