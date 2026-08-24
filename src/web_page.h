@@ -290,20 +290,6 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
   </div>
 </section>
 
-<section class="card">
-  <h2>WLAN</h2>
-  <div class="sys">
-    <div class="kv"><span>Aktuell</span><b id="wifiCurrent">-</b></div>
-  </div>
-  <label class="field" for="wifiSsid">WLAN-Name (SSID)</label>
-  <input id="wifiSsid" type="text" maxlength="32" placeholder="Netzwerkname">
-  <label class="field" for="wifiPass">Passwort</label>
-  <input id="wifiPass" type="password" maxlength="63" placeholder="Passwort">
-  <button class="primary" onclick="saveWifi()" style="margin-top:14px">Speichern &amp; Neustart</button>
-  <p class="hint">Nur lokal. Nach dem Speichern startet der Controller neu und
-    verbindet sich mit dem neuen WLAN.</p>
-</section>
-
 </main>
 
 <footer>Museum Arbeitswelt &middot; lokale Steuerung</footer>
@@ -494,17 +480,6 @@ function updateUI(data)
     }
 
     document.getElementById("systemStatus").innerHTML = sys;
-
-    const wifiCurrent = document.getElementById("wifiCurrent");
-    if(wifiCurrent)
-    {
-        let text = data.ssid || "-";
-        if(data.ap)
-        {
-            text = text + " (Setup-AP)";
-        }
-        wifiCurrent.innerText = text;
-    }
 
     if(data.sched)
     {
@@ -757,27 +732,6 @@ function renderScheduleCurve()
                 "' x2='" + nowX + "' y2='" + (H - B) + "'/>";
 
     svg.innerHTML = svgParts;
-}
-
-function saveWifi()
-{
-    const ssid = document.getElementById("wifiSsid").value.trim();
-
-    if(ssid.length === 0)
-    {
-        alert("Bitte einen WLAN-Namen eingeben.");
-        return;
-    }
-
-    if(!confirm("WLAN speichern und Controller neu starten?"))
-    {
-        return;
-    }
-
-    send({
-        wifiSsid: ssid,
-        wifiPass: document.getElementById("wifiPass").value
-    });
 }
 
 function applyPreset(slot)

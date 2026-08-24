@@ -1,10 +1,11 @@
 #pragma once
 
-static const char* FIRMWARE_VERSION = "2.4.0";
+static const char* FIRMWARE_VERSION = "2.4.1";
 #define HOSTNAME           "led-fassade"
 
-#define DEFAULT_WIFI_SSID  "Museum-Arbeitswelt"
-#define DEFAULT_WIFI_PASS  "willkommen"
+// WLAN-Zugangsdaten - fest im Code, nicht über die App änderbar.
+#define WIFI_SSID          "Museum-Arbeitswelt"
+#define WIFI_PASS          "willkommen"
 #define SETUP_AP_SSID      "Fassade-Setup"
 #define SETUP_AP_PASS      "fassade2026"
 
@@ -24,6 +25,12 @@ static const char* FIRMWARE_VERSION = "2.4.0";
 // echten Einsatz an das Netzteil anpassen, sonst dimmt FastLED herunter.
 #define LED_MAX_MILLIAMPS      2000
 #define GLOBAL_MAX_BRIGHTNESS  200
+
+// Pflichtenheft Kap. 8.3: Ist keine gueltige Zeit verfuegbar (leere RTC-Batterie
+// und noch keine NTP-Synchronisation), faehrt die Automatik in einen sicheren,
+// gedimmten Grundzustand, statt komplett hell oder dunkel zu schalten. Sobald
+// NTP verfuegbar ist, korrigiert sich das System selbst.
+#define SAFE_DEFAULT_BRIGHTNESS  25
 
 #define LOGO_PWM_CHANNEL   0
 #define LOGO_PWM_FREQ      5000

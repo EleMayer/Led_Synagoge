@@ -145,15 +145,6 @@ function handleCommand(msg, socket) {
     let doc;
     try { doc = JSON.parse(msg); } catch { return; }
 
-    // WLAN setzen -> speichern + "Neustart"
-    if (typeof doc.wifiSsid === 'string') {
-        if (doc.wifiSsid.length > 0) {
-            state.ssid = doc.wifiSsid;
-            send(socket, '{"reboot":true}');
-        }
-        return;
-    }
-
     if (typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 12) {
         state.mode = doc.mode;
         if (state.mode === 3) {

@@ -73,8 +73,6 @@ bool rtcAvailable  = false;
 bool wifiConnected = false;
 bool ntpSynced     = false;
 bool apMode        = false;
-char wifiSsid[33];
-char wifiPass[65];
 
 const char *NTP_SERVER_1 = "pool.ntp.org";
 const char *NTP_SERVER_2 = "time.nist.gov";
@@ -176,25 +174,6 @@ void loadSettings() {
     eveningEndHour         = constrain(eveningEndHour, 0, 23);
     nightStartHour         = constrain(nightStartHour, 0, 23);
     nightEndHour           = constrain(nightEndHour, 0, 23);
-}
-
-void loadWifi() {
-    preferences.begin("wifi", true);
-    String s = preferences.getString("ssid", DEFAULT_WIFI_SSID);
-    String p = preferences.getString("pass", DEFAULT_WIFI_PASS);
-    preferences.end();
-
-    strncpy(wifiSsid, s.c_str(), sizeof(wifiSsid) - 1);
-    wifiSsid[sizeof(wifiSsid) - 1] = 0;
-    strncpy(wifiPass, p.c_str(), sizeof(wifiPass) - 1);
-    wifiPass[sizeof(wifiPass) - 1] = 0;
-}
-
-void saveWifi(const char *ssid, const char *pass) {
-    preferences.begin("wifi", false);
-    preferences.putString("ssid", ssid);
-    preferences.putString("pass", pass);
-    preferences.end();
 }
 
 void savePresets() {
@@ -343,7 +322,8 @@ int currentAutoWindow() {
 int calculateAutomaticBrightness() {
     struct tm t;
     if (!getCurrentTime(t)) {
-        return 25;
+        // Keine gueltige Zeitbasis -> sicherer, gedimmter Default (Kap. 8.3).
+        return SAFE_DEFAULT_BRIGHTNESS;
     }
     float m = t.tm_hour * 60.0f + t.tm_min;
 
@@ -670,7 +650,7 @@ String createStatusJson() {
     doc["rssi"] = WiFi.RSSI();
     doc["wifi"] = WiFi.status() == WL_CONNECTED;
     doc["ap"]   = apMode;
-    doc["ssid"] = wifiSsid;
+    doc["ssid"] = WIFI_SSID;
     doc["firmware"] = FIRMWARE_VERSION;
 
     JsonObject sched = doc["sched"].to<JsonObject>();
@@ -720,21 +700,6 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
     DeserializationError err = deserializeJson(doc, data, len);
     if (err) {
         Serial.println("JSON Fehler");
-        return;
-    }
-
-    if (doc["wifiSsid"].is<const char *>()) {
-        const char *s = doc["wifiSsid"].as<const char *>();
-        const char *p = doc["wifiPass"] | "";
-        if (s && strlen(s) > 0) {
-            saveWifi(s, p);
-            if (settingsDirty) {
-                saveSettings();
-            }
-            client->text("{\"reboot\":true}");
-            delay(300);
-            ESP.restart();
-        }
         return;
     }
 
@@ -862,8 +827,8 @@ void startAccessPoint() {
 void connectWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(HOSTNAME);
-    WiFi.begin(wifiSsid, wifiPass);
-    Serial.printf("WLAN verbinde mit \"%s\" ", wifiSsid);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    Serial.printf("WLAN verbinde mit \"%s\" ", WIFI_SSID);
 
     unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - start < 12000) {
@@ -1075,7 +1040,6 @@ void setup() {
 
     loadSettings();
     loadPresets();
-    loadWifi();
 
     setupRTC();
     setupLEDs();

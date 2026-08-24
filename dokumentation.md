@@ -11,7 +11,7 @@
 **LED-Steuerung:** Adressierbare LEDs (WS2812/WS2811), ausschließlich Weiß  
 **Betriebsmodi:** Grundmodi, Effekte (Lauflicht/Pulsieren/Atmen) und feste
 feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)  
-**Netzwerk:** WLAN per App konfigurierbar, Setup-Accesspoint als Fallback,
+**Netzwerk:** WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback,
 Zugriff auch über `http://led-fassade.local` (mDNS)  
 **Sicherheit:** Software-Helligkeits- und Strombegrenzung, entprelltes Speichern  
 **Konfiguration:** Persistenter Speicher (NVS) inkl. eigener Szenen und WLAN
@@ -41,7 +41,7 @@ Die wesentlichen Funktionen sind:
 - Feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)
 - Echtzeituhr zur Zeitsteuerung mit NTP-Abgleich
 - Speicherung von Einstellungen und eigenen Szenen
-- WLAN-Kommunikation, per App konfigurierbar (Setup-AP als Fallback)
+- WLAN-Kommunikation, Zugangsdaten fest im Code (Setup-AP als Fallback für lokalen Zugriff)
 - Weboberfläche als installierbare App (PWA)
 - WebSocket-Kommunikation
 - Statusanzeige
@@ -626,7 +626,6 @@ Funktionen:
   vorschauen (aktualisiert sich live beim Bearbeiten der Werte)
 * aktuellen Modus samt Kurzbeschreibung anzeigen
 * Uhrzeit, RTC-/NTP-Status, WLAN-Status und IP anzeigen
-* WLAN direkt in der App eintragen (SSID + Passwort)
 
 Die Oberfläche ist in einem ruhigen, dunklen Design gehalten. Kopfzeile mit
 Verbindungspunkt, Uhr und aktuellem Modus; darunter Karten für Modus-Auswahl,
@@ -715,8 +714,6 @@ die enthalten sind.
 | `savePreset`   | Text   | aktuelle Helligkeiten als Szene speichern   |
 | `applyPreset`  | Slot   | gespeicherte Szene abrufen                  |
 | `deletePreset` | Slot   | gespeicherte Szene löschen                  |
-| `wifiSsid`     | Text   | neues WLAN setzen (mit `wifiPass`) → Neustart |
-| `wifiPass`     | Text   | WLAN-Passwort zum neuen `wifiSsid`          |
 | `tMorning`     | 0–23   | Automatik: Beginn Hochfahren (Stunde)       |
 | `tDay`         | 0–23   | Automatik: Beginn Tag (Stunde)              |
 | `tEvening`     | 0–23   | Automatik: Beginn Abend (Stunde)            |
@@ -827,11 +824,10 @@ Startzeit Nacht
 Endzeit Nacht
 
 Eigene Szenen (Name + Helligkeiten)
-WLAN-Zugangsdaten (SSID + Passwort)
 ```
 
-Die eigenen Szenen und die WLAN-Daten werden in getrennten
-Speicherbereichen abgelegt. Nach einem Neustart können alle Werte
+Die WLAN-Zugangsdaten stehen dagegen **fest im Code** (`config.h`) und werden
+nicht im NVS gespeichert. Nach einem Neustart können alle übrigen Werte
 wieder geladen werden.
 
 **Entprelltes Speichern:** Beim Ziehen eines Reglers ändern sich die
@@ -1079,9 +1075,11 @@ Controller läuft weiter
 Das Netzwerk dient somit hauptsächlich zur Bedienung und Überwachung.
 
 **Setup-Accesspoint:** Kann sich der Controller nicht mit dem
-gespeicherten WLAN verbinden, spannt er selbst ein eigenes WLAN
-(Accesspoint) auf. Darüber lässt sich die Bedienoberfläche öffnen und
-ein neues WLAN eintragen, ohne die Firmware neu aufspielen zu müssen.
+im Code hinterlegten WLAN verbinden, spannt er selbst ein eigenes WLAN
+(Accesspoint) auf. Darüber bleibt die Bedienoberfläche zur lokalen
+Steuerung erreichbar, auch wenn das eigentliche WLAN gerade nicht
+verfügbar ist. Die WLAN-Zugangsdaten selbst ändert man im Code
+(`config.h`) und spielt die Firmware neu auf.
 
 ```text
 WLAN-Verbindung fehlgeschlagen
@@ -1090,10 +1088,7 @@ WLAN-Verbindung fehlgeschlagen
 Setup-Accesspoint "Fassade-Setup" wird geöffnet
        │
        ▼
-Handy/Notebook verbinden → Oberfläche öffnen
-       │
-       ▼
-neues WLAN eintragen → Controller startet neu
+Handy/Notebook verbinden → Oberfläche öffnen (lokale Steuerung)
 ```
 
 Im normalen WLAN ist der Controller zusätzlich unter dem Namen
@@ -1230,7 +1225,7 @@ Bereits umgesetzt (siehe oben):
 * feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)
 * Zeitserver (NTP) inkl. automatischer Sommer-/Winterzeit
 * installierbare Bedien-App (PWA)
-* WLAN per App konfigurierbar, Setup-Accesspoint als Fallback
+* WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback für lokalen Zugriff
 * Erreichbarkeit über Namen (`led-fassade.local`, mDNS)
 * Software-Strombegrenzung, entprelltes Speichern
 

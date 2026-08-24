@@ -1,16 +1,18 @@
 // ============================================================================
-//  Erzeugt eine eigenstaendige Demo-Seite (demo.html) aus src/web_page.h.
+//  Erzeugt eine eigenstaendige Demo-Seite (src/web_page_demo.html) aus
+//  src/web_page.h.
 //
 //  Die Demo laeuft OHNE ESP32 und OHNE Server: ein eingebauter Simulator
-//  ersetzt die WebSocket-Verbindung. Einfach demo.html im Browser oeffnen.
+//  ersetzt die WebSocket-Verbindung. Einfach src/web_page_demo.html im
+//  Browser oeffnen.
 //
-//  Start:  node tools/build-demo.js   ->  erzeugt demo.html im Projektordner
+//  Start:  node tools/build-demo.js   ->  erzeugt src/web_page_demo.html
 // ============================================================================
 const fs = require('fs');
 const path = require('path');
 
 const WEB_PAGE_H = path.join(__dirname, '..', 'src', 'web_page.h');
-const OUT = path.join(__dirname, '..', 'demo.html');
+const OUT = path.join(__dirname, '..', 'src', 'web_page_demo.html');
 
 const src = fs.readFileSync(WEB_PAGE_H, 'utf8');
 const m = /const char index_html\[\] PROGMEM = R"rawliteral\(([\s\S]*?)\)rawliteral";/.exec(src);
@@ -52,7 +54,6 @@ const simulator = `
     s.date=two(d.getDate())+'.'+two(d.getMonth()+1)+'.'+d.getFullYear();return JSON.stringify(s);}
   function overrideAuto(){if(state.mode===3){state.mode=1;overrideActive=true;overrideWindow=win();}}
   function handle(msg){let doc;try{doc=JSON.parse(msg);}catch(e){return;}
-    if(typeof doc.wifiSsid==='string'){if(doc.wifiSsid)state.ssid=doc.wifiSsid;return;}
     if(typeof doc.mode==='number'&&doc.mode>=0&&doc.mode<=12){state.mode=doc.mode;
       if(doc.mode===3){overrideActive=false;}else{overrideActive=true;overrideWindow=win();}}
     if(doc.left!==undefined){state.left=clamp(doc.left,0,100);overrideAuto();}
@@ -88,6 +89,15 @@ const simulator = `
 
 html = html.replace('<body>', '<body>\n' + simulator);
 
+// Generierte Datei kennzeichnen: web_page_demo.html ist die zweite Variante der App und
+// wird IMMER aus src/web_page.h erzeugt. Nicht von Hand editieren, sonst laeuft
+// sie aus dem Takt mit der echten Firmware (so entstand der urspruengliche
+// Fehler). Nach Aenderungen an web_page.h einfach dieses Skript erneut starten.
+const banner = '<!-- AUTOMATISCH ERZEUGT aus src/web_page.h durch tools/build-demo.js.'
+             + ' Nicht von Hand editieren - Aenderungen in web_page.h vornehmen und'
+             + ' "node tools/build-demo.js" erneut ausfuehren. -->\n';
+html = banner + html.replace(/^\s+/, '');
+
 fs.writeFileSync(OUT, html);
-console.log('demo.html erzeugt:', OUT);
+console.log('web_page_demo.html erzeugt:', OUT);
 console.log('Einfach im Browser oeffnen - laeuft ohne ESP32 und ohne Server.');
