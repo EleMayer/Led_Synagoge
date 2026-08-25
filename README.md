@@ -46,7 +46,7 @@ modi.md               Erklärung aller Betriebsmodi
 dokumentation.md      Technische Dokumentation
 schaltung.md          Schaltung, Pinbelegung und Stückliste (BOM)
 testprotokoll.md      Nachweis der Pflichtenheft-Anforderungen
-wartungsplan.md       Wartungsintervalle, Störungstabelle, Wartungsnachweis
+notfallplan.md        Notfälle, Sofortmaßnahmen, Störungstabelle, Kontakte
 ```
 
 ## Zweite Variante: eigenstaendige Demo (ohne ESP32)
