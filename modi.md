@@ -55,8 +55,8 @@ fährt sanft herunter (kein harter Sprung).
 
 ### 1 – Statisch
 Konstantes, ruhiges Weiß. Segment Links, Segment Rechts und das Logo sind
-**einzeln** über die Regler (0–100 %) einstellbar; die Werte lassen sich als
-Szene speichern. Helligkeitswechsel erfolgen weich.
+**einzeln** über die Regler (0–100 %) einstellbar. Helligkeitswechsel erfolgen
+weich.
 
 ### 3 – Automatik (Standardmodus)
 Tageszeitabhängige Helligkeit nach fester Kurve:
@@ -70,8 +70,9 @@ Tageszeitabhängige Helligkeit nach fester Kurve:
 
 Uhrzeiten (`AUTO_T_*`) und Helligkeiten (`AUTO_B_*`) sind **fest in `config.h`**
 hinterlegt. Nach einem Stromausfall startet der Controller immer in diesem Modus
-(siehe Failsafe). In der App wird das Profil nur als schreibgeschützte
-Phasen-Übersicht angezeigt.
+(siehe Failsafe). In der App wird das Profil als schreibgeschützte
+Phasen-Übersicht angezeigt – sie erscheint **nur, wenn der Automatik-Modus aktiv
+ist**.
 
 ---
 

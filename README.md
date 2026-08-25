@@ -18,7 +18,6 @@ espressif32@7.0.1 → Arduino-Core 2.0.17, alte LEDC-API)
   Kontrast, langsame Bewegung, angehobene Grundhelligkeit)
 
 Ausführliche Erklärung aller Modi: siehe [modi.md](modi.md).
-- Eigene Szenen (Presets), im NVS gespeichert
 - Automatik-Profil (Uhrzeiten **und** Helligkeiten) fest in `config.h`, nur dort
   änderbar; die App zeigt es schreibgeschützt als Phasen-Übersicht
 - App-Oberfläche mit **Hell-/Dunkel-Umschalter** und **Deutsch/Englisch**
@@ -112,16 +111,16 @@ Das System läuft nach einem Stromausfall ohne Eingriff vor Ort wieder an:
    (`SAFE_DEFAULT_BRIGHTNESS`) und korrigiert sich, sobald NTP synchronisiert.
 4. Bei Internetverbindung wird die RTC periodisch per NTP nachgeführt
    (Sommer-/Winterzeit berücksichtigt).
-5. Die Benutzerkonfiguration (manuelle Helligkeiten, Szenen) liegt im NVS und
-   übersteht den Stromausfall. Das Automatik-Profil (Uhrzeiten und
-   Helligkeiten) steht dagegen fest in `config.h`.
+5. Die manuellen Helligkeiten liegen im NVS und überstehen den Stromausfall.
+   Das Automatik-Profil (Uhrzeiten und Helligkeiten) steht dagegen fest in
+   `config.h`.
 
 ## Bedienung (Kurzüberblick)
 
-- **Modus** wählen, **Helligkeit** je Bereich (Links, Rechts, Logo) im Modus
-  *Statisch* regeln und eigene **Szenen** speichern. Das **Automatik-Profil**
-  (Uhrzeiten und Helligkeiten) ist fest in `config.h` hinterlegt und in der App
-  nur als schreibgeschützte Übersicht sichtbar.
+- **Modus** wählen und **Helligkeit** je Bereich (Links, Rechts, Logo) im Modus
+  *Statisch* regeln. Das **Automatik-Profil** (Uhrzeiten und Helligkeiten) ist
+  fest in `config.h` hinterlegt und in der App nur als schreibgeschützte
+  Übersicht sichtbar.
 - Ein manueller Eingriff übersteuert die Automatik. Das System kehrt beim
   nächsten Zeitfenster-Übergang (z. B. Tag → Abend) selbsttätig in die Automatik
   zurück.

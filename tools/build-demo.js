@@ -42,8 +42,7 @@ const simulator = `
         ip: 'Demo', rssi: -55, wifi: true, ap: false,
         ssid: 'Demo (ohne ESP32)', firmware: 'Demo',
         sched: { tMorning: 6, tDay: 8, tEvening: 18, tNight: 23,
-                 bMorning: 90, bDay: 90, bEveStart: 60, bEveEnd: 25 },
-        presets: []
+                 bMorning: 90, bDay: 90, bEveStart: 60, bEveEnd: 25 }
     };
 
     let overrideActive = false;
@@ -132,16 +131,6 @@ const simulator = `
         }
     }
 
-    // Sucht eine Szene anhand des Namens; null, wenn keine gefunden.
-    function findPresetByName(name)
-    {
-        for(let i = 0; i < state.presets.length; i++)
-        {
-            if(state.presets[i].name === name) return state.presets[i];
-        }
-        return null;
-    }
-
     // Verarbeitet einen Befehl der App (wie onWebSocketEvent in der Firmware).
     function handle(msg)
     {
@@ -168,53 +157,6 @@ const simulator = `
         if(doc.global !== undefined) state.global = clamp(doc.global, 0, 100);
 
         // Automatik-Zeitprofil ist fest im Code (config.h) - wird nicht angenommen.
-
-        if(typeof doc.savePreset === 'string' && doc.savePreset)
-        {
-            let p = findPresetByName(doc.savePreset);
-            if(!p && state.presets.length < 6)
-            {
-                p = { slot: state.presets.length, name: doc.savePreset };
-                state.presets.push(p);
-            }
-            if(p)
-            {
-                p.left = state.left;
-                p.right = state.right;
-                p.logo = state.logo;
-            }
-        }
-
-        if(typeof doc.applyPreset === 'number')
-        {
-            for(let i = 0; i < state.presets.length; i++)
-            {
-                if(state.presets[i].slot === doc.applyPreset)
-                {
-                    let found = state.presets[i];
-                    state.left = found.left;
-                    state.right = found.right;
-                    state.logo = found.logo;
-                    state.mode = 1;
-                    overrideActive = true;
-                    overrideWindow = currentWindow();
-                }
-            }
-        }
-
-        if(typeof doc.deletePreset === 'number')
-        {
-            let kept = [];
-            for(let i = 0; i < state.presets.length; i++)
-            {
-                if(state.presets[i].slot !== doc.deletePreset) kept.push(state.presets[i]);
-            }
-            state.presets = kept;
-            for(let i = 0; i < state.presets.length; i++)
-            {
-                state.presets[i].slot = i;
-            }
-        }
     }
 
     // Ersatz fuer WebSocket: verbindet sofort und schickt jede Sekunde den Status.

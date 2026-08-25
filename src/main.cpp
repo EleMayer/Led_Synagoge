@@ -84,20 +84,10 @@ bool prevFrameEffect = false;
 CRGB ledsLinks[NUM_LEDS_LINKS];
 CRGB ledsRechts[NUM_LEDS_RECHTS];
 
-#define MAX_PRESETS 6
-#define PRESET_NAME_LEN 16
 #define MAX_WS_MESSAGE_LEN 512
-struct Preset {
-    bool used;
-    char name[PRESET_NAME_LEN];
-    int  left;
-    int  right;
-    int  logo;
-};
-Preset presets[MAX_PRESETS];
 
 RTC_DS3231 rtc;           // Echtzeituhr (netzunabhaengige Zeitbasis)
-Preferences preferences;  // NVS-Speicher fuer Einstellungen und Szenen
+Preferences preferences;  // NVS-Speicher fuer die Einstellungen
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws"); // Live-Steuerung und Statuspush an die App
 
@@ -147,7 +137,7 @@ CRGB whiteWithBrightness(int brightness) {
 }
 
 // --- Persistenz im NVS-Flash -----------------------------------------------
-// Einstellungen und Szenen ueberstehen einen Stromausfall (Pflichtenheft F5).
+// Die Einstellungen ueberstehen einen Stromausfall (Pflichtenheft F5).
 
 // Schreibt Helligkeiten und Zeitprofil in den NVS.
 void saveSettings() {
@@ -183,96 +173,6 @@ void loadSettings() {
     brightnessRight        = clampBrightness(brightnessRight);
     brightnessLogo         = clampBrightness(brightnessLogo);
     globalBrightness       = clampBrightness(globalBrightness);
-}
-
-// Speichert alle Szenen (Presets) als Block im NVS.
-void savePresets() {
-    preferences.begin("presets", false);
-    preferences.putBytes("data", presets, sizeof(presets));
-    preferences.end();
-}
-
-// Laedt die Szenen. Passt die gespeicherte Groesse nicht, werden sie neu
-// initialisiert (z. B. bei erster Inbetriebnahme oder geaenderter Struktur).
-void loadPresets() {
-    preferences.begin("presets", true);
-    size_t stored = preferences.getBytesLength("data");
-
-    if (stored == sizeof(presets)) {
-        preferences.getBytes("data", presets, sizeof(presets));
-    } else {
-
-        for (int i = 0; i < MAX_PRESETS; i++) {
-            presets[i].used = false;
-            presets[i].name[0] = '\0';
-            presets[i].left = 80;
-            presets[i].right = 80;
-            presets[i].logo = 80;
-        }
-    }
-    preferences.end();
-
-    for (int i = 0; i < MAX_PRESETS; i++) {
-        presets[i].left  = clampBrightness(presets[i].left);
-        presets[i].right = clampBrightness(presets[i].right);
-        presets[i].logo  = clampBrightness(presets[i].logo);
-        presets[i].name[PRESET_NAME_LEN - 1] = '\0';
-    }
-}
-
-// Sucht eine belegte Szene anhand ihres Namens; -1 wenn nicht vorhanden.
-int findPresetByName(const char *name) {
-    for (int i = 0; i < MAX_PRESETS; i++) {
-        if (!presets[i].used) {
-            continue;
-        }
-        if (strncmp(presets[i].name, name, PRESET_NAME_LEN - 1) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-// Speichert die aktuellen Helligkeiten unter dem Namen. Existiert der Name,
-// wird er ueberschrieben, sonst der naechste freie Platz belegt (-1 wenn voll).
-int storeCurrentAsPreset(const char *name) {
-    if (!name || name[0] == '\0' || strnlen(name, PRESET_NAME_LEN) >= PRESET_NAME_LEN) {
-        return -1;
-    }
-
-    int slot = findPresetByName(name);
-
-    if (slot < 0) {
-        for (int i = 0; i < MAX_PRESETS; i++) {
-            if (!presets[i].used) {
-                slot = i;
-                break;
-            }
-        }
-    }
-
-    if (slot < 0) {
-        return -1;
-    }
-
-    presets[slot].used = true;
-    strncpy(presets[slot].name, name, PRESET_NAME_LEN - 1);
-    presets[slot].name[PRESET_NAME_LEN - 1] = '\0';
-    presets[slot].left  = brightnessLeft;
-    presets[slot].right = brightnessRight;
-    presets[slot].logo  = brightnessLogo;
-    savePresets();
-    return slot;
-}
-
-// Loescht die Szene im angegebenen Platz und schreibt die Liste zurueck.
-void deletePreset(int slot) {
-    if (slot < 0 || slot >= MAX_PRESETS) {
-        return;
-    }
-    presets[slot].used = false;
-    presets[slot].name[0] = '\0';
-    savePresets();
 }
 
 // --- Zeitbasis (RTC / NTP) -------------------------------------------------
@@ -806,7 +706,7 @@ void updateOverrideReturn() {
 // --- App-Schnittstelle (WebSocket + REST) ----------------------------------
 
 // Baut den kompletten Systemzustand als JSON: Modus, Helligkeiten, Zeit/Datum,
-// RTC-/NTP-/WLAN-Status, Zeitprofil und Szenen. Dient App-Status und -Push.
+// RTC-/NTP-/WLAN-Status und Zeitprofil. Dient App-Status und -Push.
 String createStatusJson() {
     JsonDocument doc;
     doc["mode"]  = (int)currentMode;
@@ -842,19 +742,6 @@ String createStatusJson() {
     sched["bEveStart"] = eveningStartBrightness;
     sched["bEveEnd"]   = eveningEndBrightness;
 
-    JsonArray array = doc["presets"].to<JsonArray>();
-    for (int i = 0; i < MAX_PRESETS; i++) {
-        if (!presets[i].used) {
-            continue;
-        }
-        JsonObject p = array.add<JsonObject>();
-        p["slot"]  = i;
-        p["name"]  = presets[i].name;
-        p["left"]  = presets[i].left;
-        p["right"] = presets[i].right;
-        p["logo"]  = presets[i].logo;
-    }
-
     String out;
     serializeJson(doc, out);
     return out;
@@ -866,7 +753,7 @@ void broadcastStatus() {
 }
 
 // Verarbeitet eingehende WebSocket-Nachrichten der App. Jedes bekannte JSON-Feld
-// setzt einen Zustand (Modus, Helligkeit, Zeitprofil, Szenen). Danach wird die
+// setzt einen Zustand (Modus, Helligkeit). Danach wird die
 // Aenderung angewandt, zum Speichern vorgemerkt und an alle Clients gepusht.
 void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
                       AwsEventType type, void *arg, uint8_t *data, size_t len) {
@@ -931,32 +818,6 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
     // Das komplette Automatik-Zeitprofil (Uhrzeiten tMorning/tDay/tEvening/
     // tNight und Helligkeiten bMorning/bDay/bEveStart/bEveEnd) ist fest im Code
     // (config.h) und wird bewusst NICHT ueber die App entgegengenommen.
-
-    if (doc["savePreset"].is<const char *>()) {
-        const char *name = doc["savePreset"].as<const char *>();
-        if (name && strlen(name) > 0) {
-            storeCurrentAsPreset(name);
-            changed = true;
-        }
-    }
-
-    if (doc["applyPreset"].is<int>()) {
-        int slot = doc["applyPreset"].as<int>();
-        if (slot >= 0 && slot < MAX_PRESETS && presets[slot].used) {
-            brightnessLeft  = presets[slot].left;
-            brightnessRight = presets[slot].right;
-            brightnessLogo  = presets[slot].logo;
-            currentMode = MODE_STATIC;
-            overrideActive = true;
-            overrideWindow = currentAutoWindow();
-            changed = true;
-        }
-    }
-
-    if (doc["deletePreset"].is<int>()) {
-        deletePreset(doc["deletePreset"].as<int>());
-        changed = true;
-    }
 
     if (changed) {
         markSettingsDirty();
@@ -1251,7 +1112,6 @@ void setup() {
     Serial.printf("\n=== Fassadenbeleuchtung ESP32 - Firmware %s ===\n", FIRMWARE_VERSION);
 
     loadSettings();
-    loadPresets();
 
     setupRTC();
     setupLEDs();

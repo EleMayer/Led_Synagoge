@@ -105,16 +105,16 @@ body{
   min-width:34px;transition:.12s}
 .hbtn:hover{border-color:var(--accent);color:var(--accent)}
 
-main{max-width:600px;margin:0 auto;padding:20px;display:grid;gap:18px}
+main{max-width:600px;margin:0 auto;padding:16px;display:grid;gap:12px}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:20px;box-shadow:var(--shadow)}
-.card h2{margin:0 0 16px;font-size:11px;color:var(--muted);
+  padding:15px 16px;box-shadow:var(--shadow)}
+.card h2{margin:0 0 11px;font-size:11px;color:var(--muted);
   text-transform:uppercase;letter-spacing:.1em;font-weight:700}
 
-.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .modes button{
-  padding:14px;border:1px solid var(--line-strong);border-radius:9px;
+  padding:11px;border:1px solid var(--line-strong);border-radius:9px;
   background:var(--btn-bg);color:var(--fg);font-size:15px;cursor:pointer;
   transition:.12s;font-weight:500}
 .modes button:hover{border-color:var(--accent);color:var(--accent)}
@@ -123,10 +123,10 @@ main{max-width:600px;margin:0 auto;padding:20px;display:grid;gap:18px}
   font-weight:600}
 .modes button:active{transform:scale(.99)}
 
-.slider{margin:16px 0}
+.slider{margin:12px 0}
 .slider:first-of-type{margin-top:4px}
 .slider label{display:flex;justify-content:space-between;color:var(--muted);
-  font-size:14px;margin-bottom:10px}
+  font-size:14px;margin-bottom:8px}
 .slider .val{color:var(--fg);font-variant-numeric:tabular-nums;font-weight:600}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;
   background:transparent;cursor:pointer}
@@ -149,32 +149,23 @@ input[type=text]{width:100%;padding:11px 12px;border-radius:9px;
 input[type=text]:focus{outline:none;border-color:var(--accent);
   box-shadow:0 0 0 3px var(--accent-weak)}
 
-.phases{margin-top:4px}
+.phases{margin-top:2px}
 .phase{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:baseline;
-  padding:11px 0;border-bottom:1px solid var(--line)}
+  padding:9px 0;border-bottom:1px solid var(--line)}
 .phase:last-child{border-bottom:none}
 .phase .ph-name{color:var(--fg)}
 .phase .ph-time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
 .phase .ph-val{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums;
   text-align:right;min-width:84px}
 
-.preset{display:flex;gap:8px;margin-top:10px}
-.preset .apply{flex:1;padding:12px;border:1px solid var(--line-strong);border-radius:9px;
-  background:var(--btn-bg);color:var(--fg);cursor:pointer;text-align:left;transition:.12s}
-.preset .apply:hover{border-color:var(--accent)}
-.preset .delete{width:64px;border:1px solid var(--line-strong);border-radius:9px;
-  background:var(--btn-bg);color:var(--bad);cursor:pointer;transition:.12s}
-.preset .delete:hover{border-color:var(--bad)}
-
 .sys{display:grid;gap:0}
-.kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);gap:12px}
+.kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);gap:12px}
 .kv:last-child{border-bottom:none}
 .kv span{color:var(--muted)}
 .kv b{font-weight:600;font-variant-numeric:tabular-nums;text-align:right;word-break:break-all}
 .kv b.ok{color:var(--ok)}
 .kv b.warn{color:var(--warn)}
 
-hr{border:0;border-top:1px solid var(--line);margin:18px 0}
 .hint{color:var(--muted);font-size:13px;margin:12px 0 0}
 .hint b{color:var(--fg);font-weight:600}
 footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
@@ -217,16 +208,16 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
     <button class="mode" data-mode="4" onclick="sendMode(4)">Pulsieren</button>
     <button class="mode" data-mode="5" onclick="sendMode(5)">Atmen</button>
     <button class="mode" data-mode="10" onclick="sendMode(10)">Welle</button>
+    <button class="mode" data-mode="13" onclick="sendMode(13)">Sternenfunkeln</button>
+    <button class="mode" data-mode="14" onclick="sendMode(14)">Treffpunkt</button>
+    <button class="mode" data-mode="15" onclick="sendMode(15)">Herzschlag</button>
+    <button class="mode" data-mode="16" onclick="sendMode(16)">Wechsellicht</button>
     <button class="mode" data-mode="6" onclick="sendMode(6)">Dauerlicht</button>
     <button class="mode" data-mode="7" onclick="sendMode(7)">Kerzenlicht</button>
     <button class="mode" data-mode="8" onclick="sendMode(8)">Stufenlicht</button>
     <button class="mode" data-mode="9" onclick="sendMode(9)">Dämmerlicht</button>
     <button class="mode" data-mode="11" onclick="sendMode(11)">Feuerschein</button>
     <button class="mode" data-mode="12" onclick="sendMode(12)">Nachtlicht</button>
-    <button class="mode" data-mode="13" onclick="sendMode(13)">Sternenfunkeln</button>
-    <button class="mode" data-mode="14" onclick="sendMode(14)">Treffpunkt</button>
-    <button class="mode" data-mode="15" onclick="sendMode(15)">Herzschlag</button>
-    <button class="mode" data-mode="16" onclick="sendMode(16)">Wechsellicht</button>
   </div>
 </section>
 
@@ -244,25 +235,13 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
     <label><span data-i18n="seg.logo">Logo</span> <span class="val"><span id="logoValue">80</span>%</span></label>
     <input id="logoSlider" type="range" min="0" max="100" value="80">
   </div>
-</section>
-
-<section class="card">
-  <h2 data-i18n="effectBrightness">Effekt-Helligkeit</h2>
   <div class="slider">
-    <label><span data-i18n="brightness">Helligkeit</span> <span class="val"><span id="globalValue">80</span>%</span></label>
+    <label><span data-i18n="effectBrightness">Effekt-Helligkeit</span> <span class="val"><span id="globalValue">80</span>%</span></label>
     <input id="globalSlider" type="range" min="0" max="100" value="80">
   </div>
 </section>
 
-<section class="card">
-  <h2 data-i18n="scenes">Eigene Szenen</h2>
-  <input id="presetName" type="text" maxlength="15" data-i18n-ph="scene.name" placeholder="Name der Szene">
-  <button class="primary" onclick="savePreset()" style="margin-top:12px" data-i18n="scene.save">Aktuelle Einstellung speichern</button>
-  <hr>
-  <div id="presetList"></div>
-</section>
-
-<section class="card">
+<section class="card" id="autoCard" style="display:none">
   <h2 data-i18n="auto">Automatik</h2>
   <div id="autoPhases" class="phases"></div>
   <p class="hint" id="autoStatus"></p>
@@ -304,10 +283,6 @@ const T = {
     "install.hintDefault":"Diese Seite als App auf dem Startbildschirm ablegen – sie öffnet dann randlos wie eine gewohnte App.",
     "install.hintIOS":"Zum Installieren in Safari auf <b>Teilen</b> tippen und <b>„Zum Home-Bildschirm“</b> wählen.",
     "modus":"Modus","brightness":"Helligkeit","effectBrightness":"Effekt-Helligkeit",
-    "scenes":"Eigene Szenen","scene.name":"Name der Szene",
-    "scene.save":"Aktuelle Einstellung speichern","scene.empty":"Noch keine Szenen gespeichert.",
-    "scene.delete":"Entf.","scene.confirmDelete":"Szene wirklich löschen?",
-    "scene.enterName":"Bitte einen Namen eingeben.",
     "auto":"Automatik","autoNow":"Aktuelle Automatik-Helligkeit:","system":"System",
     "footer":"lokale Steuerung",
     "seg.left":"Segment Links","seg.right":"Segment Rechts","seg.logo":"Logo",
@@ -325,10 +300,6 @@ const T = {
     "install.hintDefault":"Add this page to your home screen – it then opens full-screen like a normal app.",
     "install.hintIOS":"To install, tap <b>Share</b> in Safari and choose <b>“Add to Home Screen”</b>.",
     "modus":"Mode","brightness":"Brightness","effectBrightness":"Effect brightness",
-    "scenes":"My scenes","scene.name":"Scene name",
-    "scene.save":"Save current setting","scene.empty":"No scenes saved yet.",
-    "scene.delete":"Del.","scene.confirmDelete":"Really delete scene?",
-    "scene.enterName":"Please enter a name.",
     "auto":"Automatic","autoNow":"Current automatic brightness:","system":"System",
     "footer":"local control",
     "seg.left":"Segment left","seg.right":"Segment right","seg.logo":"Logo",
@@ -388,10 +359,6 @@ function applyLanguage()
     if(lastData)
     {
         updateUI(lastData);
-    }
-    else
-    {
-        renderPresets([]);
     }
 }
 
@@ -549,12 +516,14 @@ function updateUI(data)
     updateSlider("global", data.global);
 
     // Im Automatik-Modus (3) steuert die Uhrzeit die Helligkeit - die Regler
-    // sind dann gesperrt.
-    setSlidersDisabled(data.mode === 3);
+    // sind dann gesperrt. Die Automatik-Uebersicht wird nur in diesem Modus
+    // eingeblendet.
+    const autoActive = (data.mode === 3);
+    setSlidersDisabled(autoActive);
+    document.getElementById("autoCard").style.display = autoActive ? "" : "none";
 
     let sys = "";
     sys += kv(t("sys.firmware"), data.firmware || "-");
-    sys += kv(t("sys.time"),     data.time || "--:--:--");
     sys += kv(t("sys.date"),     data.date || "--.--.----");
 
     if(data.rtc)
@@ -612,11 +581,6 @@ function updateUI(data)
     }
     document.getElementById("autoStatus").innerHTML =
         t("autoNow") + " <b>" + autoValue + " %</b>";
-
-    if(data.presets)
-    {
-        renderPresets(data.presets);
-    }
 }
 
 function kv(label, value, cls)
@@ -665,60 +629,6 @@ function updateSlider(type, value)
     }
 }
 
-function renderPresets(list)
-{
-    const box = document.getElementById("presetList");
-
-    if(!list || list.length === 0)
-    {
-        box.innerHTML =
-            "<p class='hint' style='margin:0'>" + t("scene.empty") + "</p>";
-        return;
-    }
-
-    let html = "";
-
-    for(let i = 0; i < list.length; i++)
-    {
-        const p = list[i];
-        html +=
-            "<div class='preset'>" +
-                "<button class='apply' onclick='applyPreset(" + p.slot + ")'>" +
-                    escapeHtml(p.name) + " &middot; " +
-                    p.left + " / " + p.right + " / " + p.logo +
-                "</button>" +
-                "<button class='delete' onclick='deletePreset(" + p.slot + ")'>" + t("scene.delete") + "</button>" +
-            "</div>";
-    }
-
-    box.innerHTML = html;
-}
-
-function escapeHtml(value)
-{
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function savePreset()
-{
-    const field = document.getElementById("presetName");
-    const name = field.value.trim();
-
-    if(name.length === 0)
-    {
-        alert(t("scene.enterName"));
-        return;
-    }
-
-    send({ savePreset: name });
-    field.value = "";
-}
-
 // Komplettes Automatik-Profil (Uhrzeiten + Helligkeiten). Steht fest in
 // config.h und kommt nur ueber den Status - in der App reine Anzeige.
 let schedule = {
@@ -755,21 +665,6 @@ function renderAutoPhases()
     }
 
     document.getElementById("autoPhases").innerHTML = html;
-}
-
-function applyPreset(slot)
-{
-    send({ applyPreset: slot });
-}
-
-function deletePreset(slot)
-{
-    if(!confirm(t("scene.confirmDelete")))
-    {
-        return;
-    }
-
-    send({ deletePreset: slot });
 }
 
 const sliderTypes = ["left", "right", "logo", "global"];
@@ -924,15 +819,12 @@ const char icon_svg[] PROGMEM = R"rawliteral(
 <svg xmlns="http://www.w3.org/2000/svg"
      viewBox="0 0 512 512">
 
-<rect width="512" height="512" rx="96" fill="#12171d"/>
+<!-- Museum Arbeitswelt - Bildmarke (Zickzack mit hohem Balken rechts) -->
+<rect width="512" height="512" rx="96" fill="#ffffff"/>
 
-<circle cx="256" cy="212" r="118" fill="#6f8494"/>
-
-<rect x="204" y="316" width="104" height="66" rx="18" fill="#6f8494"/>
-<rect x="220" y="384" width="72"  height="34" rx="14" fill="#6f8494"/>
-
-<rect x="236" y="150" width="40"  height="120" rx="20" fill="#12171d"/>
-<rect x="196" y="192" width="120" height="40"  rx="20" fill="#12171d"/>
+<polyline points="56,336 128,206 192,336 264,206 328,336 398,206 452,336 452,162"
+          fill="none" stroke="#111111" stroke-width="40"
+          stroke-linejoin="miter" stroke-miterlimit="10" stroke-linecap="butt"/>
 
 </svg>
 )rawliteral";

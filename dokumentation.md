@@ -14,8 +14,8 @@ feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuers
 **Netzwerk:** WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback,
 Zugriff auch über `http://led-fassade.local` (mDNS)  
 **Sicherheit:** Software-Helligkeits- und Strombegrenzung, entprelltes Speichern  
-**Konfiguration:** Persistenter Speicher (NVS) inkl. eigener Szenen;
-WLAN-Zugangsdaten dagegen fest im Code (`config.h`)
+**Konfiguration:** Persistenter Speicher (NVS) für die manuellen Helligkeiten;
+WLAN-Zugangsdaten und Automatik-Profil fest im Code (`config.h`)
 
 **Firmware-Version:** 2.4.3
 
@@ -41,7 +41,7 @@ Die wesentlichen Funktionen sind:
 - Verschiedene Beleuchtungseffekte (Lauflicht, Pulsieren, Atmen)
 - Feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)
 - Echtzeituhr zur Zeitsteuerung mit NTP-Abgleich
-- Speicherung von Einstellungen und eigenen Szenen
+- Speicherung der Einstellungen (NVS)
 - WLAN-Kommunikation, Zugangsdaten fest im Code (Setup-AP als Fallback für lokalen Zugriff)
 - Weboberfläche als installierbare App (PWA)
 - WebSocket-Kommunikation
@@ -347,38 +347,6 @@ Helligkeit: ~22 % … ~31 %   stetig, sehr langsam
 
 ---
 
-## 4.6 Eigene Szenen (Presets)
-
-Der Benutzer kann eigene Beleuchtungs-Szenen anlegen, benennen und
-dauerhaft speichern. Eine Szene enthält ausschließlich die
-Helligkeiten der drei Bereiche – die Lichtfarbe ist immer Weiß.
-
-```text
-Szene "Abend"   → Links 40 % · Rechts 40 % · Logo 60 %
-Szene "Voll"    → Links 100 % · Rechts 100 % · Logo 100 %
-```
-
-Eigenschaften:
-
-* bis zu 6 Szenen, im persistenten Speicher (NVS) abgelegt
-* über die Weboberfläche speichern, abrufen und löschen
-* das Abrufen einer Szene entspricht einem manuellen Eingriff
-  (statischer Modus) und übersteuert damit die Automatik
-
-Ablauf beim Speichern/Abrufen:
-
-```text
-Regler einstellen
-       │
-       ▼
-Szene benennen + speichern  ──►  NVS
-       │
-       ▼
-später: Szene antippen      ──►  Helligkeiten werden gesetzt
-```
-
----
-
 # 5. Zeitabhängige Steuerung
 
 Die Automatik benötigt die aktuelle Uhrzeit. Diese wird aus der
@@ -626,7 +594,7 @@ Der Controller liefert dazu selbst aus:
 /api/status     Status als JSON (REST)
 /api/schedule   Automatik-Zeitprofil lesen (REST)
 /update         Firmware-Update (OTA, POST)
-/ws             WebSocket (Live-Bedienung: Modus, Helligkeiten, Szenen)
+/ws             WebSocket (Live-Bedienung: Modus, Helligkeiten)
 ```
 
 Funktionen:
@@ -634,9 +602,9 @@ Funktionen:
 * Betriebsmodus auswählen (alle 17 Modi als Kacheln)
 * Helligkeit je Bereich einstellen (Links, Rechts, Logo)
 * Effekt-Helligkeit einstellen (für Lauflicht/Pulsieren/Atmen)
-* eigene Szenen speichern, abrufen und löschen
 * Automatik-Profil (Uhrzeiten und Helligkeiten) als schreibgeschützte
-  Phasen-Übersicht anzeigen – fest in `config.h`, in der App nicht editierbar
+  Phasen-Übersicht anzeigen – fest in `config.h`, in der App nicht editierbar;
+  die Übersicht erscheint nur im Automatik-Modus
 * zwischen hellem und dunklem Design sowie zwischen Deutsch und Englisch
   umschalten (Auswahl wird im Browser gespeichert)
 * aktuellen Modus anzeigen
@@ -649,7 +617,7 @@ einen Knopf in der Kopfzeile lässt sich auf **hell** umschalten, ein zweiter
 Knopf schaltet die **Sprache (Deutsch/Englisch)** um – beide Einstellungen
 werden im Browser gespeichert. Kopfzeile mit Verbindungspunkt, Uhr, aktuellem
 Modus und den beiden Umschaltern; darunter Karten für Modus-Auswahl,
-Helligkeiten, Szenen, Automatik-Übersicht und System.
+Helligkeiten, Automatik-Übersicht und System.
 
 Beispielhafte Oberfläche:
 
@@ -673,10 +641,7 @@ Beispielhafte Oberfläche:
  LOGO               [========--------] 55 %
  EFFEKT-HELLIGKEIT  [===========-----] 75 %
 
- EIGENE SZENEN
- [ Abend · 40 / 40 / 30 ] [Entf.]
-
- WLAN & SYSTEM
+ SYSTEM
   Firmware 2.4.3 · RTC OK · NTP synchron.
  WLAN verbunden · IP 192.168.x.x
 ```
@@ -731,9 +696,6 @@ die enthalten sind.
 | `right`        | 0–100  | Helligkeit Segment 2 (%)                    |
 | `logo`         | 0–100  | Helligkeit der einzelnen LED / Logo (%)     |
 | `global`       | 0–100  | Effekt-Helligkeit für Lauflicht/Pulsieren/Atmen (%) |
-| `savePreset`   | Text   | aktuelle Helligkeiten als Szene speichern   |
-| `applyPreset`  | Slot   | gespeicherte Szene abrufen                  |
-| `deletePreset` | Slot   | gespeicherte Szene löschen                  |
 
 Das komplette Automatik-Profil – **Uhrzeiten** (`tMorning`, `tDay`, `tEvening`,
 `tNight`) **und Helligkeiten** (`bMorning`, `bDay`, `bEveStart`, `bEveEnd`) – ist
@@ -770,10 +732,7 @@ Beispiel:
     "wifi": true,
     "ap": false,
     "ssid": "Museum-Arbeitswelt",
-    "firmware": "2.4.3",
-    "presets": [
-        { "slot": 0, "name": "Abend", "left": 40, "right": 40, "logo": 30 }
-    ]
+    "firmware": "2.4.3"
 }
 ```
 
@@ -785,7 +744,6 @@ Bedeutung der wichtigsten Felder:
 | `rtc` / `ntp`    | Zeitquelle verfügbar / synchronisiert               |
 | `wifi` / `ap`    | im WLAN verbunden / Setup-Accesspoint aktiv         |
 | `ssid`           | Name des aktuell genutzten WLANs                    |
-| `presets`        | Liste der gespeicherten Szenen                      |
 
 Damit kann die Weboberfläche den aktuellen Systemzustand anzeigen.
 
@@ -833,8 +791,6 @@ Abend-Helligkeit
 
 Startzeit Nacht
 Endzeit Nacht
-
-Eigene Szenen (Name + Helligkeiten)
 ```
 
 Die WLAN-Zugangsdaten stehen dagegen **fest im Code** (`config.h`) und werden
@@ -1035,7 +991,7 @@ Automatik jederzeit manuell wieder aktiviert werden.
 Automatik
     │ manueller Eingriff
     ▼
-Statisch / Szene
+Statisch
     │ nächster Zeitfenster-Wechsel
     ▼
 Automatik
@@ -1256,7 +1212,6 @@ Das System kann später erweitert werden.
 
 Bereits umgesetzt (siehe oben):
 
-* eigene Beleuchtungsszenen (Presets)
 * mehrere Effekte (Lauflicht, Pulsieren, Atmen)
 * feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)
 * Zeitserver (NTP) inkl. automatischer Sommer-/Winterzeit
@@ -1292,7 +1247,7 @@ include/
 
 src/
 │
-├── main.cpp             C++-Logik (Modi, Automatik, Szenen,
+├── main.cpp             C++-Logik (Modi, Automatik,
 │                        WLAN, Webserver, WebSocket, OTA)
 │
 ├── web_page.h           Bedien-App: HTML, CSS, JavaScript,
@@ -1320,7 +1275,7 @@ Steuerlogik (`main.cpp`) bearbeiten.
 **Testen ohne ESP32:** Der Mock-Server bildet die komplette API nach
 (WebSocket + `/api/status` + `/api/schedule`) und liefert die Seite direkt
 aus `web_page.h` aus. So ist die Bedienoberfläche mit allen Funktionen
-(Modi, Regler, Szenen, Zeitprofil) am PC bedienbar:
+(Modi, Regler, Automatik-Übersicht) am PC bedienbar:
 
 ```text
 node tools/mock-server.js      →  http://localhost:5598
@@ -1446,7 +1401,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 | F2 | Mehrere Betriebsmodi per App auswählbar | erfüllt | 17 Modi (Aus, Statisch, Automatik, 8 Effekte, 6 thematische Modi) |
 | F3 | Automatik tageszeitabhängig inkl. Nachtabschaltung ab 23:00 | erfüllt | `calculateAutomaticBrightness`, feste Nachtgrenze über `isNightOff` |
 | F4 | Helligkeit je Bereich manuell einstellbar | erfüllt | WebSocket-Befehle `left`/`right`/`logo` |
-| F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): manuelle Helligkeiten, Szenen (WLAN und das gesamte Automatik-Profil dagegen fest in `config.h`) |
+| F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): manuelle Helligkeiten (WLAN und das gesamte Automatik-Profil dagegen fest in `config.h`) |
 | F6 | Nach Stromausfall definierter Zustand selbsttätig | erfüllt | `setup()` startet immer im Automatik-Modus, Zustand nach Uhrzeit |
 | F7 | Netzunabhängige Zeitbasis (RTC), NTP-Abgleich wenn online | erfüllt | DS3231 sofort nach Boot; periodischer NTP-Abgleich inkl. Sommer-/Winterzeit |
 | F8 | OTA-Firmware-Update über das lokale Netz | erfüllt | `POST /update` (Browser-Upload), danach Neustart |
@@ -1460,7 +1415,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 | A2 | Automatik-Kurve korrekt; Abschaltung 23:00 zuverlässig | erfüllt | Morgen-Rampe, Tag, Abend-Rampe, Nacht = 0; Phasen-Übersicht in der App |
 | A3 | Manuelle Helligkeitsänderung ohne spürbare Verzögerung | erfüllt | WebSocket → sofort `applyHardware` (< 500 ms, NFR Kap. 5) |
 | A4 | Nach Stromausfall Zustand nach Uhrzeit selbsttätig | erfüllt | Definierter Power-On-State + RTC-Zeit unmittelbar nach Boot |
-| A5 | Konfiguration bleibt nach Stromausfall erhalten | erfüllt | NVS (`loadSettings`/`loadPresets`) |
+| A5 | Konfiguration bleibt nach Stromausfall erhalten | erfüllt | NVS (`loadSettings`) |
 | A6 | Helligkeits-/Strombegrenzung greift | erfüllt | `FastLED.setMaxPowerInVoltsAndMilliamps` + Software-Deckel `GLOBAL_MAX_BRIGHTNESS` |
 | A7 | Bedienung ausschließlich lokal | erfüllt | siehe F9 |
 | A8 | OTA-Update durchführbar | erfüllt | siehe F8 |
@@ -1489,7 +1444,7 @@ Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und da
 
 ## A.5 Zusätzlich umgesetzt (über das Pflichtenheft hinaus)
 
-Eigene Szenen (Presets), sechs feste Stimmungs-Modi (Dauerlicht, Kerzenlicht,
+Sechs feste Stimmungs-Modi (Dauerlicht, Kerzenlicht,
 Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht), Setup-Accesspoint für den
 lokalen Zugriff bei WLAN-Ausfall, Erreichbarkeit über `led-fassade.local`
 (mDNS), eine schreibgeschützte Phasen-Übersicht des Automatik-Profils sowie

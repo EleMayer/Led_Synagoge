@@ -4,8 +4,8 @@
 //  Er liefert die Bedienoberflaeche direkt aus ../src/web_page.h aus und bildet
 //  die komplette ESP32-API nach: WebSocket (/ws) mit denselben JSON-Befehlen wie
 //  die Firmware sowie die REST-Endpunkte /api/status und /api/schedule. Dadurch
-//  laesst sich die Seite ohne echten ESP32 voll bedienen (Modi, Regler, Szenen,
-//  Zeitprofil).
+//  laesst sich die Seite ohne echten ESP32 voll bedienen (Modi, Regler,
+//  Automatik-Uebersicht, Status).
 //
 //  Start:  node tools/mock-server.js     ->  http://localhost:5598
 // ============================================================================
@@ -68,8 +68,7 @@ const state = {
     ssid: 'Museum-Arbeitswelt',
     firmware: '2.3.0-mock',
     sched: { tMorning: 6, tDay: 8, tEvening: 18, tNight: 23,
-             bMorning: 90, bDay: 90, bEveStart: 60, bEveEnd: 25 },
-    presets: []                      // { slot, name, left, right, logo }
+             bMorning: 90, bDay: 90, bEveStart: 60, bEveEnd: 25 }
 };
 
 let overrideActive = false;
@@ -162,51 +161,6 @@ function handleCommand(msg, socket) {
 
     // Das komplette Automatik-Zeitprofil (Uhrzeiten + Helligkeiten) ist fest im
     // Code (config.h) und wird - wie in der Firmware - NICHT angenommen.
-
-    // Szene speichern
-    if (typeof doc.savePreset === 'string' && doc.savePreset.length > 0) {
-        let p = null;
-        for (let i = 0; i < state.presets.length; i++) {
-            if (state.presets[i].name === doc.savePreset) p = state.presets[i];
-        }
-        if (!p && state.presets.length < 6) {
-            p = { slot: state.presets.length, name: doc.savePreset };
-            state.presets.push(p);
-        }
-        if (p) {
-            p.left = state.left;
-            p.right = state.right;
-            p.logo = state.logo;
-        }
-    }
-
-    // Szene anwenden
-    if (typeof doc.applyPreset === 'number') {
-        for (let i = 0; i < state.presets.length; i++) {
-            if (state.presets[i].slot === doc.applyPreset) {
-                let p = state.presets[i];
-                state.left = p.left;
-                state.right = p.right;
-                state.logo = p.logo;
-                state.mode = 1;
-                overrideActive = true;
-                overrideWindow = currentWindow();
-            }
-        }
-    }
-
-    // Szene loeschen
-    if (typeof doc.deletePreset === 'number') {
-        let kept = [];
-        for (let i = 0; i < state.presets.length; i++) {
-            if (state.presets[i].slot !== doc.deletePreset) kept.push(state.presets[i]);
-        }
-        state.presets = kept;
-        // Slots neu durchnummerieren
-        for (let i = 0; i < state.presets.length; i++) {
-            state.presets[i].slot = i;
-        }
-    }
 
     broadcast();
 }
