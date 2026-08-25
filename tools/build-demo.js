@@ -154,7 +154,7 @@ const simulator = `
         if(doc.left !== undefined)  { state.left  = clamp(doc.left, 0, 100);  enterOverride(); }
         if(doc.right !== undefined) { state.right = clamp(doc.right, 0, 100); enterOverride(); }
         if(doc.logo !== undefined)  { state.logo  = clamp(doc.logo, 0, 100);  enterOverride(); }
-        if(doc.global !== undefined) state.global = clamp(doc.global, 0, 100);
+        // Effekt-Helligkeit (global) ist fest im Code (config.h) - nicht annehmen.
 
         // Automatik-Zeitprofil ist fest im Code (config.h) - wird nicht angenommen.
     }

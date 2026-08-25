@@ -7,8 +7,9 @@ Farbe.
 **Grundsätzliches**
 
 - **Grundmodi** (Aus, Statisch, Automatik): der normale Betrieb.
-- **Effekte**: animierte Modi, die die gemeinsame **Effekt-Helligkeit**
-  (Regler *Effekt-Helligkeit*) nutzen. Keine Nachtabschaltung.
+- **Effekte**: animierte Modi, die die gemeinsame **Effekt-Helligkeit** nutzen –
+  fest in `config.h` (`EFFECT_BRIGHTNESS`), nicht über die App einstellbar. Keine
+  Nachtabschaltung.
 - **Stimmungs-Modi**: feste Lichtstimmungen mit im Code hinterlegten Werten –
   nicht über die Regler verstellbar. Sie schalten sich **zwischen 23:00 und
   06:00 automatisch ab**.
@@ -78,8 +79,8 @@ ist**.
 
 ## Effekte
 
-Alle Effekte nutzen die gemeinsame **Effekt-Helligkeit** (Regler) und
-unterliegen **keiner** Nachtabschaltung.
+Alle Effekte nutzen die gemeinsame **Effekt-Helligkeit** (fest in `config.h`,
+`EFFECT_BRIGHTNESS`) und unterliegen **keiner** Nachtabschaltung.
 
 ### 2 – Lauflicht
 Ein weicher Lichtschweif gleitet langsam über beide Segmente. Statt eines harten
@@ -162,6 +163,7 @@ Parameter: `NACHT_*`.
   (`DAUER_*`, `KERZEN_*`, `STUFEN_*`, `DAEMMER_*`, `FEUER_*`, `NACHT_*`,
   `TWINKLE_*`, `HEART_*`, `WECHSEL_*`).
 - **Automatik-Profil:** `include/config.h` (`AUTO_T_*`, `AUTO_B_*`).
+- **Effekt-Helligkeit:** `include/config.h` (`EFFECT_BRIGHTNESS`).
 - **Pulsieren/Atmen:** die `applyWave(...)`-Aufrufe in `src/main.cpp`.
 
 Die Modus-Namen und -Nummern müssen zwischen `include/config.h`

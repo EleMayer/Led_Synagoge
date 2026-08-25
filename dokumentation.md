@@ -182,8 +182,9 @@ hat eine feste Nummer, die über `mode` im JSON übertragen wird.
 | 15  | Herzschlag    | Effekt       | ruhiger Doppelschlag der ganzen Fassade       |
 | 16  | Wechsellicht  | Effekt       | Links/Rechts schwellen langsam gegenläufig    |
 
-Die **Effekte** (2, 4, 5, 10, 13–16) verwenden eine gemeinsame Effekt-Helligkeit
-(`global`, per Regler einstellbar). Die **Stimmungs-Modi** (6–9, 11, 12) sind
+Die **Effekte** (2, 4, 5, 10, 13–16) verwenden eine gemeinsame Effekt-Helligkeit,
+die **fest in `config.h`** hinterlegt ist (`EFFECT_BRIGHTNESS`, nicht über die App
+einstellbar). Die **Stimmungs-Modi** (6–9, 11, 12) sind
 bewusst fest hinterlegt und nicht über die Regler verstellbar
 (Ausstellungsbetrieb); sie schalten sich zwischen 23:00 und 06:00
 automatisch ab.
@@ -234,9 +235,9 @@ Die einzelnen Werte können unabhängig voneinander eingestellt werden.
 
 ## 4.3 Effekte (Lauflicht, Pulsieren, Atmen)
 
-In den Effektmodi wird eine dynamische Lichtanimation ausgeführt. Alle drei
-Effekte verwenden dieselbe **Effekt-Helligkeit** (`global`), die getrennt von
-den Segment-Reglern eingestellt wird.
+In den Effektmodi wird eine dynamische Lichtanimation ausgeführt. Alle Effekte
+verwenden dieselbe **Effekt-Helligkeit**, die **fest in `config.h`**
+(`EFFECT_BRIGHTNESS`) hinterlegt und nicht über die App einstellbar ist.
 
 ```text
 MODE_EFFECT   (2)  Lauflicht
@@ -601,7 +602,6 @@ Funktionen:
 
 * Betriebsmodus auswählen (alle 17 Modi als Kacheln)
 * Helligkeit je Bereich einstellen (Links, Rechts, Logo)
-* Effekt-Helligkeit einstellen (für Lauflicht/Pulsieren/Atmen)
 * Automatik-Profil (Uhrzeiten und Helligkeiten) als schreibgeschützte
   Phasen-Übersicht anzeigen – fest in `config.h`, in der App nicht editierbar;
   die Übersicht erscheint nur im Automatik-Modus
@@ -639,7 +639,6 @@ Beispielhafte Oberfläche:
  SEGMENT LINKS      [=========-------] 70 %
  SEGMENT RECHTS     [======----------] 45 %
  LOGO               [========--------] 55 %
- EFFEKT-HELLIGKEIT  [===========-----] 75 %
 
  SYSTEM
   Firmware 2.4.3 · RTC OK · NTP synchron.
@@ -695,7 +694,6 @@ die enthalten sind.
 | `left`         | 0–100  | Helligkeit Segment 1 (%)                    |
 | `right`        | 0–100  | Helligkeit Segment 2 (%)                    |
 | `logo`         | 0–100  | Helligkeit der einzelnen LED / Logo (%)     |
-| `global`       | 0–100  | Effekt-Helligkeit für Lauflicht/Pulsieren/Atmen (%) |
 
 Das komplette Automatik-Profil – **Uhrzeiten** (`tMorning`, `tDay`, `tEvening`,
 `tNight`) **und Helligkeiten** (`bMorning`, `bDay`, `bEveStart`, `bEveEnd`) – ist
@@ -783,7 +781,6 @@ Gespeichert werden beispielsweise:
 Segment 1 Helligkeit
 Segment 2 Helligkeit
 Einzelne LED Helligkeit
-Effekt-Helligkeit (global)
 
 Morgen-Helligkeit
 Tag-Helligkeit
@@ -1435,7 +1432,7 @@ Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und da
 
 | Punkt | Aktueller Wert (`config.h`) | Zu klären |
 | ----- | --------------------------- | --------- |
-| LED-Anzahl je Segment | `NUM_LEDS_LINKS 60`, `NUM_LEDS_RECHTS 60` | Bei Bedarf an reale Segmentlängen anpassen (Kap. 13) |
+| LED-Bestückung | `NUM_LEDS_LINKS 60`, `NUM_LEDS_RECHTS 60`, Logo 1 LED | **final** – Segment Links 60, Segment Rechts 60, Logo 1 LED (PWM-gedimmt) |
 | LED-Typ | `WS2812` | Pflichtenheft schlägt WS2811 / 12 V vor (Kap. 4.1) |
 | Strombegrenzung | `LED_VOLTS 5`, `LED_MAX_MILLIAMPS 2000` | Bei 120 LEDs (60+60) ist 2000 mA zu niedrig – FastLED dimmt sonst herunter; nach Netzteil-/Einspeisekonzept erhöhen (Kap. 4.2) |
 | Automatik-Uhrzeiten | `AUTO_T_MORNING 6`, `AUTO_T_DAY 8`, `AUTO_T_EVENING 18`, `AUTO_T_NIGHT 23` | Fest im Code (aufsteigend), bewusst nicht über die App verstellbar; hier die Zeitfenster festlegen |

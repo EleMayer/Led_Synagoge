@@ -157,7 +157,7 @@ function handleCommand(msg, socket) {
     if (doc.left  !== undefined) { state.left  = clamp(doc.left, 0, 100);  enterOverrideIfAutomatic(); }
     if (doc.right !== undefined) { state.right = clamp(doc.right, 0, 100); enterOverrideIfAutomatic(); }
     if (doc.logo  !== undefined) { state.logo  = clamp(doc.logo, 0, 100);  enterOverrideIfAutomatic(); }
-    if (doc.global !== undefined) state.global = clamp(doc.global, 0, 100);
+    // Effekt-Helligkeit (global) ist fest im Code (config.h) - nicht annehmen.
 
     // Das komplette Automatik-Zeitprofil (Uhrzeiten + Helligkeiten) ist fest im
     // Code (config.h) und wird - wie in der Firmware - NICHT angenommen.

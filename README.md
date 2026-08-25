@@ -19,7 +19,10 @@ espressif32@7.0.1 → Arduino-Core 2.0.17, alte LEDC-API)
 
 Ausführliche Erklärung aller Modi: siehe [modi.md](modi.md).
 - Automatik-Profil (Uhrzeiten **und** Helligkeiten) fest in `config.h`, nur dort
-  änderbar; die App zeigt es schreibgeschützt als Phasen-Übersicht
+  änderbar; die App zeigt es schreibgeschützt als Phasen-Übersicht (inkl. Balken
+  „aktuelle Helligkeit")
+- Effekt-Helligkeit fest in `config.h` (`EFFECT_BRIGHTNESS`), nicht über die App
+  einstellbar
 - App-Oberfläche mit **Hell-/Dunkel-Umschalter** und **Deutsch/Englisch**
   (Auswahl wird im Browser gespeichert)
 - WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback für lokalen Zugriff
@@ -89,12 +92,13 @@ außen; die LED-Hochstromversorgung wird separat direkt am Streifen eingespeist.
 |---|---|---|
 | Segment Links (Daten) | 23 | Datenleitung zum linken Streifen (über Pegelwandler 3,3 V → 5 V) |
 | Segment Rechts (Daten) | 13 | Datenleitung zum rechten Streifen (über Pegelwandler) |
-| Logo (PWM) | 14 | dimmbares Logo über externen MOSFET-Treiber |
+| Logo (PWM) | 14 | 1 LED, dimmbar über externen MOSFET-Treiber |
 | RTC SDA | 21 | I²C-Datenleitung zum DS3231 |
 | RTC SCL | 22 | I²C-Taktleitung zum DS3231 |
 
-Streifen: je 60 LEDs, Typ WS2812 (GRB). Die endgültige LED-Wahl (laut
-Pflichtenheft WS2811, 12 V) sowie Netzteil und Strombegrenzung
+LED-Bestückung (final): **Segment Links 60 LEDs, Segment Rechts 60 LEDs, Logo 1
+LED** (einfarbig weiß, PWM-gedimmt), Typ WS2812 (GRB). Die endgültige LED-Wahl
+(laut Pflichtenheft WS2811, 12 V) sowie Netzteil und Strombegrenzung
 (`LED_MAX_MILLIAMPS`) sind vor dem Einsatz an die reale Hardware anzupassen.
 
 ## Verhalten bei Stromausfall (Failsafe)

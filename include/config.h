@@ -20,18 +20,26 @@ static const char* FIRMWARE_VERSION = "2.4.3";
 #define PIN_I2C_SDA        21   // I2C zum RTC-Modul DS3231
 #define PIN_I2C_SCL        22
 
-// LED-Streifen je Segment. Typ/Anzahl an die reale Hardware anpassen
-// (Pflichtenheft: WS2811, 12 V; hier Testaufbau mit WS2812).
+// LED-Bestueckung (FINAL): Segment Links 60 LEDs, Segment Rechts 60 LEDs,
+// Logo 1 LED (einfarbig weiss, ueber PWM/MOSFET an PIN_LOGO_PWM gedimmt).
+// Der LED-Typ ist ggf. noch an die reale Hardware anzupassen (Pflichtenheft:
+// WS2811, 12 V).
 #define NUM_LEDS_LINKS     60
 #define NUM_LEDS_RECHTS    60
+#define NUM_LEDS_LOGO      1    // Logo = 1 LED (PWM-gedimmt, kein Streifen)
 #define LED_TYPE           WS2812
 #define LED_COLOR_ORDER    GRB
 
 #define LED_VOLTS              5
-// TODO Hardware: bei 60+60 LEDs zu niedrig (Vollweiss ~7,2 A). Vor dem
+// TODO Hardware: bei 120 LEDs (60+60) zu niedrig (Vollweiss ~7,2 A). Vor dem
 // echten Einsatz an das Netzteil anpassen, sonst dimmt FastLED herunter.
 #define LED_MAX_MILLIAMPS      2000
 #define GLOBAL_MAX_BRIGHTNESS  200
+
+// Effekt-Helligkeit (Prozent) fuer die Effekt-Modi (Lauflicht, Pulsieren,
+// Atmen, Welle, Sternenfunkeln ...). Bewusst FEST im Code - nicht ueber die App
+// einstellbar.
+#define EFFECT_BRIGHTNESS      80
 
 // Pflichtenheft Kap. 8.3: Ist keine gueltige Zeit verfuegbar (leere RTC-Batterie
 // und noch keine NTP-Synchronisation), faehrt die Automatik in einen sicheren,

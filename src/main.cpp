@@ -45,7 +45,8 @@ int brightnessLeft  = 80;
 int brightnessRight = 80;
 int brightnessLogo  = 80;
 // Gemeinsame Helligkeit fuer die Effekt-Modi (Lauflicht, Welle, ...).
-int globalBrightness = 80;
+// Effekt-Helligkeit: fest aus config.h, nicht ueber die App aenderbar.
+const int globalBrightness = EFFECT_BRIGHTNESS;
 
 // Zeitprofil der Automatik (Stunden der Uebergaenge). Parametrierbar per App.
 // Zeitfenster der Automatik: fest aus config.h abgeleitet, nicht ueber die App
@@ -145,9 +146,8 @@ void saveSettings() {
     preferences.putInt("left", brightnessLeft);
     preferences.putInt("right", brightnessRight);
     preferences.putInt("logo", brightnessLogo);
-    preferences.putInt("global", globalBrightness);
-    // Automatik-Zeitprofil (Uhrzeiten und Helligkeiten) ist fest im Code
-    // (config.h) - wird bewusst nicht im NVS gespeichert.
+    // Effekt-Helligkeit und das Automatik-Zeitprofil sind fest im Code
+    // (config.h) - werden bewusst nicht im NVS gespeichert.
     preferences.end();
     settingsDirty = false;
 }
@@ -165,14 +165,12 @@ void loadSettings() {
     brightnessLeft         = preferences.getInt("left", 80);
     brightnessRight        = preferences.getInt("right", 80);
     brightnessLogo         = preferences.getInt("logo", 80);
-    globalBrightness       = preferences.getInt("global", 80);
-    // Automatik-Zeitprofil steht fest in config.h und wird nicht geladen.
+    // Effekt-Helligkeit und Automatik-Zeitprofil stehen fest in config.h.
     preferences.end();
 
     brightnessLeft         = clampBrightness(brightnessLeft);
     brightnessRight        = clampBrightness(brightnessRight);
     brightnessLogo         = clampBrightness(brightnessLogo);
-    globalBrightness       = clampBrightness(globalBrightness);
 }
 
 // --- Zeitbasis (RTC / NTP) -------------------------------------------------
@@ -810,10 +808,9 @@ void onWebSocketEvent(AsyncWebSocket *serverPtr, AsyncWebSocketClient *client,
         enterOverrideIfAutomatic();
         changed = true;
     }
-    if (doc["global"].is<int>()) {
-        globalBrightness = clampBrightness(doc["global"].as<int>());
-        changed = true;
-    }
+
+    // Effekt-Helligkeit (global) ist fest im Code (config.h) und wird - wie das
+    // Automatik-Zeitprofil - bewusst NICHT ueber die App entgegengenommen.
 
     // Das komplette Automatik-Zeitprofil (Uhrzeiten tMorning/tDay/tEvening/
     // tNight und Helligkeiten bMorning/bDay/bEveStart/bEveEnd) ist fest im Code

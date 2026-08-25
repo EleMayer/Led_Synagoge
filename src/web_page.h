@@ -258,10 +258,6 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
     <label><span data-i18n="seg.logo">Logo</span> <span class="val"><span id="logoValue">80</span>%</span></label>
     <input id="logoSlider" type="range" min="0" max="100" value="80">
   </div>
-  <div class="slider">
-    <label><span data-i18n="effectBrightness">Effekt-Helligkeit</span> <span class="val"><span id="globalValue">80</span>%</span></label>
-    <input id="globalSlider" type="range" min="0" max="100" value="80">
-  </div>
 </section>
 
 <section class="card" id="autoCard" style="display:none">
@@ -311,7 +307,8 @@ const T = {
     "install.button":"Installieren",
     "install.hintDefault":"Diese Seite als App auf dem Startbildschirm ablegen – sie öffnet dann randlos wie eine gewohnte App.",
     "install.hintIOS":"Zum Installieren in Safari auf <b>Teilen</b> tippen und <b>„Zum Home-Bildschirm“</b> wählen.",
-    "modus":"Modus","brightness":"Helligkeit","effectBrightness":"Effekt-Helligkeit",
+    "install.hintManual":"Als App ablegen: am Handy im Browser-Menü <b>„Zum Startbildschirm hinzufügen“</b>, am PC das <b>Installieren-Symbol in der Adressleiste</b> nutzen.",
+    "modus":"Modus","brightness":"Helligkeit",
     "off.banner":"Beleuchtung ausgeschaltet",
     "auto":"Automatik","autoNow":"Aktuelle Helligkeit","system":"System",
     "footer":"lokale Steuerung",
@@ -329,7 +326,8 @@ const T = {
     "install.button":"Install",
     "install.hintDefault":"Add this page to your home screen – it then opens full-screen like a normal app.",
     "install.hintIOS":"To install, tap <b>Share</b> in Safari and choose <b>“Add to Home Screen”</b>.",
-    "modus":"Mode","brightness":"Brightness","effectBrightness":"Effect brightness",
+    "install.hintManual":"Add as an app: on a phone use <b>“Add to Home screen”</b> in the browser menu, on a PC use the <b>install icon in the address bar</b>.",
+    "modus":"Mode","brightness":"Brightness",
     "off.banner":"Lighting switched off",
     "auto":"Automatic","autoNow":"Current brightness","system":"System",
     "footer":"local control",
@@ -347,7 +345,7 @@ const T = {
 let lang = "de";        // aktuelle Sprache
 let theme = "dark";     // aktuelles Design
 let lastData = null;    // zuletzt empfangener Status (zum Neu-Uebersetzen)
-let installIsIOS = false;
+let installMode = "";   // "", "prompt", "ios" oder "manual"
 
 // Uebersetzt einen Textschluessel in die aktuelle Sprache.
 function t(key)
@@ -549,7 +547,6 @@ function updateUI(data)
     updateSlider("left",   data.left);
     updateSlider("right",  data.right);
     updateSlider("logo",   data.logo);
-    updateSlider("global", data.global);
 
     // Im Automatik-Modus (3) steuert die Uhrzeit die Helligkeit - die Regler
     // sind dann gesperrt. Die Automatik-Uebersicht wird nur in diesem Modus
@@ -633,7 +630,7 @@ function kv(label, value, cls)
 // Sperrt oder entsperrt alle Helligkeits-Regler (Segmente und Effekt).
 function setSlidersDisabled(disabled)
 {
-    const ids = ["leftSlider", "rightSlider", "logoSlider", "globalSlider"];
+    const ids = ["leftSlider", "rightSlider", "logoSlider"];
     for(let i = 0; i < ids.length; i++)
     {
         const slider = document.getElementById(ids[i]);
@@ -704,7 +701,7 @@ function renderAutoPhases()
     document.getElementById("autoPhases").innerHTML = html;
 }
 
-const sliderTypes = ["left", "right", "logo", "global"];
+const sliderTypes = ["left", "right", "logo"];
 for(let i = 0; i < sliderTypes.length; i++)
 {
     const type = sliderTypes[i];
@@ -742,10 +739,16 @@ function updateInstallHint()
     {
         return;
     }
-    hint.innerHTML = installIsIOS ? t("install.hintIOS") : t("install.hintDefault");
+    if(installMode === "ios")         hint.innerHTML = t("install.hintIOS");
+    else if(installMode === "manual") hint.innerHTML = t("install.hintManual");
+    else                              hint.innerHTML = t("install.hintDefault");
 }
 
-function showInstallCard(iosMode)
+// Zeigt die Installieren-Karte im passenden Modus:
+//   "prompt" = Browser bietet echten Installieren-Knopf (Chrome/Edge/Android)
+//   "ios"    = Safari, manueller Weg ueber "Teilen"
+//   "manual" = alle anderen Browser, manueller Weg ueber das Browser-Menue
+function showInstallCard(mode)
 {
     if(isStandalone())
     {
@@ -757,12 +760,10 @@ function showInstallCard(iosMode)
         return;
     }
     card.style.display = "";
-    installIsIOS = iosMode;
+    installMode = mode;
 
-    if(iosMode)
-    {
-        document.getElementById("installBtn").style.display = "none";
-    }
+    // Der Knopf funktioniert nur mit echtem Prompt, sonst nur die Anleitung.
+    document.getElementById("installBtn").style.display = (mode === "prompt") ? "" : "none";
     updateInstallHint();
 }
 
@@ -783,7 +784,7 @@ window.addEventListener("beforeinstallprompt", function(event)
 {
     event.preventDefault();
     deferredInstallPrompt = event;
-    showInstallCard(false);
+    showInstallCard("prompt");
 });
 
 window.addEventListener("appinstalled", function()
@@ -796,12 +797,19 @@ window.addEventListener("appinstalled", function()
     }
 });
 
+// Falls der Browser keinen "beforeinstallprompt" liefert (Safari, Firefox oder
+// Zugriff ueber einfaches HTTP), zeigen wir die Karte nach kurzer Wartezeit
+// trotzdem - mit der passenden manuellen Anleitung. So erscheint sie ueberall.
 window.addEventListener("load", function()
 {
-    if(!isStandalone() && isIOS())
+    setTimeout(function()
     {
-        showInstallCard(true);
-    }
+        if(deferredInstallPrompt || isStandalone())
+        {
+            return;
+        }
+        showInstallCard(isIOS() ? "ios" : "manual");
+    }, 1500);
 });
 
 window.addEventListener("load", initPrefs);
