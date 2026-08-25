@@ -100,6 +100,17 @@ body{
   color:var(--muted);font-size:12px;font-weight:600;padding:5px 9px;cursor:pointer;
   min-width:34px;transition:.12s}
 .hbtn:hover{border-color:var(--accent);color:var(--accent)}
+.badge.off{background:transparent;border-color:var(--bad);color:var(--bad)}
+
+/* Deutlich sichtbarer Hinweis, wenn die Beleuchtung im Modus "Aus" ist. */
+.offbanner{display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:16px;border:1px solid var(--bad);border-radius:var(--radius);
+  background:var(--card);color:var(--bad);font-weight:600;letter-spacing:.02em;
+  text-transform:uppercase;font-size:13px;
+  animation:offpulse 2.2s ease-in-out infinite}
+.offbanner .officon{font-size:20px;line-height:1}
+@keyframes offpulse{0%,100%{opacity:1}50%{opacity:.5}}
+@media (prefers-reduced-motion: reduce){.offbanner{animation:none}}
 
 main{max-width:600px;margin:0 auto;padding:16px;display:grid;gap:12px}
 
@@ -153,6 +164,13 @@ input[type=text]:focus{outline:none;border-color:var(--accent);
 .phase .ph-time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
 .phase .ph-val{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums;
   text-align:right;min-width:84px}
+
+.autonow{margin-top:16px}
+.autonow-top{display:flex;justify-content:space-between;align-items:baseline;
+  color:var(--muted);font-size:14px;margin-bottom:8px}
+.autonow-val{color:var(--fg);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+.meter{height:8px;border-radius:6px;background:var(--track);overflow:hidden}
+.meter-fill{height:100%;width:0;background:var(--fill);border-radius:6px;transition:width .4s ease}
 
 .sys{display:grid;gap:0}
 .kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);gap:12px}
@@ -372,6 +390,11 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 
 <main>
 
+<div id="offBanner" class="offbanner" style="display:none">
+  <span class="officon">&#9211;</span>
+  <span data-i18n="off.banner">Beleuchtung ausgeschaltet</span>
+</div>
+
 <section class="card" id="installCard" style="display:none">
   <h2 data-i18n="install.title">Als App installieren</h2>
   <p class="hint" id="installHint" style="margin-top:0"></p>
@@ -425,7 +448,13 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 <section class="card" id="autoCard" style="display:none">
   <h2 data-i18n="auto">Automatik</h2>
   <div id="autoPhases" class="phases"></div>
-  <p class="hint" id="autoStatus"></p>
+  <div class="autonow">
+    <div class="autonow-top">
+      <span data-i18n="autoNow">Aktuelle Helligkeit</span>
+      <span class="autonow-val"><span id="autoNowVal">&ndash;</span> %</span>
+    </div>
+    <div class="meter"><div class="meter-fill" id="autoMeter"></div></div>
+  </div>
 </section>
 
 <section class="card">
@@ -464,7 +493,8 @@ const T = {
     "install.hintDefault":"Diese Seite als App auf dem Startbildschirm ablegen – sie öffnet dann randlos wie eine gewohnte App.",
     "install.hintIOS":"Zum Installieren in Safari auf <b>Teilen</b> tippen und <b>„Zum Home-Bildschirm“</b> wählen.",
     "modus":"Modus","brightness":"Helligkeit","effectBrightness":"Effekt-Helligkeit",
-    "auto":"Automatik","autoNow":"Aktuelle Automatik-Helligkeit:","system":"System",
+    "off.banner":"Beleuchtung ausgeschaltet",
+    "auto":"Automatik","autoNow":"Aktuelle Helligkeit","system":"System",
     "footer":"lokale Steuerung",
     "seg.left":"Segment Links","seg.right":"Segment Rechts","seg.logo":"Logo",
     "phase.morning":"Hochfahren","phase.day":"Tag","phase.evening":"Abend",
@@ -481,7 +511,8 @@ const T = {
     "install.hintDefault":"Add this page to your home screen – it then opens full-screen like a normal app.",
     "install.hintIOS":"To install, tap <b>Share</b> in Safari and choose <b>“Add to Home Screen”</b>.",
     "modus":"Mode","brightness":"Brightness","effectBrightness":"Effect brightness",
-    "auto":"Automatic","autoNow":"Current automatic brightness:","system":"System",
+    "off.banner":"Lighting switched off",
+    "auto":"Automatic","autoNow":"Current brightness","system":"System",
     "footer":"local control",
     "seg.left":"Segment left","seg.right":"Segment right","seg.logo":"Logo",
     "phase.morning":"Ramp-up","phase.day":"Day","phase.evening":"Evening",
@@ -691,6 +722,11 @@ function updateUI(data)
     }
     document.getElementById("clock").innerText = data.time || "--:--:--";
 
+    // Modus "Aus": deutlich sichtbar machen (Banner + rotes Badge).
+    const isOff = (data.mode === 0);
+    document.getElementById("offBanner").style.display = isOff ? "" : "none";
+    document.getElementById("modeBadge").classList.toggle("off", isOff);
+
     updateSlider("left",   data.left);
     updateSlider("right",  data.right);
     updateSlider("logo",   data.logo);
@@ -755,13 +791,14 @@ function updateUI(data)
         renderAutoPhases();
     }
 
-    let autoValue = "-";
+    // Aktuelle Automatik-Helligkeit als Zahl und Balken anzeigen.
+    let autoValue = 0;
     if(data.autoBrightness !== undefined)
     {
         autoValue = data.autoBrightness;
     }
-    document.getElementById("autoStatus").innerHTML =
-        t("autoNow") + " <b>" + autoValue + " %</b>";
+    document.getElementById("autoNowVal").innerText = autoValue;
+    document.getElementById("autoMeter").style.width = autoValue + "%";
 }
 
 function kv(label, value, cls)
