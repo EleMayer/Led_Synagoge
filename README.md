@@ -44,6 +44,8 @@ tools/build-icons.js  erzeugt include/icons.h aus tools/icons/*.png
 tools/icons/          Home-Screen-Icons (icon-180/192/512.png)
 modi.md               Erklärung aller Betriebsmodi
 dokumentation.md      Technische Dokumentation
+schaltung.md          Schaltung, Pinbelegung und Stückliste (BOM)
+testprotokoll.md      Nachweis der Pflichtenheft-Anforderungen
 ```
 
 ## Zweite Variante: eigenstaendige Demo (ohne ESP32)
@@ -187,3 +189,5 @@ Der Code nutzt die **alte LEDC-PWM-API** (`ledcSetup` / `ledcAttachPin` /
 `platformio.ini` sind bewusst gepinnt – **nicht** ungeprüft auf Core 3.x heben
 (dort hieße die API `ledcAttach(pin, freq, res)` und der Code würde nicht
 kompilieren).
+
+

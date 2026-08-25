@@ -84,6 +84,23 @@ static const char* FIRMWARE_VERSION = "2.4.3";
 #define ENABLE_SELFTEST    1
 #define SELFTEST_ROUNDS    1
 
+// -------- Optionaler Daemmerungssensor -------------------------------------
+// VORBEREITET, aber standardmaessig AUS. Bei 0 laeuft die Firmware unveraendert
+// (kein Sensor noetig). Bei 1 senkt die real gemessene Umgebungshelligkeit die
+// Automatik-Helligkeit bei Tageslicht ab - die Tageskurve bleibt die Obergrenze,
+// der Sensor blendet zusaetzlich nach der echten Dunkelheit ein.
+//
+// Standard-Anschluss: LDR als Spannungsteiler an einen ADC-Eingang (GPIO 34..39
+// sind reine Eingaenge). Fuer einen digitalen BH1750 (I2C, gleicher Bus wie die
+// RTC) die Bibliothek einbinden und readLightPercent() in main.cpp ersetzen -
+// die Einbindung in die Automatik bleibt gleich.
+#define USE_LIGHT_SENSOR   0
+
+#define LIGHT_SENSOR_PIN   34      // ADC-Eingang fuer den LDR
+// ADC-Rohwerte (0..4095) beim Kalibrieren eintragen:
+#define LIGHT_ADC_DARK     400     // Rohwert bei Dunkelheit
+#define LIGHT_ADC_BRIGHT   3200    // Rohwert bei Tageslicht
+
 // Betriebsmodi. Die Zahlenwerte sind die Modus-IDs im App-Protokoll und muessen
 // mit web_page.h/web_page_demo.html uebereinstimmen. MODE_LAST begrenzt die
 // gueltigen Werte in onWebSocketEvent().

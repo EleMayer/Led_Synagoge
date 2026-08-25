@@ -482,8 +482,68 @@ int calculateAutomaticBrightness() {
     return 0;
 }
 
+// ---------------------------------------------------------------------------
+// Optionaler Daemmerungssensor
+//
+// Nur aktiv bei USE_LIGHT_SENSOR == 1. Liefert die gemessene Umgebungshelligkeit
+// als 0..100 % (0 = dunkel, 100 = hell) und senkt damit die Automatik bei
+// Tageslicht ab. Ist der Sensor aus, bleibt der Automatikwert unveraendert.
+// ---------------------------------------------------------------------------
+
+#if USE_LIGHT_SENSOR
+
+int readLightPercent() {
+    // Nicht jeden Frame lesen - ein zwischengespeicherter Wert reicht.
+    static unsigned long lastRead = 0;
+    static int cached = 100;
+
+    if (millis() - lastRead < 500) {
+        return cached;
+    }
+
+    lastRead = millis();
+
+    // Mehrere Messungen mitteln (ruhigerer Wert).
+    uint32_t sum = 0;
+
+    for (int i = 0; i < 8; i++) {
+        sum += analogRead(LIGHT_SENSOR_PIN);
+    }
+
+    int raw = sum / 8;
+
+    int pct = map(
+        raw,
+        LIGHT_ADC_DARK,
+        LIGHT_ADC_BRIGHT,
+        0,
+        100
+    );
+
+    cached = constrain(pct, 0, 100);
+
+    return cached;
+}
+
+#endif
+
+int applyLightSensorToAuto(int timeBrightness) {
+#if USE_LIGHT_SENSOR
+    int lightPct = readLightPercent();   // 0 = dunkel ... 100 = hell
+    int darkness = 100 - lightPct;
+
+    // Zeitkurve ist die Obergrenze, die Dunkelheit blendet ein.
+    return timeBrightness * darkness / 100;
+#else
+    // Sensor aus: Automatik bleibt rein zeitgesteuert.
+    return timeBrightness;
+#endif
+}
+
 void applyAutomatic() {
     int value = calculateAutomaticBrightness();
+
+    value = applyLightSensorToAuto(value);
 
     currentAutoBrightness = value;
 
