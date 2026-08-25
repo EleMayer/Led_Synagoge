@@ -5,7 +5,7 @@ ESP32-Steuerung für eine mehrteilige LED-Fassadenbeleuchtung mit Weiß-LEDs
 installierbare Web-App (PWA) per WLAN – kein Cloud-Dienst.
 
 **Firmware-Version:** 2.4.3 · **Plattform:** ESP32 / Arduino (PlatformIO,
-espressif32@7.0.1 → Arduino-Core 2.0.17, alte LEDC-API)
+espressif32@7.0.1 → Arduino-Core 2.x, alte LEDC-API)
 
 ## Funktionen
 
@@ -27,7 +27,8 @@ Ausführliche Erklärung aller Modi: siehe [modi.md](modi.md).
   (Auswahl wird im Browser gespeichert)
 - WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback für lokalen Zugriff
 - Erreichbar über `http://led-fassade.local` (mDNS)
-- Firmware-Update über den Browser (OTA)
+- Firmware-Update (OTA) über `POST /update`, **passwortgeschützt**
+  (`OTA_USER`/`OTA_PASSWORD` in `config.h`)
 
 ## Projektstruktur
 
@@ -180,6 +181,9 @@ node tools/mock-server.js      # → http://localhost:5598
 
 ## Wichtiger Hinweis
 
-Der Code nutzt die **alte LEDC-PWM-API** (`ledcSetup`/`ledcAttachPin`) und
-setzt daher **Arduino-ESP32-Core 2.x** voraus. Die Versionen in
-`platformio.ini` sind bewusst gepinnt – nicht ungeprüft auf Core 3.x heben.
+Der Code nutzt die **alte LEDC-PWM-API** (`ledcSetup` / `ledcAttachPin` /
+`ledcWrite(channel, …)`) und setzt daher **Arduino-ESP32-Core 2.x** voraus
+(geliefert durch das gepinnte `espressif32@7.0.1`). Die Versionen in
+`platformio.ini` sind bewusst gepinnt – **nicht** ungeprüft auf Core 3.x heben
+(dort hieße die API `ledcAttach(pin, freq, res)` und der Code würde nicht
+kompilieren).

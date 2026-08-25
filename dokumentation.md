@@ -594,7 +594,7 @@ Der Controller liefert dazu selbst aus:
 /icon.svg       App-Icon
 /api/status     Status als JSON (REST)
 /api/schedule   Automatik-Zeitprofil lesen (REST)
-/update         Firmware-Update (OTA, POST)
+/update         Firmware-Update (OTA, POST, passwortgeschuetzt)
 /ws             WebSocket (Live-Bedienung: Modus, Helligkeiten)
 ```
 
@@ -1130,6 +1130,14 @@ Over The Air
 
 Dabei wird eine neue Firmware über die Netzwerkverbindung übertragen.
 
+Das Update ist **passwortgeschützt** (HTTP-Basic-Auth): Der `POST /update`
+akzeptiert Firmware nur mit den Zugangsdaten `OTA_USER`/`OTA_PASSWORD` aus
+`config.h`. Beispiel mit curl:
+
+```bash
+curl --user admin:PASSWORT -F "update=@firmware.bin" http://led-fassade.local/update
+```
+
 Vereinfachter Ablauf:
 
 ```text
@@ -1401,7 +1409,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 | F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): manuelle Helligkeiten (WLAN und das gesamte Automatik-Profil dagegen fest in `config.h`) |
 | F6 | Nach Stromausfall definierter Zustand selbsttätig | erfüllt | `setup()` startet immer im Automatik-Modus, Zustand nach Uhrzeit |
 | F7 | Netzunabhängige Zeitbasis (RTC), NTP-Abgleich wenn online | erfüllt | DS3231 sofort nach Boot; periodischer NTP-Abgleich inkl. Sommer-/Winterzeit |
-| F8 | OTA-Firmware-Update über das lokale Netz | erfüllt | `POST /update` (Browser-Upload), danach Neustart |
+| F8 | OTA-Firmware-Update über das lokale Netz | erfüllt | `POST /update` (passwortgeschützt, `OTA_USER`/`OTA_PASSWORD`), danach Neustart |
 | F9 | Bedienung ausschließlich im lokalen WLAN, kein Fernzugriff | erfüllt | Reiner STA-/AP-Betrieb, kein Cloud-Dienst, keine Portfreigabe |
 
 ## A.2 Abnahmekriterien

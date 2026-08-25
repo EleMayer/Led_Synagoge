@@ -13,6 +13,11 @@ static const char* FIRMWARE_VERSION = "2.4.3";
 #define SETUP_AP_SSID      "Fassade-Setup"
 #define SETUP_AP_PASS      "fassade2026"
 
+// Zugangsdaten fuer das Firmware-Update (OTA) ueber POST /update. Ohne diese
+// Anmeldung koennte jeder im WLAN fremde Firmware aufspielen. UNBEDINGT AENDERN.
+#define OTA_USER           "admin"
+#define OTA_PASSWORD       "fassade-ota-2026"
+
 // GPIO-Belegung (Details siehe Pinbelegung in README.md).
 #define PIN_LED_LINKS      23   // Datenausgang Segment Links
 #define PIN_LED_RECHTS     13   // Datenausgang Segment Rechts
@@ -68,10 +73,12 @@ static const char* FIRMWARE_VERSION = "2.4.3";
 #define AUTO_T_EVENING     18
 #define AUTO_T_NIGHT       23
 
-// PWM-Kanal fuer das dimmbare Logo (alte LEDC-API, Arduino-Core 2.x).
+// PWM fuer das dimmbare Logo. Arduino-Core 2.x (LEDC-API):
+//   ledcSetup(channel, freq, res) + ledcAttachPin(pin, channel) + ledcWrite(channel, duty)
 #define LOGO_PWM_CHANNEL   0
 #define LOGO_PWM_FREQ      5000
 #define LOGO_PWM_RES       8
+
 
 // Optischer LED-Selbsttest beim Start (0 = aus).
 #define ENABLE_SELFTEST    1
