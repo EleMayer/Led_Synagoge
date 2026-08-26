@@ -46,6 +46,7 @@ tools/build-icons.js  erzeugt include/icons.h aus tools/icons/*.png
 tools/icons/          Home-Screen-Icons (icon-180/192/512.png)
 modi.md               Erklärung aller Betriebsmodi
 dokumentation.md      Technische Dokumentation
+inbetriebnahme.md     Erster Hardware-Test (Anschluss, Reihenfolge, Fehlersuche)
 notfallplan.md        Notfälle, Sofortmaßnahmen, Störungstabelle, Kontakte
 ```
 
