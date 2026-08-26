@@ -85,13 +85,12 @@ body{
 .top{
   position:sticky; top:0; z-index:5;
   display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:8px 12px;
   padding:16px 20px; background:var(--top-bg); backdrop-filter:blur(8px);
   border-bottom:1px solid var(--line);
 }
-.brand{display:flex; align-items:center; gap:10px; font-size:16px; font-weight:600; letter-spacing:.01em}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--bad);
-  box-shadow:0 0 0 3px rgba(192,80,90,.14)}
-.dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(47,138,91,.16)}
+.brand{display:flex; align-items:center; gap:9px; font-size:15px; font-weight:600; letter-spacing:.01em}
+.brandmark{width:30px; height:15px; flex:none; display:block}
 .hstat{display:flex;align-items:center;gap:10px}
 #clock{font-variant-numeric:tabular-nums;color:var(--muted)}
 .badge{background:var(--accent-weak);border:1px solid var(--accent-weak);border-radius:999px;
@@ -377,8 +376,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 
 <header class="top">
   <div class="brand">
-    <span class="dot" id="connDot"></span>
-    <strong>LED-Fassade</strong>
+    <svg class="brandmark" viewBox="36 142 436 214" aria-hidden="true">
+      <polyline points="56,336 128,206 192,336 264,206 328,336 398,206 452,336 452,162"
+                fill="none" stroke="currentColor" stroke-width="40"
+                stroke-linejoin="miter" stroke-miterlimit="10" stroke-linecap="butt"/>
+    </svg>
+    <strong>Museum Arbeitswelt Steyr</strong>
   </div>
   <div class="hstat">
     <span id="clock">--:--:--</span>
@@ -668,9 +671,8 @@ function connect()
 
 function setConnected(ok)
 {
-    document
-        .getElementById("connDot")
-        .classList.toggle("on", ok);
+    // Der Verbindungspunkt wurde entfernt; Funktion bleibt als No-Op bestehen.
+    void ok;
 }
 
 function send(data)

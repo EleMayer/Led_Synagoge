@@ -9,7 +9,8 @@ Bei Problemen: Sofortmaßnahmen und Fehlersuche im [notfallplan.md](../notfallpl
 ## Werkzeuge zum Beobachten
 
 - **App** (im WLAN): `http://led-fassade.local` – zeigt Modus, Uhrzeit und in der
-  Karte **System** den Status von RTC, NTP und WLAN.
+  Karte **System** den Status von RTC, NTP und WLAN. Lädt der Name nicht, die
+  **IP** aus dem seriellen Monitor nehmen (z. B. `http://192.168.0.42`).
 - **Serielle Ausgabe** (nur bei angeschlossenem PC, optional):
   `pio device monitor` mit 115200 Baud. Der Controller meldet dort z. B.
   „System bereit.", „DS3231 gefunden.", „WLAN verbunden. IP: …".

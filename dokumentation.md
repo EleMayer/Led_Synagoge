@@ -626,9 +626,9 @@ Helligkeiten, Automatik-Übersicht und System.
 Beispielhafte Oberfläche:
 
 ```text
-+------------------------------------------+
-| ● LED-Fassade     14:32   [ Stufenlicht ]|
-+------------------------------------------+
++----------------------------------------------+
+| /\/\ Museum Arbeitswelt Steyr  14:32 [ Auto ]|
++----------------------------------------------+
 
  MODUS
  [ Aus         ] [ Statisch    ]
@@ -1061,7 +1061,9 @@ Handy/Notebook verbinden → Oberfläche öffnen (lokale Steuerung)
 
 Im normalen WLAN ist der Controller zusätzlich unter dem Namen
 `http://led-fassade.local` erreichbar (mDNS), sodass die IP-Adresse
-nicht bekannt sein muss.
+nicht bekannt sein muss. **Hinweis:** Viele Windows-PCs und Android-Geräte
+lösen `.local` nicht auf (dann `DNS_PROBE_FINISHED_NXDOMAIN`); in dem Fall die
+IP-Adresse aus dem seriellen Monitor verwenden (z. B. `http://192.168.0.42`).
 
 ## 23.1 WLAN einstellen (`config.h`)
 

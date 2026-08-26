@@ -26,7 +26,9 @@ Ausführliche Erklärung aller Modi: siehe [modi.md](modi.md).
 - App-Oberfläche mit **Hell-/Dunkel-Umschalter** und **Deutsch/Englisch**
   (Auswahl wird im Browser gespeichert)
 - WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback für lokalen Zugriff
-- Erreichbar über `http://led-fassade.local` (mDNS)
+- Erreichbar über `http://led-fassade.local` (mDNS). Lädt der Name nicht
+  (Windows/Android lösen `.local` oft nicht auf), die **IP** aus dem seriellen
+  Monitor verwenden, z. B. `http://192.168.0.42`
 - Firmware-Update (OTA) über `POST /update`, **passwortgeschützt**
   (`OTA_USER`/`OTA_PASSWORD` in `config.h`)
 
