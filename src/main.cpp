@@ -122,6 +122,11 @@ const uint32_t WIFI_RECONNECT_INTERVAL = 30000;
 RTC_DS3231 rtc;
 Preferences preferences;
 
+// Schuetzt alle I2C-/RTC-Zugriffe. Der Webserver-Callback laeuft im AsyncTCP-Task,
+// loop() im Haupt-Task - ohne diesen Mutex koennten beide gleichzeitig auf den
+// DS3231 zugreifen und sich die I2C-Uebertragung zerstoeren (falsche Zeit/Haenger).
+SemaphoreHandle_t rtcMutex = NULL;
+
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
@@ -293,12 +298,23 @@ void loadSettings() {
 // RTC / Zeit
 // ---------------------------------------------------------------------------
 
+// Sperrt/entsperrt den RTC-Mutex (rekursiv, damit sich die Funktionen
+// gegenseitig aufrufen duerfen). Vor der Mutex-Erzeugung sind es No-Ops.
+static void rtcLock() {
+    if (rtcMutex) xSemaphoreTakeRecursive(rtcMutex, portMAX_DELAY);
+}
+static void rtcUnlock() {
+    if (rtcMutex) xSemaphoreGiveRecursive(rtcMutex);
+}
+
 bool isRTCValid() {
     if (!rtcAvailable) {
         return false;
     }
 
+    rtcLock();
     DateTime now = rtc.now();
+    rtcUnlock();
 
     return now.year() >= 2024 &&
            now.year() <= 2099;
@@ -307,7 +323,9 @@ bool isRTCValid() {
 bool getCurrentTime(struct tm &out) {
     memset(&out, 0, sizeof(out));
 
-    if (rtcAvailable && isRTCValid()) {
+    rtcLock();
+    bool valid = rtcAvailable && isRTCValid();
+    if (valid) {
         DateTime now = rtc.now();
 
         out.tm_year = now.year() - 1900;
@@ -316,10 +334,14 @@ bool getCurrentTime(struct tm &out) {
         out.tm_hour = now.hour();
         out.tm_min  = now.minute();
         out.tm_sec  = now.second();
+    }
+    rtcUnlock();
 
+    if (valid) {
         return true;
     }
 
+    // Keine (gueltige) RTC-Zeit -> Systemzeit (NTP), kein I2C.
     return getLocalTime(&out, 5);
 }
 
@@ -1657,7 +1679,6 @@ void onWebSocketEvent(
     size_t len
 ) {
     (void)serverPtr;
-    (void)arg;
 
     if (type == WS_EVT_CONNECT) {
         client->text(
@@ -1668,6 +1689,21 @@ void onWebSocketEvent(
     }
 
     if (type != WS_EVT_DATA) {
+        return;
+    }
+
+    // Nur eine vollstaendige Text-Nachricht in EINEM Frame verarbeiten.
+    // Fragmentierte oder Binaer-Frames werden ignoriert (sonst wuerde ein
+    // Teilstueck als JSON fehlinterpretiert).
+    AwsFrameInfo *info = (AwsFrameInfo *)arg;
+
+    if (
+        !info ||
+        !info->final ||
+        info->index != 0 ||
+        info->len != len ||
+        info->opcode != WS_TEXT
+    ) {
         return;
     }
 
@@ -1992,6 +2028,7 @@ void setupNTP() {
                 &lt
             );
 
+            rtcLock();
             rtc.adjust(
                 DateTime(
                     lt.tm_year + 1900,
@@ -2002,6 +2039,7 @@ void setupNTP() {
                     lt.tm_sec
                 )
             );
+            rtcUnlock();
 
             Serial.println(
                 "RTC mit NTP synchronisiert."
@@ -2057,6 +2095,7 @@ void updateNTP() {
                 &lt
             );
 
+            rtcLock();
             rtc.adjust(
                 DateTime(
                     lt.tm_year + 1900,
@@ -2067,6 +2106,7 @@ void updateNTP() {
                     lt.tm_sec
                 )
             );
+            rtcUnlock();
         }
     }
 }
@@ -2465,15 +2505,19 @@ void handleUpdateUpload(
         }
     }
 
-    if (
-        Update.write(
-            data,
-            len
-        ) != len
-    ) {
-        Update.printError(
-            Serial
-        );
+    // Nur schreiben, solange kein Fehler ansteht (z. B. wenn Update.begin
+    // fehlgeschlagen ist). Sonst wuerde auf einen ungueltigen Zustand geschrieben.
+    if (!Update.hasError()) {
+        if (
+            Update.write(
+                data,
+                len
+            ) != len
+        ) {
+            Update.printError(
+                Serial
+            );
+        }
     }
 
     if (final) {
@@ -2606,6 +2650,9 @@ void setup() {
     );
 
     loadSettings();
+
+    // Muss vor dem ersten RTC-/Webserver-Zugriff bereitstehen.
+    rtcMutex = xSemaphoreCreateRecursiveMutex();
 
     setupRTC();
 
