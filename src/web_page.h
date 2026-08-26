@@ -235,6 +235,9 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
     <button class="mode" data-mode="14" onclick="sendMode(14)">Treffpunkt</button>
     <button class="mode" data-mode="15" onclick="sendMode(15)">Herzschlag</button>
     <button class="mode" data-mode="16" onclick="sendMode(16)">Wechsellicht</button>
+    <button class="mode" data-mode="17" onclick="sendMode(17)">Ausstrahlung</button>
+    <button class="mode" data-mode="18" onclick="sendMode(18)">Wolkenzug</button>
+    <button class="mode" data-mode="19" onclick="sendMode(19)">Leuchtturm</button>
     <button class="mode" data-mode="6" onclick="sendMode(6)">Dauerlicht</button>
     <button class="mode" data-mode="7" onclick="sendMode(7)">Kerzenlicht</button>
     <button class="mode" data-mode="8" onclick="sendMode(8)">Stufenlicht</button>
@@ -293,11 +296,13 @@ const MODE_LABEL = {
   de:{0:"Aus",1:"Statisch",2:"Lauflicht",3:"Automatik",4:"Pulsieren",5:"Atmen",
       6:"Dauerlicht",7:"Kerzenlicht",8:"Stufenlicht",9:"Dämmerlicht",10:"Welle",
       11:"Feuerschein",12:"Nachtlicht",13:"Sternenfunkeln",14:"Treffpunkt",
-      15:"Herzschlag",16:"Wechsellicht"},
+      15:"Herzschlag",16:"Wechsellicht",17:"Ausstrahlung",18:"Wolkenzug",
+      19:"Leuchtturm"},
   en:{0:"Off",1:"Static",2:"Running light",3:"Automatic",4:"Pulse",5:"Breathe",
       6:"Steady",7:"Candle",8:"Steps",9:"Dusk",10:"Wave",
       11:"Fire",12:"Night light",13:"Starlight",14:"Meeting",
-      15:"Heartbeat",16:"Alternating"}
+      15:"Heartbeat",16:"Alternating",17:"Radiate",18:"Clouds",
+      19:"Lighthouse"}
 };
 
 // Alle uebrigen Texte je Sprache.

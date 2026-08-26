@@ -126,7 +126,10 @@ enum OperatingMode {
     MODE_TREFFPUNKT   = 14,  // zwei Lichter treffen sich in der Mitte
     MODE_HERZSCHLAG   = 15,  // ruhiger Doppelschlag der ganzen Fassade
     MODE_WECHSEL      = 16,  // Segmente Links/Rechts gegenlaeufig
-    MODE_LAST         = MODE_WECHSEL
+    MODE_AUSSTRAHLUNG = 17,  // Welle vom Logo/Zentrum nach aussen
+    MODE_WOLKEN       = 18,  // organische Helligkeit (Perlin-Rauschen)
+    MODE_LEUCHTTURM   = 19,  // langsam wanderndes Lichtband
+    MODE_LAST         = MODE_LEUCHTTURM
 };
 
 // Feste Parameter der Stimmungs-Modi (8-Bit-Helligkeitsgrenzen, Perioden bzw.
@@ -187,3 +190,18 @@ enum OperatingMode {
 // Wechsellicht: Segmente Links/Rechts schwellen langsam gegenlaeufig.
 #define WECHSEL_PERIOD_MS  9000UL
 #define WECHSEL_LOW_PCT    35     // dunklere Seite in % der Effekt-Helligkeit
+
+// Ausstrahlung: langsame Welle vom Logo/Zentrum nach aussen ueber beide Segmente.
+#define AUSSTR_SPACING     4      // raeumliche Dichte der Welle (groesser = enger)
+#define AUSSTR_SPEED_DIV   48     // groesser = langsamere Ausbreitung
+#define AUSSTR_FLOOR_PCT   45     // dunkelster Anteil in % der Effekt-Helligkeit
+
+// Wolkenzug: organische, unregelmaessige Helligkeit (Perlin-Rauschen).
+#define WOLKEN_SCALE       6      // raeumliche Groesse der "Wolken"
+#define WOLKEN_SPEED_DIV   60     // groesser = langsamerer Wolkenzug
+#define WOLKEN_FLOOR_PCT   40     // dunkelster Anteil in % der Effekt-Helligkeit
+
+// Leuchtturm: ein weiches Lichtband wandert langsam ueber die ganze Linie.
+#define LEUCHTTURM_PERIOD_MS 16000UL  // Dauer eines Durchlaufs
+#define LEUCHTTURM_WIDTH     14       // halbe Breite des Bandes in LEDs
+#define LEUCHTTURM_FLOOR_PCT 35       // Grundniveau in % der Effekt-Helligkeit

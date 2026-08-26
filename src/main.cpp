@@ -1209,6 +1209,134 @@ void renderWechsellicht() {
 }
 
 // ---------------------------------------------------------------------------
+// Ausstrahlung
+//
+// Eine langsame Welle laeuft vom Logo/Zentrum (Position 0 je Segment) nach
+// aussen. Beide Segmente zeigen dieselbe Welle, das Logo pulst im Ursprung mit.
+// ---------------------------------------------------------------------------
+
+void renderAusstrahlung() {
+    if (!frameReady(RENDER_INTERVAL)) {
+        return;
+    }
+
+    uint8_t base = brightnessTo8Bit(globalBrightness);
+
+    uint8_t floorLevel =
+        (uint16_t)base * AUSSTR_FLOOR_PCT / 100;
+
+    uint16_t phase = millis() / AUSSTR_SPEED_DIV;
+
+    for (uint16_t i = 0; i < NUM_LEDS_LINKS; i++) {
+        uint8_t w = sin8((uint8_t)(i * AUSSTR_SPACING - phase));
+        ledsLinks[i] = whiteRaw(map(w, 0, 255, floorLevel, base));
+    }
+
+    for (uint16_t i = 0; i < NUM_LEDS_RECHTS; i++) {
+        uint8_t w = sin8((uint8_t)(i * AUSSTR_SPACING - phase));
+        ledsRechts[i] = whiteRaw(map(w, 0, 255, floorLevel, base));
+    }
+
+    FastLED.show();
+
+    // Logo = Ursprung der Welle (Position 0).
+    uint8_t wLogo = sin8((uint8_t)(0 - phase));
+    setLogoRaw(map(wLogo, 0, 255, floorLevel, base));
+}
+
+// ---------------------------------------------------------------------------
+// Wolkenzug
+//
+// Organische, unregelmaessige Helligkeit ueber Perlin-Rauschen (inoise8). Kein
+// sichtbares Muster - wirkt wie langsam vorbeiziehende Wolken.
+// ---------------------------------------------------------------------------
+
+void renderWolken() {
+    if (!frameReady(RENDER_INTERVAL)) {
+        return;
+    }
+
+    uint8_t base = brightnessTo8Bit(globalBrightness);
+
+    uint8_t floorLevel =
+        (uint16_t)base * WOLKEN_FLOOR_PCT / 100;
+
+    uint16_t t = millis() / WOLKEN_SPEED_DIV;
+
+    for (uint16_t i = 0; i < NUM_LEDS_LINKS; i++) {
+        uint8_t n = inoise8(i * WOLKEN_SCALE, t);
+        int level = map(n, 50, 205, floorLevel, base);
+        ledsLinks[i] = whiteRaw(constrain(level, floorLevel, base));
+    }
+
+    for (uint16_t i = 0; i < NUM_LEDS_RECHTS; i++) {
+        // Versatz, damit die Segmente nicht identisch wolken.
+        uint8_t n = inoise8(1000 + i * WOLKEN_SCALE, t);
+        int level = map(n, 50, 205, floorLevel, base);
+        ledsRechts[i] = whiteRaw(constrain(level, floorLevel, base));
+    }
+
+    FastLED.show();
+
+    uint8_t nLogo = inoise8(500, t);
+    int logo = map(nLogo, 50, 205, floorLevel, base);
+    setLogoRaw(constrain(logo, floorLevel, base));
+}
+
+// ---------------------------------------------------------------------------
+// Leuchtturm
+//
+// Ein weiches Lichtband wandert langsam ueber die ganze Linie (beide Segmente
+// als eine Reihe) und kommt periodisch wieder. Dazwischen niedriges Grundniveau.
+// ---------------------------------------------------------------------------
+
+void renderLeuchtturm() {
+    if (!frameReady(RENDER_INTERVAL)) {
+        return;
+    }
+
+    uint8_t base = brightnessTo8Bit(globalBrightness);
+
+    int floorLevel =
+        (uint16_t)base * LEUCHTTURM_FLOOR_PCT / 100;
+
+    const int total = NUM_LEDS_LINKS + NUM_LEDS_RECHTS;
+
+    // Position des Strahls 0..total-1, langsam umlaufend.
+    int posBeam =
+        (int)((uint32_t)(millis() % LEUCHTTURM_PERIOD_MS) * total /
+              LEUCHTTURM_PERIOD_MS);
+
+    for (int i = 0; i < total; i++) {
+        int d = abs(i - posBeam);
+
+        int level = floorLevel;
+        if (d < LEUCHTTURM_WIDTH) {
+            level = floorLevel +
+                (base - floorLevel) * (LEUCHTTURM_WIDTH - d) / LEUCHTTURM_WIDTH;
+        }
+
+        if (i < NUM_LEDS_LINKS) {
+            ledsLinks[i] = whiteRaw((uint8_t)level);
+        }
+        else {
+            ledsRechts[i - NUM_LEDS_LINKS] = whiteRaw((uint8_t)level);
+        }
+    }
+
+    FastLED.show();
+
+    // Logo leuchtet auf, wenn der Strahl die Mitte passiert.
+    int dCenter = abs(total / 2 - posBeam);
+    int logo = floorLevel;
+    if (dCenter < LEUCHTTURM_WIDTH) {
+        logo = floorLevel +
+            (base - floorLevel) * (LEUCHTTURM_WIDTH - dCenter) / LEUCHTTURM_WIDTH;
+    }
+    setLogoRaw((uint8_t)logo);
+}
+
+// ---------------------------------------------------------------------------
 // Modus-Klassifizierung
 // ---------------------------------------------------------------------------
 
@@ -1332,6 +1460,18 @@ void applyHardware() {
 
         case MODE_WECHSEL:
             renderWechsellicht();
+            break;
+
+        case MODE_AUSSTRAHLUNG:
+            renderAusstrahlung();
+            break;
+
+        case MODE_WOLKEN:
+            renderWolken();
+            break;
+
+        case MODE_LEUCHTTURM:
+            renderLeuchtturm();
             break;
 
         default:

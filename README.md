@@ -11,7 +11,7 @@ espressif32@7.0.1 → Arduino-Core 2.x, alte LEDC-API)
 
 - Grundmodi: Aus, Statisch, Automatik (tageszeitabhängig, mit RTC + NTP)
 - Effekte: Lauflicht, Pulsieren, Atmen, Welle, Sternenfunkeln, Treffpunkt,
-  Herzschlag, Wechsellicht
+  Herzschlag, Wechsellicht, Ausstrahlung, Wolkenzug, Leuchtturm
 - Stimmungs-Modi: Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht
   (feste Werte, Nachtabschaltung 23:00–06:00)
 - Alle Modi außer Automatik sind auf **ruhige Fassadenwirkung** abgestimmt (wenig

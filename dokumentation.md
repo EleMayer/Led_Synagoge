@@ -181,8 +181,11 @@ hat eine feste Nummer, die über `mode` im JSON übertragen wird.
 | 14  | Treffpunkt    | Effekt       | zwei Lichter laufen zur Mitte und treffen sich |
 | 15  | Herzschlag    | Effekt       | ruhiger Doppelschlag der ganzen Fassade       |
 | 16  | Wechsellicht  | Effekt       | Links/Rechts schwellen langsam gegenläufig    |
+| 17  | Ausstrahlung  | Effekt       | Welle vom Logo/Zentrum langsam nach außen     |
+| 18  | Wolkenzug     | Effekt       | organische Helligkeit, wie ziehende Wolken    |
+| 19  | Leuchtturm    | Effekt       | weiches Lichtband wandert langsam über die Linie |
 
-Die **Effekte** (2, 4, 5, 10, 13–16) verwenden eine gemeinsame Effekt-Helligkeit,
+Die **Effekte** (2, 4, 5, 10, 13–19) verwenden eine gemeinsame Effekt-Helligkeit,
 die **fest in `config.h`** hinterlegt ist (`EFFECT_BRIGHTNESS`, nicht über die App
 einstellbar). Die **Stimmungs-Modi** (6–9, 11, 12) sind
 bewusst fest hinterlegt und nicht über die Regler verstellbar
@@ -600,7 +603,7 @@ Der Controller liefert dazu selbst aus:
 
 Funktionen:
 
-* Betriebsmodus auswählen (alle 17 Modi als Kacheln)
+* Betriebsmodus auswählen (alle 20 Modi als Kacheln)
 * Helligkeit je Bereich einstellen (Links, Rechts, Logo)
 * Automatik-Profil (Uhrzeiten und Helligkeiten) als schreibgeschützte
   Phasen-Übersicht anzeigen – fest in `config.h`, in der App nicht editierbar;
@@ -1404,7 +1407,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 | ID | Anforderung (Pflichtenheft Kap. 6) | Status | Umsetzung |
 | -- | ---------------------------------- | ------ | --------- |
 | F1 | Drei Leuchtbereiche (Links, Rechts, Logo) getrennt und gemeinsam ansteuerbar | erfüllt | Getrennte Helligkeiten `brightnessLeft/Right/Logo`; Regler in der App |
-| F2 | Mehrere Betriebsmodi per App auswählbar | erfüllt | 17 Modi (Aus, Statisch, Automatik, 8 Effekte, 6 thematische Modi) |
+| F2 | Mehrere Betriebsmodi per App auswählbar | erfüllt | 20 Modi (Aus, Statisch, Automatik, 11 Effekte, 6 thematische Modi) |
 | F3 | Automatik tageszeitabhängig inkl. Nachtabschaltung ab 23:00 | erfüllt | `calculateAutomaticBrightness`, feste Nachtgrenze über `isNightOff` |
 | F4 | Helligkeit je Bereich manuell einstellbar | erfüllt | WebSocket-Befehle `left`/`right`/`logo` |
 | F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): manuelle Helligkeiten (WLAN und das gesamte Automatik-Profil dagegen fest in `config.h`) |
@@ -1419,7 +1422,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 | --- | --------------------------------- | ------ | -------- |
 | A1 | Links, Rechts, Logo einzeln und gemeinsam ansteuerbar | erfüllt | Getrennte Zielwerte, gemeinsames Rendern in `applyHardware`/`renderSolid` |
 | A2 | Automatik-Kurve korrekt; Abschaltung 23:00 zuverlässig | erfüllt | Morgen-Rampe, Tag, Abend-Rampe, Nacht = 0; Phasen-Übersicht in der App |
-| A3 | Manuelle Helligkeitsänderung ohne spürbare Verzögerung | erfüllt | WebSocket → sofort `applyHardware` (< 500 ms, NFR Kap. 5) |
+| A3 | Manuelle Helligkeitsänderung ohne spürbare Verzögerung | erfüllt | WebSocket-Befehl setzt ein Flag, `loop()` rendert im nächsten Durchlauf (< 500 ms, NFR Kap. 5) |
 | A4 | Nach Stromausfall Zustand nach Uhrzeit selbsttätig | erfüllt | Definierter Power-On-State + RTC-Zeit unmittelbar nach Boot |
 | A5 | Konfiguration bleibt nach Stromausfall erhalten | erfüllt | NVS (`loadSettings`) |
 | A6 | Helligkeits-/Strombegrenzung greift | erfüllt | `FastLED.setMaxPowerInVoltsAndMilliamps` + Software-Deckel `GLOBAL_MAX_BRIGHTNESS` |
@@ -1428,11 +1431,20 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 
 ## A.3 Betriebsmodi & Override (Kap. 7)
 
-- **Automatik** als Standardmodus mit weichen Übergängen (Fade) – entspricht Kap. 7.1.
+- **Automatik** als Standardmodus mit weichen Übergängen (Fade) – Kap. 7.1
+  (mit einer bewussten Abweichung, siehe unten).
 - **Statisch** und **Effekte** (Lauflicht, Pulsieren/„Welle", Atmen) – entspricht Kap. 7.2.
 - **Aus**: Bereiche aus, Controller bleibt im WLAN erreichbar – entspricht Kap. 7.3.
 - **Override-Rückkehr**: umgesetzt als **Variante (a)** – Rückkehr in die Automatik beim
   nächsten Zeitfenster-Wechsel. Das ist die im Pflichtenheft (Kap. 7.4) empfohlene Variante.
+
+**Bewusste Abweichung (Kap. 7.1 / 9.1):** Das Pflichtenheft sieht vor, dass die
+Automatik-Uhrzeiten und -Helligkeiten „über die App parametrierbar" sind. In
+dieser Umsetzung ist das Profil bewusst **fest in `include/config.h`** hinterlegt
+und in der App nur schreibgeschützt sichtbar (`/api/schedule` liefert es nur
+lesend). Begründung: feste, abgestimmte Lichtzeiten für den Museumsbetrieb und
+keine versehentliche Fehlbedienung durch Besucher. Eine Änderung der Werte ist im
+Code (mit anschließendem OTA-Update) jederzeit möglich.
 
 ## A.4 Offene Punkte (Hardware, Pflichtenheft Kap. 13)
 
@@ -1453,10 +1465,26 @@ Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und da
 Sechs feste Stimmungs-Modi (Dauerlicht, Kerzenlicht,
 Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht), Setup-Accesspoint für den
 lokalen Zugriff bei WLAN-Ausfall, Erreichbarkeit über `led-fassade.local`
-(mDNS), eine schreibgeschützte Phasen-Übersicht des Automatik-Profils sowie
-umschaltbares Design (hell/dunkel) und Sprache (Deutsch/Englisch).
+(mDNS), eine schreibgeschützte Phasen-Übersicht des Automatik-Profils,
+umschaltbares Design (hell/dunkel) und Sprache (Deutsch/Englisch),
+**passwortgeschütztes OTA-Update**, **automatisierte Unit-Tests** der
+Automatik-Logik (`test/`) samt Betriebs-/Wiederanlauf-Anleitung sowie
+Installierbarkeit als **PWA** (Home-Screen).
 
-**Ergebnis:** Alle funktionalen Anforderungen (F1–F9) und Abnahmekriterien (A1–A8) sind
-umgesetzt. Offen sind ausschließlich die im Pflichtenheft als „zu klären" gekennzeichneten
-Hardware-Parameter (Kap. 13).
+## A.6 Liefergegenstände (Pflichtenheft Kap. 14)
+
+| Liefergegenstand | Status |
+| --- | --- |
+| Konfigurierter ESP32-Controller inkl. RTC, einbaufertig | beim Hardware-Aufbau |
+| Eigenentwickelte Firmware (Kap. 8 und 10) | erfüllt |
+| Bedien-PWA | erfüllt |
+| Verkabelungs- und Einspeisekonzept (Schemaplan) inkl. Netzteilauslegung | **offen** – noch zu erstellen |
+| Kurzdokumentation (Inbetriebnahme, Bedienung, Failsafe) | erfüllt (`README.md`, `dokumentation.md`, `notfallplan.md`) |
+
+**Ergebnis:** Alle funktionalen Anforderungen (F1–F9) und Abnahmekriterien
+(A1–A8) sind umgesetzt. Offen sind die im Pflichtenheft als „zu klären"
+gekennzeichneten Hardware-Parameter (Kap. 13) sowie – als Liefergegenstand – das
+**Verkabelungs-/Einspeisekonzept inkl. Netzteilauslegung** (Kap. 14). Das
+Automatik-Profil ist eine bewusste Abweichung (fest im Code, Kap. 7.1/9.1,
+siehe A.3).
 

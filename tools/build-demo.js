@@ -137,7 +137,7 @@ const simulator = `
         let doc;
         try { doc = JSON.parse(msg); } catch(e) { return; }
 
-        if(typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 16)
+        if(typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 19)
         {
             state.mode = doc.mode;
             if(doc.mode === 3)

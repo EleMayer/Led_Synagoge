@@ -1,6 +1,6 @@
 # Betriebsmodi – LED-Fassade
 
-Übersicht und Erklärung aller **17 Leuchtmodi**. Das Licht ist ausschließlich
+Übersicht und Erklärung aller **20 Leuchtmodi**. Das Licht ist ausschließlich
 **weiß** – die Modus-Namen beschreiben also die *Bewegung/Dynamik*, nicht die
 Farbe.
 
@@ -45,6 +45,9 @@ Die konkreten Werte stehen in [`include/config.h`](include/config.h)
 | 14 | Treffpunkt     | Effekt     | zwei Lichter treffen sich in der Mitte | Effekt-Helligkeit |
 | 15 | Herzschlag     | Effekt     | ruhiger Doppelschlag der Fassade | Effekt-Helligkeit |
 | 16 | Wechsellicht   | Effekt     | Links/Rechts gegenläufig | Effekt-Helligkeit |
+| 17 | Ausstrahlung   | Effekt     | Welle vom Logo/Zentrum nach außen | Effekt-Helligkeit |
+| 18 | Wolkenzug      | Effekt     | organische Helligkeit wie ziehende Wolken | Effekt-Helligkeit |
+| 19 | Leuchtturm     | Effekt     | weiches Lichtband wandert über die Linie | Effekt-Helligkeit |
 
 ---
 
@@ -122,6 +125,22 @@ Segment Links und Rechts schwellen **langsam gegenläufig**: während die eine
 Seite heller wird, dimmt die andere ab (Zyklus ≈ 9 s, dunklere Seite ~35 %).
 Parameter: `WECHSEL_PERIOD_MS`, `WECHSEL_LOW_PCT`.
 
+### 17 – Ausstrahlung
+Eine langsame Welle läuft **vom Logo bzw. der Mitte nach außen** über beide
+Segmente – als würde die Fassade vom Eingang her „atmen". Das Logo pulst im
+Ursprung mit. Parameter: `AUSSTR_SPACING`, `AUSSTR_SPEED_DIV`, `AUSSTR_FLOOR_PCT`.
+
+### 18 – Wolkenzug
+**Organische, unregelmäßige** Helligkeitsschwankungen ziehen langsam über die
+Linie (Perlin-Rauschen) – ohne sichtbares Muster, wie vorbeiziehende Wolken.
+Parameter: `WOLKEN_SCALE`, `WOLKEN_SPEED_DIV`, `WOLKEN_FLOOR_PCT`.
+
+### 19 – Leuchtturm
+Ein **weiches Lichtband** wandert langsam über die ganze Linie (beide Segmente
+als eine Reihe) und kommt periodisch wieder; dazwischen ein niedriges
+Grundniveau. Das Logo leuchtet auf, wenn der Strahl die Mitte passiert.
+Parameter: `LEUCHTTURM_PERIOD_MS`, `LEUCHTTURM_WIDTH`, `LEUCHTTURM_FLOOR_PCT`.
+
 ---
 
 ## Stimmungs-Modi
@@ -161,7 +180,7 @@ Parameter: `NACHT_*`.
 
 - **Stimmungs-Modi und Effekt-Parameter:** `include/config.h`
   (`DAUER_*`, `KERZEN_*`, `STUFEN_*`, `DAEMMER_*`, `FEUER_*`, `NACHT_*`,
-  `TWINKLE_*`, `HEART_*`, `WECHSEL_*`).
+  `TWINKLE_*`, `HEART_*`, `WECHSEL_*`, `AUSSTR_*`, `WOLKEN_*`, `LEUCHTTURM_*`).
 - **Automatik-Profil:** `include/config.h` (`AUTO_T_*`, `AUTO_B_*`).
 - **Effekt-Helligkeit:** `include/config.h` (`EFFECT_BRIGHTNESS`).
 - **Pulsieren/Atmen:** die `applyWave(...)`-Aufrufe in `src/main.cpp`.
