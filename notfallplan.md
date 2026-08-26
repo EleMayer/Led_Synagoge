@@ -55,7 +55,7 @@ Standort der Sicherung/des Trennschalters: ____________________________
 | Flackern / Helligkeitssprünge | Spannungseinbruch, Datenleitung, Pegelwandler oder fehlende gemeinsame Masse | Einspeisung/Power-Injection prüfen; **alle Massen verbinden**. Bei gleichzeitiger Erwärmung: Not-Aus |
 | Uhrzeit falsch, Automatik verschoben | RTC-Batterie leer und kein NTP | CR2032 tauschen; WLAN/Internet bereitstellen |
 | App nicht erreichbar | WLAN, mDNS oder IP | `http://led-fassade.local` bzw. IP versuchen; Setup-AP „Fassade-Setup" nutzen |
-| Tags zu dunkel trotz Vollhelligkeit | Strombegrenzung greift (`LED_MAX_MILLIAMPS` zu niedrig fürs Netzteil) | Wert an das reale Netzteil anpassen (siehe `schaltung.md`) |
+| Tags zu dunkel trotz Vollhelligkeit | Strombegrenzung greift (`LED_MAX_MILLIAMPS` zu niedrig fürs Netzteil) | Wert in `config.h` an das reale Netzteil anpassen |
 
 ---
 
@@ -94,7 +94,7 @@ Jeden Notfall hier festhalten.
 
 ## 7. Ersatzteile (für die Behebung)
 
-Grundvorrat (Details und Richtpreise in [schaltung.md](schaltung.md)):
+Empfohlener Grundvorrat:
 
 - LED-Segment WS2812 (Ersatzstück bzw. einzelne LEDs zum Nachlöten)
 - Logo-LED (weiß)

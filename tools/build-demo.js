@@ -156,7 +156,25 @@ const simulator = `
         if(doc.logo !== undefined)  { state.logo  = clamp(doc.logo, 0, 100);  enterOverride(); }
         // Effekt-Helligkeit (global) ist fest im Code (config.h) - nicht annehmen.
 
-        // Automatik-Zeitprofil ist fest im Code (config.h) - wird nicht angenommen.
+        // Automatik-Profil (Uhrzeiten + Helligkeiten) pruefen und uebernehmen.
+        if(doc.sched && typeof doc.sched === 'object')
+        {
+            let s = doc.sched;
+            let tM = parseInt(s.tMorning), tD = parseInt(s.tDay);
+            let tE = parseInt(s.tEvening), tN = parseInt(s.tNight);
+            let bM = parseInt(s.bMorning), bD = parseInt(s.bDay);
+            let bES = parseInt(s.bEveStart), bEE = parseInt(s.bEveEnd);
+            let list = [tM, tD, tE, tN, bM, bD, bES, bEE];
+            let allNums = true;
+            for(let i = 0; i < list.length; i++){ if(isNaN(list[i])) allNums = false; }
+            let orderOk = tM >= 0 && tN <= 23 && tM < tD && tD < tE && tE < tN;
+            let rangeOk = bM>=0&&bM<=100&&bD>=0&&bD<=100&&bES>=0&&bES<=100&&bEE>=0&&bEE<=100;
+            if(allNums && orderOk && rangeOk)
+            {
+                state.sched = { tMorning: tM, tDay: tD, tEvening: tE, tNight: tN,
+                                bMorning: bM, bDay: bD, bEveStart: bES, bEveEnd: bEE };
+            }
+        }
     }
 
     // Ersatz fuer WebSocket: verbindet sofort und schickt jede Sekunde den Status.

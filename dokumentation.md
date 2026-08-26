@@ -593,7 +593,7 @@ Der Controller liefert dazu selbst aus:
 /manifest.json  App-Manifest (Name, Icon, Vollbild)
 /icon.svg       App-Icon
 /api/status     Status als JSON (REST)
-/api/schedule   Automatik-Zeitprofil lesen (REST)
+/api/schedule   Automatik-Profil lesen (REST); Schreiben über WebSocket (`sched`)
 /update         Firmware-Update (OTA, POST, passwortgeschuetzt)
 /ws             WebSocket (Live-Bedienung: Modus, Helligkeiten)
 ```
@@ -602,9 +602,10 @@ Funktionen:
 
 * Betriebsmodus auswählen (alle 17 Modi als Kacheln)
 * Helligkeit je Bereich einstellen (Links, Rechts, Logo)
-* Automatik-Profil (Uhrzeiten und Helligkeiten) als schreibgeschützte
-  Phasen-Übersicht anzeigen – fest in `config.h`, in der App nicht editierbar;
-  die Übersicht erscheint nur im Automatik-Modus
+* Automatik-Profil (Uhrzeiten und Helligkeiten) direkt bearbeiten und mit
+  „Profil speichern" dauerhaft im Gerät (NVS) ablegen; `config.h` liefert die
+  Startwerte. Die Karte erscheint nur im Automatik-Modus, inkl. Balken
+  „aktuelle Helligkeit"
 * zwischen hellem und dunklem Design sowie zwischen Deutsch und Englisch
   umschalten (Auswahl wird im Browser gespeichert)
 * aktuellen Modus anzeigen
@@ -1406,7 +1407,7 @@ und ihrer Umsetzung in dieser Firmware (Version 2.4.3).
 | F2 | Mehrere Betriebsmodi per App auswählbar | erfüllt | 17 Modi (Aus, Statisch, Automatik, 8 Effekte, 6 thematische Modi) |
 | F3 | Automatik tageszeitabhängig inkl. Nachtabschaltung ab 23:00 | erfüllt | `calculateAutomaticBrightness`, feste Nachtgrenze über `isNightOff` |
 | F4 | Helligkeit je Bereich manuell einstellbar | erfüllt | WebSocket-Befehle `left`/`right`/`logo` |
-| F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): manuelle Helligkeiten (WLAN und das gesamte Automatik-Profil dagegen fest in `config.h`) |
+| F5 | Konfiguration persistent gespeichert | erfüllt | NVS-Flash (`Preferences`): manuelle Helligkeiten **und** das Automatik-Profil (Uhrzeiten + Helligkeiten); `config.h` liefert die Startwerte. WLAN-Zugang bleibt fest in `config.h` |
 | F6 | Nach Stromausfall definierter Zustand selbsttätig | erfüllt | `setup()` startet immer im Automatik-Modus, Zustand nach Uhrzeit |
 | F7 | Netzunabhängige Zeitbasis (RTC), NTP-Abgleich wenn online | erfüllt | DS3231 sofort nach Boot; periodischer NTP-Abgleich inkl. Sommer-/Winterzeit |
 | F8 | OTA-Firmware-Update über das lokale Netz | erfüllt | `POST /update` (passwortgeschützt, `OTA_USER`/`OTA_PASSWORD`), danach Neustart |
@@ -1443,8 +1444,8 @@ Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und da
 | LED-Bestückung | `NUM_LEDS_LINKS 60`, `NUM_LEDS_RECHTS 60`, Logo 1 LED | **final** – Segment Links 60, Segment Rechts 60, Logo 1 LED (PWM-gedimmt) |
 | LED-Typ | `WS2812` | Pflichtenheft schlägt WS2811 / 12 V vor (Kap. 4.1) |
 | Strombegrenzung | `LED_VOLTS 5`, `LED_MAX_MILLIAMPS 2000` | Bei 120 LEDs (60+60) ist 2000 mA zu niedrig – FastLED dimmt sonst herunter; nach Netzteil-/Einspeisekonzept erhöhen (Kap. 4.2) |
-| Automatik-Uhrzeiten | `AUTO_T_MORNING 6`, `AUTO_T_DAY 8`, `AUTO_T_EVENING 18`, `AUTO_T_NIGHT 23` | Fest im Code (aufsteigend), bewusst nicht über die App verstellbar; hier die Zeitfenster festlegen |
-| Automatik-Helligkeiten | `AUTO_B_MORNING 90`, `AUTO_B_DAY 90`, `AUTO_B_EVE_START 60`, `AUTO_B_EVE_END 25` | Fest im Code, bewusst nicht über die App verstellbar; hier an die gewünschte Lichtwirkung anpassen |
+| Automatik-Uhrzeiten | `AUTO_T_MORNING 6`, `AUTO_T_DAY 8`, `AUTO_T_EVENING 18`, `AUTO_T_NIGHT 23` | **Startwerte** (aufsteigend); über die App änderbar und in NVS gespeichert |
+| Automatik-Helligkeiten | `AUTO_B_MORNING 90`, `AUTO_B_DAY 90`, `AUTO_B_EVE_START 60`, `AUTO_B_EVE_END 25` | **Startwerte**; über die App änderbar und in NVS gespeichert |
 | Sonnenstand-Kopplung | nicht umgesetzt | Optional (Kap. 7.1 `[OPTION]`) |
 
 ## A.5 Zusätzlich umgesetzt (über das Pflichtenheft hinaus)
@@ -1452,7 +1453,7 @@ Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und da
 Sechs feste Stimmungs-Modi (Dauerlicht, Kerzenlicht,
 Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht), Setup-Accesspoint für den
 lokalen Zugriff bei WLAN-Ausfall, Erreichbarkeit über `led-fassade.local`
-(mDNS), eine schreibgeschützte Phasen-Übersicht des Automatik-Profils sowie
+(mDNS), eine Live-Anzeige der aktuellen Automatik-Helligkeit sowie
 umschaltbares Design (hell/dunkel) und Sprache (Deutsch/Englisch).
 
 **Ergebnis:** Alle funktionalen Anforderungen (F1–F9) und Abnahmekriterien (A1–A8) sind

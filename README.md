@@ -18,9 +18,9 @@ espressif32@7.0.1 → Arduino-Core 2.x, alte LEDC-API)
   Kontrast, langsame Bewegung, angehobene Grundhelligkeit)
 
 Ausführliche Erklärung aller Modi: siehe [modi.md](modi.md).
-- Automatik-Profil (Uhrzeiten **und** Helligkeiten) fest in `config.h`, nur dort
-  änderbar; die App zeigt es schreibgeschützt als Phasen-Übersicht (inkl. Balken
-  „aktuelle Helligkeit")
+- Automatik-Profil (Uhrzeiten **und** Helligkeiten) **über die App einstellbar**
+  und im Gerät (NVS) gespeichert; `config.h` liefert nur die Startwerte. Die App
+  zeigt zusätzlich einen Balken „aktuelle Helligkeit"
 - Effekt-Helligkeit fest in `config.h` (`EFFECT_BRIGHTNESS`), nicht über die App
   einstellbar
 - App-Oberfläche mit **Hell-/Dunkel-Umschalter** und **Deutsch/Englisch**
@@ -44,8 +44,6 @@ tools/build-icons.js  erzeugt include/icons.h aus tools/icons/*.png
 tools/icons/          Home-Screen-Icons (icon-180/192/512.png)
 modi.md               Erklärung aller Betriebsmodi
 dokumentation.md      Technische Dokumentation
-schaltung.md          Schaltung, Pinbelegung und Stückliste (BOM)
-testprotokoll.md      Nachweis der Pflichtenheft-Anforderungen
 notfallplan.md        Notfälle, Sofortmaßnahmen, Störungstabelle, Kontakte
 ```
 
@@ -119,16 +117,16 @@ Das System läuft nach einem Stromausfall ohne Eingriff vor Ort wieder an:
    (`SAFE_DEFAULT_BRIGHTNESS`) und korrigiert sich, sobald NTP synchronisiert.
 4. Bei Internetverbindung wird die RTC periodisch per NTP nachgeführt
    (Sommer-/Winterzeit berücksichtigt).
-5. Die manuellen Helligkeiten liegen im NVS und überstehen den Stromausfall.
-   Das Automatik-Profil (Uhrzeiten und Helligkeiten) steht dagegen fest in
-   `config.h`.
+5. Die manuellen Helligkeiten **und das Automatik-Profil** (Uhrzeiten und
+   Helligkeiten) liegen im NVS und überstehen den Stromausfall. `config.h`
+   liefert nur die Startwerte, falls noch nichts gespeichert wurde.
 
 ## Bedienung (Kurzüberblick)
 
 - **Modus** wählen und **Helligkeit** je Bereich (Links, Rechts, Logo) im Modus
-  *Statisch* regeln. Das **Automatik-Profil** (Uhrzeiten und Helligkeiten) ist
-  fest in `config.h` hinterlegt und in der App nur als schreibgeschützte
-  Übersicht sichtbar.
+  *Statisch* regeln. Das **Automatik-Profil** (Uhrzeiten und Helligkeiten) lässt
+  sich in der Automatik-Karte direkt bearbeiten und mit „Profil speichern"
+  dauerhaft ablegen; `config.h` liefert nur die Startwerte.
 - Ein manueller Eingriff übersteuert die Automatik. Das System kehrt beim
   nächsten Zeitfenster-Übergang (z. B. Tag → Abend) selbsttätig in die Automatik
   zurück.

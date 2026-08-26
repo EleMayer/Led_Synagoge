@@ -156,14 +156,19 @@ input[type=text]{width:100%;padding:11px 12px;border-radius:9px;
 input[type=text]:focus{outline:none;border-color:var(--accent);
   box-shadow:0 0 0 3px var(--accent-weak)}
 
-.phases{margin-top:2px}
-.phase{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:baseline;
+.sched{margin-top:2px}
+.srow{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;
   padding:9px 0;border-bottom:1px solid var(--line)}
-.phase:last-child{border-bottom:none}
-.phase .ph-name{color:var(--fg)}
-.phase .ph-time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
-.phase .ph-val{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums;
-  text-align:right;min-width:84px}
+.srow:last-child{border-bottom:none}
+.srow .s-name{color:var(--fg)}
+.srow .s-f{color:var(--muted);font-size:13px;text-align:right;white-space:nowrap}
+.srow input[type=number]{width:54px;padding:7px 6px;border-radius:8px;
+  border:1px solid var(--line-strong);background:var(--input-bg);color:var(--fg);
+  font-size:15px;text-align:center;font-variant-numeric:tabular-nums}
+.srow input[type=number]:focus{outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-weak)}
+#schedSave{margin-top:14px}
+.hint.err{color:var(--warn)}
 
 .autonow{margin-top:16px}
 .autonow-top{display:flex;justify-content:space-between;align-items:baseline;
@@ -315,7 +320,25 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
         if(doc.logo !== undefined)  { state.logo  = clamp(doc.logo, 0, 100);  enterOverride(); }
         // Effekt-Helligkeit (global) ist fest im Code (config.h) - nicht annehmen.
 
-        // Automatik-Zeitprofil ist fest im Code (config.h) - wird nicht angenommen.
+        // Automatik-Profil (Uhrzeiten + Helligkeiten) pruefen und uebernehmen.
+        if(doc.sched && typeof doc.sched === 'object')
+        {
+            let s = doc.sched;
+            let tM = parseInt(s.tMorning), tD = parseInt(s.tDay);
+            let tE = parseInt(s.tEvening), tN = parseInt(s.tNight);
+            let bM = parseInt(s.bMorning), bD = parseInt(s.bDay);
+            let bES = parseInt(s.bEveStart), bEE = parseInt(s.bEveEnd);
+            let list = [tM, tD, tE, tN, bM, bD, bES, bEE];
+            let allNums = true;
+            for(let i = 0; i < list.length; i++){ if(isNaN(list[i])) allNums = false; }
+            let orderOk = tM >= 0 && tN <= 23 && tM < tD && tD < tE && tE < tN;
+            let rangeOk = bM>=0&&bM<=100&&bD>=0&&bD<=100&&bES>=0&&bES<=100&&bEE>=0&&bEE<=100;
+            if(allNums && orderOk && rangeOk)
+            {
+                state.sched = { tMorning: tM, tDay: tD, tEvening: tE, tNight: tN,
+                                bMorning: bM, bDay: bD, bEveStart: bES, bEveEnd: bEE };
+            }
+        }
     }
 
     // Ersatz fuer WebSocket: verbindet sofort und schickt jede Sekunde den Status.
@@ -443,7 +466,34 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 
 <section class="card" id="autoCard" style="display:none">
   <h2 data-i18n="auto">Automatik</h2>
-  <div id="autoPhases" class="phases"></div>
+  <p class="hint" data-i18n="auto.editHint">Uhrzeiten und Helligkeiten des Tagesprofils. Ab „Nacht" bleibt die Beleuchtung aus.</p>
+
+  <div class="sched">
+    <div class="srow">
+      <span class="s-name" data-i18n="phase.morning">Morgen</span>
+      <span class="s-f"><input type="number" id="tMorning" min="0" max="23" inputmode="numeric"> <span data-i18n="unit.hour">Uhr</span></span>
+      <span class="s-f">&rarr; <input type="number" id="bMorning" min="0" max="100" inputmode="numeric"> %</span>
+    </div>
+    <div class="srow">
+      <span class="s-name" data-i18n="phase.day">Tag</span>
+      <span class="s-f"><input type="number" id="tDay" min="0" max="23" inputmode="numeric"> <span data-i18n="unit.hour">Uhr</span></span>
+      <span class="s-f"><input type="number" id="bDay" min="0" max="100" inputmode="numeric"> %</span>
+    </div>
+    <div class="srow">
+      <span class="s-name" data-i18n="phase.evening">Abend</span>
+      <span class="s-f"><input type="number" id="tEvening" min="0" max="23" inputmode="numeric"> <span data-i18n="unit.hour">Uhr</span></span>
+      <span class="s-f"><input type="number" id="bEveStart" min="0" max="100" inputmode="numeric"> % &rarr; <input type="number" id="bEveEnd" min="0" max="100" inputmode="numeric"> %</span>
+    </div>
+    <div class="srow">
+      <span class="s-name" data-i18n="phase.night">Nacht</span>
+      <span class="s-f"><input type="number" id="tNight" min="0" max="23" inputmode="numeric"> <span data-i18n="unit.hour">Uhr</span></span>
+      <span class="s-f" data-i18n="phase.off">aus</span>
+    </div>
+  </div>
+
+  <p class="hint err" id="schedError" style="display:none"></p>
+  <button class="primary" id="schedSave" onclick="saveSchedule()" data-i18n="auto.save">Profil speichern</button>
+
   <div class="autonow">
     <div class="autonow-top">
       <span data-i18n="autoNow">Aktuelle Helligkeit</span>
@@ -496,6 +546,10 @@ const T = {
     "seg.left":"Segment Links","seg.right":"Segment Rechts","seg.logo":"Logo",
     "phase.morning":"Hochfahren","phase.day":"Tag","phase.evening":"Abend",
     "phase.night":"Nacht","phase.off":"aus",
+    "auto.editHint":"Uhrzeiten und Helligkeiten des Tagesprofils. Ab „Nacht“ bleibt die Beleuchtung aus.",
+    "auto.save":"Profil speichern","unit.hour":"Uhr",
+    "sched.errOrder":"Uhrzeiten müssen aufsteigend sein (Morgen < Tag < Abend < Nacht, 0–23).",
+    "sched.errRange":"Bitte gültige Werte eingeben (Stunden 0–23, Helligkeit 0–100 %).",
     "sys.firmware":"Firmware","sys.time":"Uhrzeit","sys.date":"Datum","sys.rtc":"RTC",
     "sys.ntp":"NTP","sys.wifi":"WLAN","sys.ip":"IP","sys.signal":"Signal",
     "val.ok":"OK","val.rtcMissing":"nicht verfügbar","val.ntpSynced":"synchronisiert",
@@ -515,6 +569,10 @@ const T = {
     "seg.left":"Segment left","seg.right":"Segment right","seg.logo":"Logo",
     "phase.morning":"Ramp-up","phase.day":"Day","phase.evening":"Evening",
     "phase.night":"Night","phase.off":"off",
+    "auto.editHint":"Times and brightness of the daily profile. From “Night” the lighting stays off.",
+    "auto.save":"Save profile","unit.hour":"h",
+    "sched.errOrder":"Times must be ascending (morning < day < evening < night, 0–23).",
+    "sched.errRange":"Please enter valid values (hours 0–23, brightness 0–100 %).",
     "sys.firmware":"Firmware","sys.time":"Time","sys.date":"Date","sys.rtc":"RTC",
     "sys.ntp":"NTP","sys.wifi":"WiFi","sys.ip":"IP","sys.signal":"Signal",
     "val.ok":"OK","val.rtcMissing":"not available","val.ntpSynced":"synced",
@@ -564,7 +622,6 @@ function applyLanguage()
     document.getElementById("langBtn").textContent = (lang === "de") ? "EN" : "DE";
 
     updateInstallHint();
-    renderAutoPhases();
 
     if(lastData)
     {
@@ -782,10 +839,10 @@ function updateUI(data)
 
     if(data.sched)
     {
-        // Das komplette Automatik-Profil (Uhrzeiten und Helligkeiten) ist fest
-        // im Code (config.h) und wird nur angezeigt, nicht editiert.
+        // Automatik-Profil (Uhrzeiten und Helligkeiten) vom Controller in die
+        // Eingabefelder uebernehmen (gerade bearbeitete Felder bleiben stehen).
         schedule = data.sched;
-        renderAutoPhases();
+        fillSchedule(schedule);
     }
 
     // Aktuelle Automatik-Helligkeit als Zahl und Balken anzeigen.
@@ -844,42 +901,86 @@ function updateSlider(type, value)
     }
 }
 
-// Komplettes Automatik-Profil (Uhrzeiten + Helligkeiten). Steht fest in
-// config.h und kommt nur ueber den Status - in der App reine Anzeige.
+// Letztes vom Controller gemeldetes Automatik-Profil.
 let schedule = {
     tMorning: 6, tDay: 8, tEvening: 18, tNight: 23,
     bMorning: 90, bDay: 90, bEveStart: 60, bEveEnd: 25
 };
 
-function two(n)
+// Alle Profil-Eingabefelder (die IDs entsprechen den Feldnamen im Status).
+const schedIds = ["tMorning", "tDay", "tEvening", "tNight",
+                  "bMorning", "bDay", "bEveStart", "bEveEnd"];
+
+// Fuellt die Eingabefelder mit dem Profil vom Controller. Ein gerade
+// bearbeitetes Feld wird nicht ueberschrieben.
+function fillSchedule(s)
 {
-    return String(n).padStart(2, "0");
+    for(let i = 0; i < schedIds.length; i++)
+    {
+        const el = document.getElementById(schedIds[i]);
+        if(el && el !== document.activeElement && s[schedIds[i]] !== undefined)
+        {
+            el.value = s[schedIds[i]];
+        }
+    }
 }
 
-// Baut die schreibgeschuetzte Phasen-Uebersicht: Name, Zeitfenster, Helligkeit.
-function renderAutoPhases()
+// Liest ein Eingabefeld als ganze Zahl.
+function schedNum(id)
 {
-    const s = schedule;
-    const rows = [
-        [t("phase.morning"), s.tMorning, s.tDay,     "&rarr; " + s.bMorning + " %"],
-        [t("phase.day"),     s.tDay,     s.tEvening, s.bDay + " %"],
-        [t("phase.evening"), s.tEvening, s.tNight,   s.bEveStart + " &rarr; " + s.bEveEnd + " %"],
-        [t("phase.night"),   s.tNight,   s.tMorning, t("phase.off")]
-    ];
+    return parseInt(document.getElementById(id).value, 10);
+}
 
-    let html = "";
-    for(let i = 0; i < rows.length; i++)
+// Prueft die Eingaben und schickt das Profil an den Controller.
+function saveSchedule()
+{
+    const tM  = schedNum("tMorning");
+    const tD  = schedNum("tDay");
+    const tE  = schedNum("tEvening");
+    const tN  = schedNum("tNight");
+    const bM  = schedNum("bMorning");
+    const bD  = schedNum("bDay");
+    const bES = schedNum("bEveStart");
+    const bEE = schedNum("bEveEnd");
+
+    const err = document.getElementById("schedError");
+    const vals = [tM, tD, tE, tN, bM, bD, bES, bEE];
+
+    for(let i = 0; i < vals.length; i++)
     {
-        const r = rows[i];
-        html +=
-            "<div class='phase'>" +
-                "<span class='ph-name'>" + r[0] + "</span>" +
-                "<span class='ph-time'>" + two(r[1]) + ":00–" + two(r[2]) + ":00</span>" +
-                "<span class='ph-val'>" + r[3] + "</span>" +
-            "</div>";
+        if(isNaN(vals[i]))
+        {
+            err.innerText = t("sched.errRange");
+            err.style.display = "";
+            return;
+        }
     }
 
-    document.getElementById("autoPhases").innerHTML = html;
+    // Uhrzeiten muessen aufsteigend sein: Morgen < Tag < Abend < Nacht.
+    if(tM < 0 || tN > 23 || !(tM < tD && tD < tE && tE < tN))
+    {
+        err.innerText = t("sched.errOrder");
+        err.style.display = "";
+        return;
+    }
+
+    const bs = [bM, bD, bES, bEE];
+    for(let i = 0; i < bs.length; i++)
+    {
+        if(bs[i] < 0 || bs[i] > 100)
+        {
+            err.innerText = t("sched.errRange");
+            err.style.display = "";
+            return;
+        }
+    }
+
+    err.style.display = "none";
+
+    send({ sched: {
+        tMorning: tM, tDay: tD, tEvening: tE, tNight: tN,
+        bMorning: bM, bDay: bD, bEveStart: bES, bEveEnd: bEE
+    }});
 }
 
 const sliderTypes = ["left", "right", "logo"];

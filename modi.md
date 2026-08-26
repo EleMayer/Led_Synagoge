@@ -69,11 +69,11 @@ Tageszeitabhängige Helligkeit nach fester Kurve:
 23:00–06:00  Nacht           aus
 ```
 
-Uhrzeiten (`AUTO_T_*`) und Helligkeiten (`AUTO_B_*`) sind **fest in `config.h`**
-hinterlegt. Nach einem Stromausfall startet der Controller immer in diesem Modus
-(siehe Failsafe). In der App wird das Profil als schreibgeschützte
-Phasen-Übersicht angezeigt – sie erscheint **nur, wenn der Automatik-Modus aktiv
-ist**.
+Die Werte in `config.h` (`AUTO_T_*`, `AUTO_B_*`) sind nur die **Startwerte**:
+Uhrzeiten und Helligkeiten lassen sich in der App bearbeiten und werden im Gerät
+(NVS) gespeichert. Nach einem Stromausfall startet der Controller immer in diesem
+Modus (siehe Failsafe). Die Automatik-Karte erscheint **nur, wenn der
+Automatik-Modus aktiv ist**, und zeigt zusätzlich die aktuelle Helligkeit.
 
 ---
 
