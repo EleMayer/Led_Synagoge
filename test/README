@@ -5,8 +5,9 @@ Tests für die Firmware.
 ## Automatische Unit-Tests
 
 `test_auto_logic/` prüft die Automatik-Logik aus `include/auto_logic.h`
-(Tageskurve, Zeitfenster, Helligkeits-Umrechnung) – also genau den Code, den
-auch die Firmware verwendet.
+(Tageskurve, Zeitfenster, Helligkeits-Umrechnung). `test_sun/` prüft die
+Sonnenstand-Logik aus `include/sun.h` (Sonnenauf-/-untergang, Sommerzeit,
+Tag-im-Jahr). Beide testen genau den Code, den auch die Firmware verwendet.
 
 Ausführen – zwei Wege:
 

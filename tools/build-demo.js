@@ -41,6 +41,7 @@ const simulator = `
         rtc: true, ntp: true,
         ip: 'Demo', rssi: -55, wifi: true, ap: false,
         ssid: 'Demo (ohne ESP32)', firmware: 'Demo',
+        onHours: 128.5, upHours: 140.2, kWh: 128.5 * 90 / 1000,
         sched: { tMorning: 6, tDay: 8, tEvening: 18, tNight: 23,
                  bMorning: 90, bDay: 90, bEveStart: 60, bEveEnd: 25 }
     };

@@ -41,6 +41,11 @@ static const char* FIRMWARE_VERSION = "2.4.3";
 #define LED_MAX_MILLIAMPS      2000
 #define GLOBAL_MAX_BRIGHTNESS  200
 
+// Fuer die Energie-Schaetzung in der Statistik: durchschnittliche Leistung der
+// gesamten Anlage im Betrieb (Watt). Grobe Annahme - an die reale Anlage bzw.
+// eine Messung anpassen. Energie (kWh) = Leucht-Stunden * EST_WATT_AVG / 1000.
+#define EST_WATT_AVG           90
+
 // Effekt-Helligkeit (Prozent) fuer die Effekt-Modi (Lauflicht, Pulsieren,
 // Atmen, Welle, Sternenfunkeln ...). Bewusst FEST im Code - nicht ueber die App
 // einstellbar.
@@ -71,6 +76,13 @@ static const char* FIRMWARE_VERSION = "2.4.3";
 #define AUTO_T_DAY          8
 #define AUTO_T_EVENING     18
 #define AUTO_T_NIGHT       23
+
+// Optionale Sonnenstand-Kopplung der Automatik (Pflichtenheft Kap. 7.1 [OPTION]).
+// 0 = aus (feste Uhrzeiten AUTO_T_*). 1 = Morgen-/Abendwechsel folgen Sonnenauf-
+// bzw. -untergang; die Nachtabschaltung AUTO_T_NIGHT bleibt feste Grenze.
+#define USE_SUN_TIMES       0
+#define SUN_LAT             48.043   // geogr. Breite (Steyr/Garsten)
+#define SUN_LON             14.420   // geogr. Laenge (Ost positiv)
 
 // PWM fuer das dimmbare Logo. Arduino-Core 2.x (LEDC-API):
 //   ledcSetup(channel, freq, res) + ledcAttachPin(pin, channel) + ledcWrite(channel, duty)

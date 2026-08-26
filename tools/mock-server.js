@@ -67,6 +67,7 @@ const state = {
     wifi: true, ap: false,
     ssid: 'Museum-Arbeitswelt',
     firmware: '2.3.0-mock',
+    onHours: 128.5, upHours: 140.2, kWh: 128.5 * 90 / 1000,
     sched: { tMorning: 6, tDay: 8, tEvening: 18, tNight: 23,
              bMorning: 90, bDay: 90, bEveStart: 60, bEveEnd: 25 }
 };

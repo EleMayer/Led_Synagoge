@@ -1460,7 +1460,8 @@ Diese Werte sind im Pflichtenheft selbst als „noch zu klären" markiert und da
 | Strombegrenzung | `LED_VOLTS 5`, `LED_MAX_MILLIAMPS 2000` | Bei 120 LEDs (60+60) ist 2000 mA zu niedrig – FastLED dimmt sonst herunter; nach Netzteil-/Einspeisekonzept erhöhen (Kap. 4.2) |
 | Automatik-Uhrzeiten | `AUTO_T_MORNING 6`, `AUTO_T_DAY 8`, `AUTO_T_EVENING 18`, `AUTO_T_NIGHT 23` | Fest im Code (aufsteigend), bewusst nicht über die App verstellbar; hier die Zeitfenster festlegen |
 | Automatik-Helligkeiten | `AUTO_B_MORNING 90`, `AUTO_B_DAY 90`, `AUTO_B_EVE_START 60`, `AUTO_B_EVE_END 25` | Fest im Code, bewusst nicht über die App verstellbar; hier an die gewünschte Lichtwirkung anpassen |
-| Sonnenstand-Kopplung | nicht umgesetzt | Optional (Kap. 7.1 `[OPTION]`) |
+| Sonnenstand-Kopplung | `USE_SUN_TIMES 0` (aus), `SUN_LAT`, `SUN_LON` | Optional (Kap. 7.1 `[OPTION]`): auf `1` setzen, dann folgen Morgen/Abend dem Sonnenstand |
+| Energie-Schätzung | `EST_WATT_AVG 90` | Durchschnittsleistung der Anlage (W) für die Statistik – an reale Messung anpassen |
 
 ## A.5 Zusätzlich umgesetzt (über das Pflichtenheft hinaus)
 
@@ -1469,9 +1470,11 @@ Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht), Setup-Accesspoint für den
 lokalen Zugriff bei WLAN-Ausfall, Erreichbarkeit über `led-fassade.local`
 (mDNS), eine schreibgeschützte Phasen-Übersicht des Automatik-Profils,
 umschaltbares Design (hell/dunkel) und Sprache (Deutsch/Englisch),
-**passwortgeschütztes OTA-Update**, **automatisierte Unit-Tests** der
-Automatik-Logik (`test/`) samt Betriebs-/Wiederanlauf-Anleitung sowie
-Installierbarkeit als **PWA** (Home-Screen).
+**passwortgeschütztes OTA-Update**, **automatisierte Unit-Tests** der Automatik-
+und Sonnenstand-Logik (`test/`) samt Betriebs-/Wiederanlauf-Anleitung,
+Installierbarkeit als **PWA** (Home-Screen), eine **Betriebs-Statistik**
+(Leucht-Stunden + geschätzter Energieverbrauch) sowie eine **optionale
+Sonnenstand-Kopplung** der Automatik.
 
 ## A.6 Liefergegenstände (Pflichtenheft Kap. 14)
 

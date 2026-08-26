@@ -325,6 +325,7 @@ const T = {
     "phase.night":"Nacht","phase.off":"aus",
     "sys.firmware":"Firmware","sys.time":"Uhrzeit","sys.date":"Datum","sys.rtc":"RTC",
     "sys.ntp":"NTP","sys.wifi":"WLAN","sys.ip":"IP","sys.signal":"Signal",
+    "sys.hours":"Leucht-Stunden","sys.energy":"Energie",
     "val.ok":"OK","val.rtcMissing":"nicht verfügbar","val.ntpSynced":"synchronisiert",
     "val.ntpNot":"nicht synchron.","val.connected":"verbunden","val.setupAp":"Setup-AP",
     "val.disconnected":"getrennt","val.noData":"Keine Daten"
@@ -344,6 +345,7 @@ const T = {
     "phase.night":"Night","phase.off":"off",
     "sys.firmware":"Firmware","sys.time":"Time","sys.date":"Date","sys.rtc":"RTC",
     "sys.ntp":"NTP","sys.wifi":"WiFi","sys.ip":"IP","sys.signal":"Signal",
+    "sys.hours":"Lit hours","sys.energy":"Energy",
     "val.ok":"OK","val.rtcMissing":"not available","val.ntpSynced":"synced",
     "val.ntpNot":"not synced","val.connected":"connected","val.setupAp":"Setup AP",
     "val.disconnected":"disconnected","val.noData":"No data"
@@ -602,6 +604,16 @@ function updateUI(data)
     if(data.wifi && data.rssi !== undefined)
     {
         sys += kv(t("sys.signal"), data.rssi + " dBm");
+    }
+
+    if(data.onHours !== undefined)
+    {
+        sys += kv(t("sys.hours"), data.onHours.toFixed(1) + " h");
+    }
+
+    if(data.kWh !== undefined)
+    {
+        sys += kv(t("sys.energy"), "ca. " + data.kWh.toFixed(2) + " kWh");
     }
 
     document.getElementById("systemStatus").innerHTML = sys;

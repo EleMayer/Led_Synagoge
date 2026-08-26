@@ -35,6 +35,7 @@
 
 #include "config.h"
 #include "auto_logic.h"
+#include "sun.h"
 #include "web_page.h"
 #include "icons.h"
 
@@ -126,6 +127,14 @@ Preferences preferences;
 // loop() im Haupt-Task - ohne diesen Mutex koennten beide gleichzeitig auf den
 // DS3231 zugreifen und sich die I2C-Uebertragung zerstoeren (falsche Zeit/Haenger).
 SemaphoreHandle_t rtcMutex = NULL;
+
+// Betriebs-Statistik (in NVS gespeichert, zaehlt ueber Neustarts hinweg weiter).
+unsigned long statTotalSeconds = 0;              // gesamte Betriebszeit
+unsigned long statOnSeconds    = 0;              // davon mit Licht an
+unsigned long statByMode[MODE_LAST + 1] = {0};   // Zeit je Modus
+unsigned long lastStatTick = 0;
+unsigned long lastStatSave = 0;
+const uint32_t STAT_SAVE_INTERVAL = 600000;      // Statistik alle 10 min sichern
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -248,6 +257,11 @@ void saveSettings() {
     preferences.putInt("right", brightnessRight);
     preferences.putInt("logo", brightnessLogo);
 
+    // Betriebs-Statistik mitspeichern.
+    preferences.putULong("statTot", statTotalSeconds);
+    preferences.putULong("statOn", statOnSeconds);
+    preferences.putBytes("statMode", statByMode, sizeof(statByMode));
+
     preferences.end();
 
     Serial.println("Einstellungen gespeichert.");
@@ -279,6 +293,13 @@ void loadSettings() {
 
     brightnessLogo =
         preferences.getInt("logo", 80);
+
+    // Betriebs-Statistik laden (nur bei passender Groesse, sonst Standard 0).
+    statTotalSeconds = preferences.getULong("statTot", 0);
+    statOnSeconds    = preferences.getULong("statOn", 0);
+    if (preferences.getBytesLength("statMode") == sizeof(statByMode)) {
+        preferences.getBytes("statMode", statByMode, sizeof(statByMode));
+    }
 
     preferences.end();
 
@@ -403,6 +424,30 @@ AutoProfile currentAutoProfile() {
     p.bDay       = dayBrightness;
     p.bEveStart  = eveningStartBrightness;
     p.bEveEnd    = eveningEndBrightness;
+
+#if USE_SUN_TIMES
+    // Morgen-/Abendwechsel an Sonnenauf-/-untergang koppeln; Nacht bleibt fest.
+    struct tm t;
+    if (getCurrentTime(t)) {
+        int y = t.tm_year + 1900, mo = t.tm_mon + 1, d = t.tm_mday;
+        int N = dayOfYear(y, mo, d);
+        double off = 1.0 + (isEuropeDST(y, mo, d) ? 1.0 : 0.0);   // MEZ/MESZ
+        double sr = sunHour(false, N, SUN_LAT, SUN_LON, off);
+        double ss = sunHour(true,  N, SUN_LAT, SUN_LON, off);
+        if (sr >= 0 && ss >= 0) {
+            int m = (int)round(sr);
+            int e = (int)round(ss);
+            if (m < 0) m = 0;
+            int day = m + 2;                    // volle Tageshelligkeit ~2 h nach Aufgang
+            if (e <= day)              e = day + 1;
+            if (e >= nightStartHour)   e = nightStartHour - 1;
+            p.tMorning = m;
+            p.tDay     = day;
+            p.tEvening = e;
+        }
+    }
+#endif
+
     return p;
 }
 
@@ -1623,32 +1668,31 @@ String createStatusJson() {
     doc["override"] =
         overrideActive;
 
+    // Betriebs-Statistik: Leucht-Stunden, Gesamtstunden, geschaetzte Energie.
+    doc["onHours"] =
+        statOnSeconds / 3600.0;
+
+    doc["upHours"] =
+        statTotalSeconds / 3600.0;
+
+    doc["kWh"] =
+        statOnSeconds / 3600.0 * EST_WATT_AVG / 1000.0;
+
+    // Tatsaechlich wirksames Profil (bei aktiver Sonnenstand-Kopplung die
+    // Sonnenzeiten, sonst die festen config.h-Werte).
+    AutoProfile ap = currentAutoProfile();
+
     JsonObject sched =
         doc["sched"].to<JsonObject>();
 
-    sched["tMorning"] =
-        morningStartHour;
-
-    sched["tDay"] =
-        dayStartHour;
-
-    sched["tEvening"] =
-        eveningStartHour;
-
-    sched["tNight"] =
-        nightStartHour;
-
-    sched["bMorning"] =
-        morningBrightness;
-
-    sched["bDay"] =
-        dayBrightness;
-
-    sched["bEveStart"] =
-        eveningStartBrightness;
-
-    sched["bEveEnd"] =
-        eveningEndBrightness;
+    sched["tMorning"]  = ap.tMorning;
+    sched["tDay"]      = ap.tDay;
+    sched["tEvening"]  = ap.tEvening;
+    sched["tNight"]    = ap.tNight;
+    sched["bMorning"]  = ap.bMorning;
+    sched["bDay"]      = ap.bDay;
+    sched["bEveStart"] = ap.bEveStart;
+    sched["bEveEnd"]   = ap.bEveEnd;
 
     String out;
 
@@ -2688,12 +2732,48 @@ void setup() {
 }
 
 // ---------------------------------------------------------------------------
+// Statistik
+// ---------------------------------------------------------------------------
+
+// Leuchtet die Fassade gerade wirklich? (fuer die Leucht-Stunden-Zaehlung)
+bool lightsAreOn() {
+    if (currentMode == MODE_OFF) {
+        return false;
+    }
+    if (isThematic(currentMode) && isNightOff()) {
+        return false;
+    }
+    if (currentMode == MODE_AUTOMATIC && currentAutoBrightness == 0) {
+        return false;
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
 // Hauptschleife
 // ---------------------------------------------------------------------------
 
 void loop() {
 
     ws.cleanupClients();
+
+    // Betriebs-Statistik jede Sekunde fortschreiben.
+    if (millis() - lastStatTick >= 1000) {
+        lastStatTick = millis();
+
+        statTotalSeconds++;
+        statByMode[currentMode]++;
+
+        if (lightsAreOn()) {
+            statOnSeconds++;
+        }
+    }
+
+    // Statistik regelmaessig sichern (uebersteht Stromausfall).
+    if (millis() - lastStatSave >= STAT_SAVE_INTERVAL) {
+        lastStatSave = millis();
+        saveSettings();
+    }
 
     // WLAN-Zustand überwachen.
     updateWiFi();

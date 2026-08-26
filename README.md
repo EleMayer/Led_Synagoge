@@ -31,6 +31,10 @@ Ausführliche Erklärung aller Modi: siehe [modi.md](modi.md).
   Monitor verwenden, z. B. `http://192.168.0.42`
 - Firmware-Update (OTA) über `POST /update`, **passwortgeschützt**
   (`OTA_USER`/`OTA_PASSWORD` in `config.h`)
+- **Betriebs-Statistik**: Leucht-Stunden und geschätzter Energieverbrauch (kWh),
+  im Gerät gespeichert und in der App-Systemkarte angezeigt
+- **Optionale Sonnenstand-Kopplung** der Automatik (`USE_SUN_TIMES` in `config.h`):
+  Morgen-/Abendwechsel folgen Sonnenauf-/-untergang, Nachtabschaltung bleibt fest
 
 ## Projektstruktur
 
