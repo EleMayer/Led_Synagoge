@@ -1,10 +1,27 @@
 # test/
 
-Ordner für PlatformIO-Unit-Tests (`pio test`).
+Tests für die Firmware.
 
-Aktuell sind **keine** automatischen Unit-Tests hinterlegt. Getestet wird
-stattdessen praxisnah:
+## Automatische Unit-Tests
 
+`test_auto_logic/` prüft die Automatik-Logik aus `include/auto_logic.h`
+(Tageskurve, Zeitfenster, Helligkeits-Umrechnung) – also genau den Code, den
+auch die Firmware verwendet.
+
+Ausführen – zwei Wege:
+
+```bash
+pio test -e native      # auf dem PC (braucht einen C++-Compiler, z. B. MinGW-w64)
+pio test -e esp32dev     # auf dem angeschlossenen ESP32 (Ergebnis im seriellen Monitor)
+```
+
+Hinweis: Der native Weg benötigt ein installiertes `g++`/`gcc`. Ist keiner
+vorhanden, laufen die Tests direkt auf dem ESP32.
+
+## Praxisnahe Tests
+
+- **Betriebs- und Wiederanlauftests** (Alltag, nach Stromausfall, Störungen):
+  siehe [betriebstests.md](betriebstests.md) – Checklisten zum Abzeichnen,
 - die Bedienoberfläche am PC über den Mock-Server (`node tools/mock-server.js`)
   oder die eigenständige Demo (`src/web_page_demo.html`), beide ohne ESP32,
 - das Verhalten auf dem Gerät über die serielle Ausgabe

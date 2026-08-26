@@ -159,23 +159,8 @@ function handleCommand(msg, socket) {
     if (doc.logo  !== undefined) { state.logo  = clamp(doc.logo, 0, 100);  enterOverrideIfAutomatic(); }
     // Effekt-Helligkeit (global) ist fest im Code (config.h) - nicht annehmen.
 
-    // Automatik-Profil (Uhrzeiten + Helligkeiten) - wie in der Firmware pruefen
-    // und uebernehmen.
-    if (doc.sched && typeof doc.sched === 'object') {
-        const s = doc.sched;
-        const tM  = Number(s.tMorning),  tD  = Number(s.tDay);
-        const tE  = Number(s.tEvening),  tN  = Number(s.tNight);
-        const bM  = Number(s.bMorning),  bD  = Number(s.bDay);
-        const bES = Number(s.bEveStart), bEE = Number(s.bEveEnd);
-        const ints = [tM, tD, tE, tN, bM, bD, bES, bEE];
-        const allNums = ints.every(v => Number.isFinite(v));
-        const orderOk = tM >= 0 && tN <= 23 && tM < tD && tD < tE && tE < tN;
-        const rangeOk = [bM, bD, bES, bEE].every(v => v >= 0 && v <= 100);
-        if (allNums && orderOk && rangeOk) {
-            state.sched = { tMorning: tM, tDay: tD, tEvening: tE, tNight: tN,
-                            bMorning: bM, bDay: bD, bEveStart: bES, bEveEnd: bEE };
-        }
-    }
+    // Das komplette Automatik-Zeitprofil (Uhrzeiten + Helligkeiten) ist fest im
+    // Code (config.h) und wird - wie in der Firmware - NICHT angenommen.
 
     broadcast();
 }

@@ -34,6 +34,7 @@
 #include <time.h>
 
 #include "config.h"
+#include "auto_logic.h"
 #include "web_page.h"
 #include "icons.h"
 
@@ -55,48 +56,21 @@ int brightnessLogo  = 80;
 // Effekt-Helligkeit ist fest in config.h.
 const int globalBrightness = EFFECT_BRIGHTNESS;
 
-// Automatik-Zeitfenster. Start = Werte aus config.h, per App aenderbar und in
-// NVS gespeichert. Es gibt vier "Basis"-Stunden (Morgen, Tag, Abend, Nacht);
-// die uebrigen Grenzen leiten sich daraus ab (setAutoHours()).
-int morningStartHour = AUTO_T_MORNING;
-int morningEndHour   = AUTO_T_DAY;
-int dayStartHour     = AUTO_T_DAY;
-int dayEndHour       = AUTO_T_EVENING;
-int eveningStartHour = AUTO_T_EVENING;
-int eveningEndHour   = AUTO_T_NIGHT;
-int nightStartHour   = AUTO_T_NIGHT;
-int nightEndHour     = AUTO_T_MORNING;
+// Automatik-Zeitfenster aus config.h. Fest im Code, in der App nur Anzeige.
+const int morningStartHour = AUTO_T_MORNING;
+const int morningEndHour   = AUTO_T_DAY;
+const int dayStartHour     = AUTO_T_DAY;
+const int dayEndHour       = AUTO_T_EVENING;
+const int eveningStartHour = AUTO_T_EVENING;
+const int eveningEndHour   = AUTO_T_NIGHT;
+const int nightStartHour   = AUTO_T_NIGHT;
+const int nightEndHour     = AUTO_T_MORNING;
 
-// Automatik-Helligkeiten. Ebenfalls per App aenderbar und in NVS gespeichert.
-int morningBrightness      = AUTO_B_MORNING;
-int dayBrightness          = AUTO_B_DAY;
-int eveningStartBrightness = AUTO_B_EVE_START;
-int eveningEndBrightness   = AUTO_B_EVE_END;
-
-// Setzt die vier Basis-Stunden und leitet die abhaengigen Grenzen ab.
-void setAutoHours(int m, int d, int e, int n) {
-    morningStartHour = m;
-    morningEndHour   = d;
-    dayStartHour     = d;
-    dayEndHour       = e;
-    eveningStartHour = e;
-    eveningEndHour   = n;
-    nightStartHour   = n;
-    nightEndHour     = m;
-}
-
-// Prueft ein Automatik-Profil: Stunden 0..23 und streng aufsteigend
-// (Morgen < Tag < Abend < Nacht), Helligkeiten 0..100.
-bool scheduleValid(int m, int d, int e, int n,
-                   int bm, int bd, int bes, int bee) {
-    if (m < 0 || n > 23) return false;
-    if (!(m < d && d < e && e < n)) return false;
-    if (bm  < 0 || bm  > 100) return false;
-    if (bd  < 0 || bd  > 100) return false;
-    if (bes < 0 || bes > 100) return false;
-    if (bee < 0 || bee > 100) return false;
-    return true;
-}
+// Automatik-Helligkeiten aus config.h. Ebenfalls fest im Code.
+const int morningBrightness      = AUTO_B_MORNING;
+const int dayBrightness          = AUTO_B_DAY;
+const int eveningStartBrightness = AUTO_B_EVE_START;
+const int eveningEndBrightness   = AUTO_B_EVE_END;
 
 int currentAutoBrightness = 0;
 
@@ -194,12 +168,11 @@ void updateOverrideReturn();
 // ---------------------------------------------------------------------------
 
 int clampBrightness(int value) {
-    return constrain(value, 0, 100);
+    return clampPct(value);
 }
 
 uint8_t brightnessTo8Bit(int brightness) {
-    int safe = clampBrightness(brightness);
-    return (uint8_t)map(safe, 0, 100, 0, 255);
+    return (uint8_t)pctTo8bit(brightness);
 }
 
 CRGB whiteWithBrightness(int brightness) {
@@ -270,16 +243,6 @@ void saveSettings() {
     preferences.putInt("right", brightnessRight);
     preferences.putInt("logo", brightnessLogo);
 
-    // Automatik-Profil (vier Basis-Stunden + vier Helligkeiten).
-    preferences.putInt("tM", morningStartHour);
-    preferences.putInt("tD", dayStartHour);
-    preferences.putInt("tE", eveningStartHour);
-    preferences.putInt("tN", nightStartHour);
-    preferences.putInt("bM", morningBrightness);
-    preferences.putInt("bD", dayBrightness);
-    preferences.putInt("bES", eveningStartBrightness);
-    preferences.putInt("bEE", eveningEndBrightness);
-
     preferences.end();
 
     Serial.println("Einstellungen gespeichert.");
@@ -312,44 +275,17 @@ void loadSettings() {
     brightnessLogo =
         preferences.getInt("logo", 80);
 
-    // Automatik-Profil laden (Standard = Werte aus config.h).
-    int tM  = preferences.getInt("tM",  AUTO_T_MORNING);
-    int tD  = preferences.getInt("tD",  AUTO_T_DAY);
-    int tE  = preferences.getInt("tE",  AUTO_T_EVENING);
-    int tN  = preferences.getInt("tN",  AUTO_T_NIGHT);
-    int bM  = preferences.getInt("bM",  AUTO_B_MORNING);
-    int bD  = preferences.getInt("bD",  AUTO_B_DAY);
-    int bES = preferences.getInt("bES", AUTO_B_EVE_START);
-    int bEE = preferences.getInt("bEE", AUTO_B_EVE_END);
-
     preferences.end();
 
     brightnessLeft = clampBrightness(brightnessLeft);
     brightnessRight = clampBrightness(brightnessRight);
     brightnessLogo = clampBrightness(brightnessLogo);
 
-    // Nur uebernehmen, wenn das gespeicherte Profil gueltig ist - sonst bleiben
-    // die sicheren config.h-Werte stehen.
-    if (scheduleValid(tM, tD, tE, tN, bM, bD, bES, bEE)) {
-        setAutoHours(tM, tD, tE, tN);
-        morningBrightness      = bM;
-        dayBrightness          = bD;
-        eveningStartBrightness = bES;
-        eveningEndBrightness   = bEE;
-    }
-
     Serial.printf(
         "Einstellungen: Links=%d%% Rechts=%d%% Logo=%d%%\n",
         brightnessLeft,
         brightnessRight,
         brightnessLogo
-    );
-
-    Serial.printf(
-        "Automatik: %02d/%02d/%02d/%02d Uhr, %d/%d/%d->%d %%\n",
-        morningStartHour, dayStartHour, eveningStartHour, nightStartHour,
-        morningBrightness, dayBrightness,
-        eveningStartBrightness, eveningEndBrightness
     );
 }
 
@@ -433,6 +369,21 @@ String getDateString() {
 // Automatik
 // ---------------------------------------------------------------------------
 
+// Baut das aktuelle Automatik-Profil aus den config.h-Werten fuer die reine
+// Logik in auto_logic.h.
+AutoProfile currentAutoProfile() {
+    AutoProfile p;
+    p.tMorning   = morningStartHour;
+    p.tDay       = dayStartHour;
+    p.tEvening   = eveningStartHour;
+    p.tNight     = nightStartHour;
+    p.bMorning   = morningBrightness;
+    p.bDay       = dayBrightness;
+    p.bEveStart  = eveningStartBrightness;
+    p.bEveEnd    = eveningEndBrightness;
+    return p;
+}
+
 int currentAutoWindow() {
     struct tm t;
 
@@ -442,39 +393,7 @@ int currentAutoWindow() {
 
     int minutes = t.tm_hour * 60 + t.tm_min;
 
-    // Nacht
-    if (
-        minutes >= nightStartHour * 60 ||
-        minutes < nightEndHour * 60
-    ) {
-        return 0;
-    }
-
-    // Morgen
-    if (
-        minutes >= morningStartHour * 60 &&
-        minutes < morningEndHour * 60
-    ) {
-        return 1;
-    }
-
-    // Tag
-    if (
-        minutes >= dayStartHour * 60 &&
-        minutes < dayEndHour * 60
-    ) {
-        return 2;
-    }
-
-    // Abend
-    if (
-        minutes >= eveningStartHour * 60 &&
-        minutes < eveningEndHour * 60
-    ) {
-        return 3;
-    }
-
-    return 0;
+    return autoWindowAt(minutes, currentAutoProfile());
 }
 
 int calculateAutomaticBrightness() {
@@ -484,66 +403,12 @@ int calculateAutomaticBrightness() {
         return SAFE_DEFAULT_BRIGHTNESS;
     }
 
-    float minutes =
-        t.tm_hour * 60.0f +
+    double minutes =
+        t.tm_hour * 60.0 +
         t.tm_min +
-        t.tm_sec / 60.0f;
+        t.tm_sec / 60.0;
 
-    // Nacht
-    if (
-        minutes >= nightStartHour * 60 ||
-        minutes < nightEndHour * 60
-    ) {
-        return 0;
-    }
-
-    // Morgenrampe
-    if (
-        minutes >= morningStartHour * 60 &&
-        minutes < morningEndHour * 60
-    ) {
-        float start = morningStartHour * 60.0f;
-        float end   = morningEndHour * 60.0f;
-
-        float p = (minutes - start) / (end - start);
-
-        p = constrain(p, 0.0f, 1.0f);
-
-        return round(
-            p * morningBrightness
-        );
-    }
-
-    // Tag
-    if (
-        minutes >= dayStartHour * 60 &&
-        minutes < dayEndHour * 60
-    ) {
-        return dayBrightness;
-    }
-
-    // Abendrampe
-    if (
-        minutes >= eveningStartHour * 60 &&
-        minutes < eveningEndHour * 60
-    ) {
-        float start = eveningStartHour * 60.0f;
-        float end   = eveningEndHour * 60.0f;
-
-        float p = (minutes - start) / (end - start);
-
-        p = constrain(p, 0.0f, 1.0f);
-
-        return round(
-            eveningStartBrightness +
-            (
-                eveningEndBrightness -
-                eveningStartBrightness
-            ) * p
-        );
-    }
-
-    return 0;
+    return autoBrightnessAt(minutes, currentAutoProfile());
 }
 
 // ---------------------------------------------------------------------------
@@ -1801,45 +1666,8 @@ void onWebSocketEvent(
         }
     }
 
-    // ---------------------------------------------------------
-    // Automatik-Profil (Uhrzeiten + Helligkeiten) aus der App
-    // ---------------------------------------------------------
-    // Die Effekt-Helligkeit bleibt dagegen fest in config.h.
-
-    if (doc["sched"].is<JsonObject>()) {
-
-        JsonObject s = doc["sched"];
-
-        // Fehlt ein Feld, bleibt der aktuelle Wert erhalten.
-        int tM  = s["tMorning"]  | morningStartHour;
-        int tD  = s["tDay"]      | dayStartHour;
-        int tE  = s["tEvening"]  | eveningStartHour;
-        int tN  = s["tNight"]    | nightStartHour;
-        int bM  = s["bMorning"]  | morningBrightness;
-        int bD  = s["bDay"]      | dayBrightness;
-        int bES = s["bEveStart"] | eveningStartBrightness;
-        int bEE = s["bEveEnd"]   | eveningEndBrightness;
-
-        if (scheduleValid(tM, tD, tE, tN, bM, bD, bES, bEE)) {
-
-            setAutoHours(tM, tD, tE, tN);
-            morningBrightness      = bM;
-            dayBrightness          = bD;
-            eveningStartBrightness = bES;
-            eveningEndBrightness   = bEE;
-
-            if (currentMode == MODE_AUTOMATIC) {
-                applyAutomatic();
-            }
-
-            changed = true;
-        }
-        else {
-            Serial.println(
-                "WebSocket: Ungueltiges Automatik-Profil verworfen."
-            );
-        }
-    }
+    // Effekt-Helligkeit und Automatikprofil werden absichtlich NICHT
+    // über die App angenommen (Automatik-Zeiten/Helligkeiten fest in config.h).
 
     if (changed) {
 

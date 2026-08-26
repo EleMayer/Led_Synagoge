@@ -52,9 +52,8 @@ static const char* FIRMWARE_VERSION = "2.4.3";
 // NTP verfuegbar ist, korrigiert sich das System selbst.
 #define SAFE_DEFAULT_BRIGHTNESS  25
 
-// Automatik-Helligkeiten (Prozent) fuer die Tageskurve. Dies sind die
-// STARTWERTE; das Profil ist ueber die App aenderbar und wird im Geraet (NVS)
-// gespeichert. Nach dem Loeschen des NVS gelten wieder diese Werte.
+// Automatik-Helligkeiten (Prozent) fuer die Tageskurve. Bewusst FEST im Code:
+// nur hier aenderbar, nicht ueber die App (in der App reine Anzeige).
 //   Morgen  = Zielhelligkeit am Ende des Hochfahrens
 //   Tag     = konstante Tageshelligkeit
 //   EveStart/EveEnd = Abend-Rampe (Beginn -> Ende, wird zur Nacht ausgeblendet)
@@ -63,9 +62,9 @@ static const char* FIRMWARE_VERSION = "2.4.3";
 #define AUTO_B_EVE_START   60
 #define AUTO_B_EVE_END     25
 
-// Automatik-Uhrzeiten (Stunde 0-23) der Zeitfenster-Uebergaenge. Ebenfalls
-// STARTWERTE - ueber die App aenderbar und in NVS gespeichert. Muessen
-// aufsteigend sein: MORNING < DAY < EVENING < NIGHT (wird geprueft).
+// Automatik-Uhrzeiten (Stunde 0-23) der Zeitfenster-Uebergaenge. Ebenfalls FEST
+// im Code, nicht ueber die App aenderbar. Muessen aufsteigend sein:
+// MORNING < DAY < EVENING < NIGHT.
 //   MORNING = Beginn Hochfahren   DAY     = Beginn Tageshelligkeit
 //   EVENING = Beginn Abendrampe   NIGHT   = Nachtabschaltung (bis MORNING aus)
 #define AUTO_T_MORNING      6
@@ -80,8 +79,9 @@ static const char* FIRMWARE_VERSION = "2.4.3";
 #define LOGO_PWM_RES       8
 
 
-// Optischer LED-Selbsttest beim Start (0 = aus).
-#define ENABLE_SELFTEST    1
+// Optischer LED-Selbsttest beim Start (0 = aus). Deaktiviert: die Fassade
+// blinkt beim Einschalten nicht mehr Rot/Gruen/Blau/Weiss durch.
+#define ENABLE_SELFTEST    0
 #define SELFTEST_ROUNDS    1
 
 // -------- Optionaler Daemmerungssensor -------------------------------------
