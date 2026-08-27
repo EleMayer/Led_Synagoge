@@ -354,55 +354,7 @@ Helligkeit: ~22 % … ~31 %   stetig, sehr langsam
 
 ---
 
-# 5. Zeitabhängige Steuerung
-
-Die Automatik benötigt die aktuelle Uhrzeit. Diese wird aus der
-besten verfügbaren Quelle bezogen (Funktion `getCurrentTime`):
-
-```text
-1. Echtzeituhr (DS3231), falls vorhanden und plausibel
-2. NTP / Systemzeit, falls einmal synchronisiert
-3. sonst: sicherer Standardwert (gedimmte Grundhelligkeit)
-```
-
-Dadurch funktioniert die Automatik auch **ohne** Echtzeituhr,
-solange einmal per NTP synchronisiert wurde. Ist eine DS3231
-verbaut, liefert sie die Zeit unmittelbar nach dem Einschalten –
-auch ohne WLAN – und wird bei Internetverbindung per NTP
-nachgeführt (inkl. Sommer-/Winterzeit).
-
-Die aktuelle Uhrzeit wird regelmäßig ausgelesen.
-
-```mermaid
-flowchart TD
-
-    RTC["Aktuelle Uhrzeit"]
-
-    Check{"Zeitbereich?"}
-
-    Night["Nacht"]
-    Morning["Morgen"]
-    Day["Tag"]
-    Evening["Abend"]
-
-    Brightness["Helligkeit berechnen"]
-
-    RTC --> Check
-
-    Check -->|Nacht| Night
-    Check -->|Morgen| Morning
-    Check -->|Tag| Day
-    Check -->|Abend| Evening
-
-    Night --> Brightness
-    Morning --> Brightness
-    Day --> Brightness
-    Evening --> Brightness
-```
-
----
-
-# 6. Helligkeitsberechnung
+# 5. Helligkeitsberechnung
 
 Die Helligkeit wird als Prozentwert behandelt.
 
@@ -426,7 +378,7 @@ Dadurch kann die Helligkeit mit den üblichen LED-Werten verarbeitet werden.
 
 ---
 
-# 7. Weiche Übergänge
+# 6. Weiche Übergänge
 
 Sämtliche Helligkeitsänderungen erfolgen weich, ohne harte Sprünge.
 Die Modus-Logik setzt nur eine **Ziel-Helligkeit** je Bereich; ein
@@ -469,123 +421,7 @@ Anschließend wird die Helligkeit interpoliert.
 
 ---
 
-# 8. Hardwaremodell
-
-Die Hardware kann grundsätzlich aus folgenden Komponenten bestehen:
-
-```mermaid
-classDiagram
-
-    class Controller {
-        +setup()
-        +loop()
-        +applyHardware()
-    }
-
-    class RTC {
-        +begin()
-        +now()
-        +lostPower()
-    }
-
-    class LEDSegment {
-        +setBrightness()
-        +show()
-        +clear()
-    }
-
-    class SingleLED {
-        +setBrightness()
-    }
-
-    class Storage {
-        +saveSettings()
-        +loadSettings()
-    }
-
-    class WebServer {
-        +handleRequest()
-        +start()
-    }
-
-    class WebSocket {
-        +send()
-        +receive()
-    }
-
-    Controller --> RTC
-    Controller --> LEDSegment
-    Controller --> SingleLED
-    Controller --> Storage
-    Controller --> WebServer
-    WebServer --> WebSocket
-```
-
----
-
-# 9. LED-Segmente
-
-Die Beleuchtung kann aus mehreren unabhängig steuerbaren Segmenten bestehen.
-
-Beispiel:
-
-```text
-             Beleuchtungsanlage
-                    │
-          ┌─────────┴─────────┐
-          │                   │
-      Segment 1           Segment 2
-          │                   │
-       LEDs                LEDs
-```
-
-Jedes Segment kann einen eigenen Helligkeitswert besitzen.
-
-Dadurch ist beispielsweise möglich:
-
-```text
-Segment 1 = 100 %
-Segment 2 = 50 %
-```
-
----
-
-# 10. Einzelnes LED-Element
-
-Zusätzlich zu den LED-Segmenten kann eine einzelne adressierbare LED
-verwendet werden.
-
-Diese LED kann beispielsweise ein Symbol, Logo oder Statussignal
-darstellen.
-
-Im Gegensatz zu einem separaten PWM-Ausgang wird diese LED direkt über
-die adressierbare LED-Kette gesteuert.
-
-Beispiel:
-
-```text
-LED-Segment 1
-    │
-    ├── LED
-    ├── LED
-    ├── LED
-    └── ...
-
-LED-Segment 2
-    │
-    ├── LED
-    ├── LED
-    ├── LED
-    └── ...
-
-Einzelne LED
-    │
-    └── Logo / Symbol
-```
-
----
-
-# 11. Weboberfläche (Bedien-App / PWA)
+# 7. Weboberfläche (Bedien-App / PWA)
 
 Die Weboberfläche ermöglicht die Bedienung des Systems über einen
 normalen Webbrowser. Sie ist als **Progressive Web App (PWA)**
@@ -654,7 +490,7 @@ Beispielhafte Oberfläche:
 
 ---
 
-# 12. WebSocket-Kommunikation
+# 8. WebSocket-Kommunikation
 
 Für die Kommunikation zwischen Weboberfläche und Mikrocontroller wird
 eine WebSocket-Verbindung verwendet.
@@ -678,7 +514,7 @@ sequenceDiagram
 
 ---
 
-# 13. JSON-Kommunikation
+# 9. JSON-Kommunikation
 
 Die Kommunikation kann beispielsweise folgende Struktur verwenden:
 
@@ -705,15 +541,15 @@ die enthalten sind.
 Das komplette Automatik-Profil – **Uhrzeiten** (`tMorning`, `tDay`, `tEvening`,
 `tNight`) **und Helligkeiten** (`bMorning`, `bDay`, `bEveStart`, `bEveEnd`) – ist
 **fest im Code** (`config.h`) hinterlegt und wird vom Controller **nicht** über
-die App entgegengenommen. Diese Felder erscheinen nur im Status (Kap. 14) zur
+die App entgegengenommen. Diese Felder erscheinen nur im Status (Kap. 10) zur
 Anzeige in der Phasen-Übersicht.
 
 Eine Änderung von `left`, `right` oder `logo` während der Automatik wechselt
-automatisch in den statischen Modus (manueller Eingriff, siehe Kap. 21).
+automatisch in den statischen Modus (manueller Eingriff, siehe Kap. 17).
 
 ---
 
-# 14. Statusinformationen
+# 10. Statusinformationen
 
 Der Controller sendet nach jeder Änderung und regelmäßig (alle 2 Sekunden)
 seinen vollständigen Status an alle verbundenen Clients.
@@ -754,7 +590,7 @@ Damit kann die Weboberfläche den aktuellen Systemzustand anzeigen.
 
 ---
 
-# 15. REST-Schnittstelle
+# 11. REST-Schnittstelle
 
 Zusätzlich zur WebSocket-Kommunikation kann eine REST-Schnittstelle
 bereitgestellt werden.
@@ -775,7 +611,7 @@ Die Schnittstelle liefert Informationen über:
 
 ---
 
-# 16. Persistente Einstellungen
+# 12. Persistente Einstellungen
 
 Bestimmte Einstellungen werden dauerhaft gespeichert.
 
@@ -809,7 +645,7 @@ wenn eine kurze Zeit (ca. 1,5 s) lang keine weitere Änderung mehr kam.
 
 ---
 
-# 17. Verhalten nach Neustart
+# 13. Verhalten nach Neustart
 
 Ein wichtiger Bestandteil der Software ist ein definierter
 Power-On-Zustand.
@@ -846,7 +682,7 @@ unbeabsichtigt ein manueller Effekt weiterläuft.
 
 ---
 
-# 18. Startsequenz
+# 14. Startsequenz
 
 Die Initialisierung erfolgt grundsätzlich in mehreren Schritten.
 
@@ -872,7 +708,7 @@ sequenceDiagram
 
 ---
 
-# 19. Hauptprogramm
+# 15. Hauptprogramm
 
 Das Programm besteht grundsätzlich aus zwei zentralen Funktionen:
 
@@ -929,7 +765,7 @@ loop()
 
 ---
 
-# 20. Zustandsdiagramm
+# 16. Zustandsdiagramm
 
 Das Verhalten der Betriebsmodi lässt sich als Zustandsautomat darstellen.
 
@@ -969,7 +805,7 @@ werden, und jeder gilt (außer Automatik) als manueller Eingriff.
 
 ---
 
-# 21. Manuelle Bedienung
+# 17. Manuelle Bedienung
 
 Eine manuelle Änderung der Helligkeit kann automatisch den
 Automatikmodus verlassen.
@@ -1003,7 +839,7 @@ Automatik
 
 ---
 
-# 22. Sicherheitskonzept
+# 18. Sicherheitskonzept
 
 Die Software sollte grundsätzlich folgende Eigenschaften besitzen:
 
@@ -1024,7 +860,7 @@ sodass Netzteil und Verkabelung nicht überlastet werden.
 
 ---
 
-# 23. Verhalten bei WLAN-Ausfall
+# 19. Verhalten bei WLAN-Ausfall
 
 Die Beleuchtung sollte nicht vom WLAN abhängig sein.
 
@@ -1068,7 +904,7 @@ nicht bekannt sein muss. **Hinweis:** Viele Windows-PCs und Android-Geräte
 lösen `.local` nicht auf (dann `DNS_PROBE_FINISHED_NXDOMAIN`); in dem Fall die
 IP-Adresse aus dem seriellen Monitor verwenden (z. B. `http://192.168.0.42`).
 
-## 23.1 WLAN einstellen (`config.h`)
+## 19.1 WLAN einstellen (`config.h`)
 
 Die WLAN-Zugangsdaten sind **fest im Code hinterlegt** und werden **nicht**
 im NVS gespeichert und **nicht** über die App geändert (Pflichtenheft: rein
@@ -1095,7 +931,7 @@ NVS) ist bewusst nicht umgesetzt und wäre eine mögliche Erweiterung.
 
 ---
 
-# 24. Verhalten bei RTC-Ausfall
+# 20. Verhalten bei RTC-Ausfall
 
 Auch ein Ausfall der Echtzeituhr sollte erkannt werden.
 
@@ -1126,7 +962,7 @@ Betriebszustand entsteht.
 
 ---
 
-# 25. OTA-Update
+# 21. OTA-Update
 
 Das System kann grundsätzlich eine Firmware-Aktualisierung über das
 Netzwerk unterstützen.
@@ -1165,7 +1001,7 @@ Controller
 
 ---
 
-# 26. Datenfluss
+# 22. Datenfluss
 
 Der gesamte Datenfluss kann vereinfacht so dargestellt werden:
 
@@ -1205,7 +1041,7 @@ flowchart LR
 
 ---
 
-# 27. Softwarekomponenten
+# 23. Softwarekomponenten
 
 | Komponente            | Aufgabe                          |
 | --------------------- | -------------------------------- |
@@ -1220,7 +1056,7 @@ flowchart LR
 
 ---
 
-# 28. Erweiterungsmöglichkeiten
+# 24. Erweiterungsmöglichkeiten
 
 Das System kann später erweitert werden.
 
@@ -1246,7 +1082,7 @@ Mögliche weitere Erweiterungen:
 
 ---
 
-# 29. Softwarestruktur
+# 25. Softwarestruktur
 
 Konfiguration, Steuerlogik und Bedienoberfläche sind voneinander getrennt:
 
@@ -1328,7 +1164,7 @@ src/
 Dadurch können die einzelnen Funktionen unabhängig voneinander
 bearbeitet und getestet werden.
 
-## 29.1 Codestil
+## 25.1 Codestil
 
 Der Code ist bewusst **einfach und gut nachvollziehbar** gehalten:
 
@@ -1346,7 +1182,7 @@ Ziel ist, dass der Code auch mit Grundkenntnissen lesbar und wartbar bleibt.
 
 ---
 
-# 30. Zusammenfassung
+# 26. Zusammenfassung
 
 Die LED-Beleuchtungssteuerung ist als eigenständiges,
 netzwerkfähiges Steuerungssystem aufgebaut.
