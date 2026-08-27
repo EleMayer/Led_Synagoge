@@ -49,10 +49,11 @@ OperatingMode currentMode = MODE_AUTOMATIC;
 bool overrideActive = false;
 int overrideWindow = -1;
 
-// Manuelle Helligkeiten 0-100 %.
-int brightnessLeft  = 80;
-int brightnessRight = 80;
-int brightnessLogo  = 80;
+// Manuelle Helligkeiten 0-100 %. Standard/Reset-Wert je Moduswechsel.
+const int DEFAULT_BRIGHTNESS = 90;
+int brightnessLeft  = DEFAULT_BRIGHTNESS;
+int brightnessRight = DEFAULT_BRIGHTNESS;
+int brightnessLogo  = DEFAULT_BRIGHTNESS;
 
 // Effekt-Helligkeit ist fest in config.h.
 const int globalBrightness = EFFECT_BRIGHTNESS;
@@ -246,6 +247,19 @@ void setLogoRaw(uint8_t level) {
     ledcWrite(LOGO_PWM_CHANNEL, duty);
 }
 
+// Skaliert beide Segmente mit den Reglern (Links/Rechts) und gibt sie aus.
+// Damit bestimmen die Regler auch in den Effekt-/Stimmungsmodi die Helligkeit.
+void showScaled() {
+    nscale8(ledsLinks, NUM_LEDS_LINKS, brightnessTo8Bit(brightnessLeft));
+    nscale8(ledsRechts, NUM_LEDS_RECHTS, brightnessTo8Bit(brightnessRight));
+    FastLED.show();
+}
+
+// Logo eines Effekts, zusaetzlich mit dem Logo-Regler skaliert.
+void setLogoEffect(uint8_t base) {
+    setLogoRaw(scale8(base, brightnessTo8Bit(brightnessLogo)));
+}
+
 // ---------------------------------------------------------------------------
 // NVS
 // ---------------------------------------------------------------------------
@@ -286,13 +300,13 @@ void loadSettings() {
     preferences.begin("facelight", true);
 
     brightnessLeft =
-        preferences.getInt("left", 80);
+        preferences.getInt("left", DEFAULT_BRIGHTNESS);
 
     brightnessRight =
-        preferences.getInt("right", 80);
+        preferences.getInt("right", DEFAULT_BRIGHTNESS);
 
     brightnessLogo =
-        preferences.getInt("logo", 80);
+        preferences.getInt("logo", DEFAULT_BRIGHTNESS);
 
     // Betriebs-Statistik laden (nur bei passender Groesse, sonst Standard 0).
     statTotalSeconds = preferences.getULong("statTot", 0);
@@ -710,9 +724,9 @@ void applyEffect() {
         effectStep % NUM_LEDS_RECHTS
     ] = CRGB(base, base, base);
 
-    FastLED.show();
+    showScaled();
 
-    setLogoBrightness(globalBrightness);
+    setLogoEffect(brightnessTo8Bit(globalBrightness));
 
     effectStep++;
 }
@@ -754,9 +768,9 @@ void applyWave(
         color
     );
 
-    FastLED.show();
+    showScaled();
 
-    setLogoBrightness(level);
+    setLogoEffect(brightnessTo8Bit(level));
 }
 
 // ---------------------------------------------------------------------------
@@ -780,9 +794,9 @@ void showAll(
         whiteRaw(vRechts)
     );
 
-    FastLED.show();
+    showScaled();
 
-    setLogoRaw(vLogo);
+    setLogoEffect(vLogo);
 }
 
 // ---------------------------------------------------------------------------
@@ -901,9 +915,9 @@ void renderStufenlicht() {
         }
     }
 
-    FastLED.show();
+    showScaled();
 
-    setLogoRaw(STUFEN_LEVEL);
+    setLogoEffect(STUFEN_LEVEL);
 }
 
 void renderDaemmerlicht() {
@@ -981,9 +995,9 @@ void renderWave() {
             );
     }
 
-    FastLED.show();
+    showScaled();
 
-    setLogoBrightness(globalBrightness);
+    setLogoEffect(brightnessTo8Bit(globalBrightness));
 }
 
 void renderFeuerschein() {
@@ -1095,13 +1109,13 @@ void renderSternenfunkeln() {
         ] = whiteRaw(base);
     }
 
-    FastLED.show();
+    showScaled();
 
-    setLogoBrightness(
+    setLogoEffect(brightnessTo8Bit(
         globalBrightness *
         TWINKLE_BASE_PCT /
         100
-    );
+    ));
 }
 
 // ---------------------------------------------------------------------------
@@ -1142,9 +1156,9 @@ void renderTreffpunkt() {
     ledsRechts[posR] =
         CRGB(base, base, base);
 
-    FastLED.show();
+    showScaled();
 
-    setLogoBrightness(globalBrightness);
+    setLogoEffect(brightnessTo8Bit(globalBrightness));
 
     effectStep++;
 }
@@ -1304,11 +1318,11 @@ void renderAusstrahlung() {
         ledsRechts[i] = whiteRaw(map(w, 0, 255, floorLevel, base));
     }
 
-    FastLED.show();
+    showScaled();
 
     // Logo = Ursprung der Welle (Position 0).
     uint8_t wLogo = sin8((uint8_t)(0 - phase));
-    setLogoRaw(map(wLogo, 0, 255, floorLevel, base));
+    setLogoEffect(map(wLogo, 0, 255, floorLevel, base));
 }
 
 // ---------------------------------------------------------------------------
@@ -1343,11 +1357,11 @@ void renderWolken() {
         ledsRechts[i] = whiteRaw(constrain(level, floorLevel, base));
     }
 
-    FastLED.show();
+    showScaled();
 
     uint8_t nLogo = inoise8(500, t);
     int logo = map(nLogo, 50, 205, floorLevel, base);
-    setLogoRaw(constrain(logo, floorLevel, base));
+    setLogoEffect(constrain(logo, floorLevel, base));
 }
 
 // ---------------------------------------------------------------------------
@@ -1391,7 +1405,7 @@ void renderLeuchtturm() {
         }
     }
 
-    FastLED.show();
+    showScaled();
 
     // Logo leuchtet auf, wenn der Strahl die Mitte passiert.
     int dCenter = abs(total / 2 - posBeam);
@@ -1400,7 +1414,7 @@ void renderLeuchtturm() {
         logo = floorLevel +
             (base - floorLevel) * (LEUCHTTURM_WIDTH - dCenter) / LEUCHTTURM_WIDTH;
     }
-    setLogoRaw((uint8_t)logo);
+    setLogoEffect((uint8_t)logo);
 }
 
 // ---------------------------------------------------------------------------
@@ -1804,6 +1818,14 @@ void onWebSocketEvent(
                 // Bewusst gewählter Modus ist KEIN Override.
                 overrideActive = false;
                 overrideWindow = -1;
+
+                // Bei jedem Moduswechsel starten die Regler wieder bei 90 %.
+                // Automatik ist ausgenommen (nutzt die Tageskurve, Regler gesperrt).
+                if (currentMode != MODE_AUTOMATIC) {
+                    brightnessLeft  = DEFAULT_BRIGHTNESS;
+                    brightnessRight = DEFAULT_BRIGHTNESS;
+                    brightnessLogo  = DEFAULT_BRIGHTNESS;
+                }
 
                 // Effekt bei erneutem Start sauber von vorne beginnen.
                 effectStep = 0;

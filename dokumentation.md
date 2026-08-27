@@ -185,11 +185,11 @@ hat eine feste Nummer, die über `mode` im JSON übertragen wird.
 | 18  | Wolkenzug     | Effekt       | organische Helligkeit, wie ziehende Wolken    |
 | 19  | Leuchtturm    | Effekt       | weiches Lichtband wandert langsam über die Linie |
 
-Die **Effekte** (2, 4, 5, 10, 13–19) verwenden eine gemeinsame Effekt-Helligkeit,
-die **fest in `config.h`** hinterlegt ist (`EFFECT_BRIGHTNESS`, nicht über die App
-einstellbar). Die **Stimmungs-Modi** (6–9, 11, 12) sind
-bewusst fest hinterlegt und nicht über die Regler verstellbar
-(Ausstellungsbetrieb); sie schalten sich zwischen 23:00 und 06:00
+Die **Effekte** (2, 4, 5, 10, 13–19) verwenden `EFFECT_BRIGHTNESS` aus `config.h`
+als interne Grundstärke. Die **tatsächliche** Helligkeit bestimmen in allen Modi
+(außer Automatik) die **Regler** (Links/Rechts/Logo): jeder Modus wird damit je
+Segment skaliert. Bei jedem Moduswechsel starten die Regler wieder bei **90 %**.
+Die **Stimmungs-Modi** (6–9, 11, 12) schalten sich zwischen 23:00 und 06:00
 automatisch ab.
 
 **Fassaden-Abstimmung:** Alle Modi außer Automatik sind auf die Wirkung an
@@ -213,6 +213,8 @@ Eigenschaften:
 * zusätzliche LED aus
 * keine Effektberechnung
 * keine automatische Helligkeit
+* in der App werden die **Modus-Karte** und der **„Aus"-Button** deutlich **rot**
+  markiert, damit der Aus-Zustand klar erkennbar ist
 
 ---
 
@@ -238,9 +240,9 @@ Die einzelnen Werte können unabhängig voneinander eingestellt werden.
 
 ## 4.3 Effekte (Lauflicht, Pulsieren, Atmen)
 
-In den Effektmodi wird eine dynamische Lichtanimation ausgeführt. Alle Effekte
-verwenden dieselbe **Effekt-Helligkeit**, die **fest in `config.h`**
-(`EFFECT_BRIGHTNESS`) hinterlegt und nicht über die App einstellbar ist.
+In den Effektmodi wird eine dynamische Lichtanimation ausgeführt. `EFFECT_BRIGHTNESS`
+aus `config.h` ist die interne Grundstärke; die **Regler** (Links/Rechts/Logo)
+skalieren die Ausgabe je Segment und starten bei jedem Moduswechsel bei **90 %**.
 
 ```text
 MODE_EFFECT   (2)  Lauflicht
@@ -296,9 +298,10 @@ Nacht       → 0 %
 ## 4.5 Stimmungs-Modi
 
 Zusätzlich zu den Grundmodi und Effekten gibt es sechs feste
-Lichtstimmungen für den Ausstellungsbetrieb. Ihre Werte (Helligkeit, Tempo)
-sind **fest im Code hinterlegt** und werden nicht über die Regler verändert.
-Alle sechs schalten sich zwischen **23:00 und 06:00** automatisch ab. Die Werte
+Lichtstimmungen für den Ausstellungsbetrieb. Ihr **Verlauf** (Helligkeitsbereiche,
+Tempo) ist fest im Code hinterlegt; die Gesamthelligkeit lässt sich – wie bei den
+Effekten – über die **Regler** je Segment skalieren (Standard 90 % je
+Moduswechsel). Alle sechs schalten sich zwischen **23:00 und 06:00** automatisch ab. Die Werte
 sind auf eine ruhige Fassadenwirkung abgestimmt (siehe Hinweis in Kap. 4).
 
 **Dauerlicht (Nr. 6)** – ein gleichmäßiges, ganz langsam „atmendes"

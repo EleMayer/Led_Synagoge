@@ -7,12 +7,14 @@ Farbe.
 **Grundsätzliches**
 
 - **Grundmodi** (Aus, Statisch, Automatik): der normale Betrieb.
-- **Effekte**: animierte Modi, die die gemeinsame **Effekt-Helligkeit** nutzen –
-  fest in `config.h` (`EFFECT_BRIGHTNESS`), nicht über die App einstellbar. Keine
-  Nachtabschaltung.
-- **Stimmungs-Modi**: feste Lichtstimmungen mit im Code hinterlegten Werten –
-  nicht über die Regler verstellbar. Sie schalten sich **zwischen 23:00 und
-  06:00 automatisch ab**.
+- **Effekte**: animierte Modi. `EFFECT_BRIGHTNESS` in `config.h` ist die interne
+  Grundstärke; die tatsächliche Helligkeit stellst du je Segment über die Regler.
+  Keine Nachtabschaltung.
+- **Stimmungs-Modi**: feste Lichtstimmungen mit im Code hinterlegten Werten. Sie
+  schalten sich **zwischen 23:00 und 06:00 automatisch ab**.
+- **Regler in allen Modi**: außer in der Automatik bestimmen die Regler
+  (Links/Rechts/Logo) die Helligkeit. Bei jedem **Moduswechsel starten sie bei
+  90 %** und sind dann frei verstellbar.
 - **Fassaden-Abstimmung**: Alle Modi außer Automatik sind auf die Wirkung an
   einer Außenwand ausgelegt – enge Helligkeitsbereiche (wenig Kontrast),
   langsame Bewegung und angehobene Grundhelligkeit, damit die Fassade aus
@@ -82,8 +84,9 @@ ist**.
 
 ## Effekte
 
-Alle Effekte nutzen die gemeinsame **Effekt-Helligkeit** (fest in `config.h`,
-`EFFECT_BRIGHTNESS`) und unterliegen **keiner** Nachtabschaltung.
+Alle Effekte nutzen `EFFECT_BRIGHTNESS` (`config.h`) als Grundstärke und werden
+über die **Regler** je Segment skaliert; sie unterliegen **keiner**
+Nachtabschaltung.
 
 ### 2 – Lauflicht
 Ein weicher Lichtschweif gleitet langsam über beide Segmente. Statt eines harten
@@ -145,8 +148,9 @@ Parameter: `LEUCHTTURM_PERIOD_MS`, `LEUCHTTURM_WIDTH`, `LEUCHTTURM_FLOOR_PCT`.
 
 ## Stimmungs-Modi
 
-Feste Lichtstimmungen für den Ausstellungsbetrieb. Werte im Code hinterlegt,
-nicht über die Regler verstellbar. **Nachtabschaltung 23:00–06:00.**
+Feste Lichtstimmungen für den Ausstellungsbetrieb: der Verlauf ist im Code
+hinterlegt, die Gesamthelligkeit skalierst du über die Regler (Standard 90 %).
+**Nachtabschaltung 23:00–06:00.**
 
 ### 6 – Dauerlicht
 Gleichmäßiges, ganz langsam „atmendes" Licht auf hohem Niveau (~75–84 %, ein

@@ -64,7 +64,7 @@ Zur Orientierung, was zu welcher Tageszeit zu sehen sein sollte:
 | Kein WLAN beim Start | Gerät ohne erreichbares WLAN starten | Setup-AP **„Fassade-Setup"** erscheint, App darüber erreichbar; Licht läuft nach RTC |
 | Uhr ohne Zeitquelle | RTC-Batterie leer **und** kein Internet | sicherer, gedimmter Grundzustand (nicht voll hell, nicht ganz aus); korrigiert sich, sobald NTP da ist |
 | Nachtabschaltung | Uhrzeit im Betrieb Richtung 23:00 beobachten | ab 23:00 alles aus, ab 06:00 sanftes Hochfahren |
-| Modus „Aus" | in der App Modus **Aus** wählen | Segmente + Logo dunkel, App zeigt Hinweis „ausgeschaltet", Gerät bleibt erreichbar |
+| Modus „Aus" | in der App Modus **Aus** wählen | Segmente + Logo dunkel; in der App werden Modus-Karte und Aus-Button rot; Gerät bleibt erreichbar |
 | Override-Rückkehr | in Automatik einen Regler verstellen, dann Zeitfenster-Wechsel abwarten | nach dem nächsten Übergang (z. B. Tag → Abend) selbsttätig zurück in Automatik |
 | OTA nur mit Passwort | Firmware-Upload ohne bzw. mit falschem Passwort | Upload wird abgewiesen (kein Update); nur mit richtigem `OTA_PASSWORD` erfolgreich |
 

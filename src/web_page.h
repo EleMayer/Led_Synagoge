@@ -32,6 +32,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 
   /* Dunkles (schwarzes) Design - Standard */
   --bg:#0a0b0d;
+  --offbg:#4a0f16;   /* Modus-Karte im Zustand "Aus" (deutlich rot) */
   --card:#131619;
   --line:#242830;
   --line-strong:#333a44;
@@ -57,6 +58,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 
   /* Helles (klinisches) Design */
   --bg:#eef2f5;
+  --offbg:#f6d9dc;   /* Modus-Karte im Zustand "Aus" */
   --card:#ffffff;
   --line:#e6ebf0;
   --line-strong:#d3dbe2;
@@ -105,22 +107,18 @@ body{
 .hbtn:hover{border-color:var(--accent);color:var(--accent)}
 .badge.off{background:transparent;border-color:var(--bad);color:var(--bad)}
 
-/* Deutlich sichtbarer Hinweis, wenn die Beleuchtung im Modus "Aus" ist. */
-.offbanner{display:flex;align-items:center;justify-content:center;gap:10px;
-  padding:16px;border:1px solid var(--bad);border-radius:var(--radius);
-  background:var(--card);color:var(--bad);font-weight:600;letter-spacing:.02em;
-  text-transform:uppercase;font-size:13px;
-  animation:offpulse 2.2s ease-in-out infinite}
-.offbanner .officon{font-size:20px;line-height:1}
-@keyframes offpulse{0%,100%{opacity:1}50%{opacity:.5}}
-@media (prefers-reduced-motion: reduce){.offbanner{animation:none}}
 
 main{max-width:600px;margin:0 auto;padding:16px;display:grid;gap:12px}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:15px 16px;box-shadow:var(--shadow)}
+  padding:15px 16px;box-shadow:var(--shadow);transition:background .3s ease,border-color .3s ease}
 .card h2{margin:0 0 11px;font-size:11px;color:var(--muted);
   text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+
+/* Modus "Aus": die Modus-Karte und der aktive "Aus"-Button werden rot. */
+body.isoff #modeCard{background:var(--offbg);border-color:var(--bad)}
+body.isoff #modeCard h2{color:var(--bad)}
+body.isoff .modes button.active{background:var(--bad);border-color:var(--bad);color:#fff}
 
 .modes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .modes button{
@@ -212,10 +210,6 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 
 <main>
 
-<div id="offBanner" class="offbanner" style="display:none">
-  <span class="officon">&#9211;</span>
-  <span data-i18n="off.banner">Beleuchtung ausgeschaltet</span>
-</div>
 
 <section class="card" id="installCard" style="display:none">
   <h2 data-i18n="install.title">Als App installieren</h2>
@@ -224,7 +218,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
           style="margin-top:12px" data-i18n="install.button">Installieren</button>
 </section>
 
-<section class="card">
+<section class="card" id="modeCard">
   <h2 data-i18n="modus">Modus</h2>
   <div class="modes">
     <button class="mode" data-mode="0" onclick="sendMode(0)">Aus</button>
@@ -253,16 +247,16 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 <section class="card">
   <h2 data-i18n="brightness">Helligkeit</h2>
   <div class="slider">
-    <label><span data-i18n="seg.left">Segment Links</span> <span class="val"><span id="leftValue">80</span>%</span></label>
-    <input id="leftSlider" type="range" min="0" max="100" value="80">
+    <label><span data-i18n="seg.left">Segment Links</span> <span class="val"><span id="leftValue">90</span>%</span></label>
+    <input id="leftSlider" type="range" min="0" max="100" value="90">
   </div>
   <div class="slider">
-    <label><span data-i18n="seg.right">Segment Rechts</span> <span class="val"><span id="rightValue">80</span>%</span></label>
-    <input id="rightSlider" type="range" min="0" max="100" value="80">
+    <label><span data-i18n="seg.right">Segment Rechts</span> <span class="val"><span id="rightValue">90</span>%</span></label>
+    <input id="rightSlider" type="range" min="0" max="100" value="90">
   </div>
   <div class="slider">
-    <label><span data-i18n="seg.logo">Logo</span> <span class="val"><span id="logoValue">80</span>%</span></label>
-    <input id="logoSlider" type="range" min="0" max="100" value="80">
+    <label><span data-i18n="seg.logo">Logo</span> <span class="val"><span id="logoValue">90</span>%</span></label>
+    <input id="logoSlider" type="range" min="0" max="100" value="90">
   </div>
 </section>
 
@@ -317,7 +311,6 @@ const T = {
     "install.hintIOS":"Zum Installieren in Safari auf <b>Teilen</b> tippen und <b>„Zum Home-Bildschirm“</b> wählen.",
     "install.hintManual":"Als App ablegen: am Handy im Browser-Menü <b>„Zum Startbildschirm hinzufügen“</b>, am PC das <b>Installieren-Symbol in der Adressleiste</b> nutzen.",
     "modus":"Modus","brightness":"Helligkeit",
-    "off.banner":"Beleuchtung ausgeschaltet",
     "auto":"Automatik","autoNow":"Aktuelle Helligkeit","system":"System",
     "footer":"lokale Steuerung",
     "seg.left":"Segment Links","seg.right":"Segment Rechts","seg.logo":"Logo",
@@ -337,7 +330,6 @@ const T = {
     "install.hintIOS":"To install, tap <b>Share</b> in Safari and choose <b>“Add to Home Screen”</b>.",
     "install.hintManual":"Add as an app: on a phone use <b>“Add to Home screen”</b> in the browser menu, on a PC use the <b>install icon in the address bar</b>.",
     "modus":"Mode","brightness":"Brightness",
-    "off.banner":"Lighting switched off",
     "auto":"Automatic","autoNow":"Current brightness","system":"System",
     "footer":"local control",
     "seg.left":"Segment left","seg.right":"Segment right","seg.logo":"Logo",
@@ -550,7 +542,7 @@ function updateUI(data)
 
     // Modus "Aus": deutlich sichtbar machen (Banner + rotes Badge).
     const isOff = (data.mode === 0);
-    document.getElementById("offBanner").style.display = isOff ? "" : "none";
+    document.body.classList.toggle("isoff", isOff);
     document.getElementById("modeBadge").classList.toggle("off", isOff);
 
     updateSlider("left",   data.left);

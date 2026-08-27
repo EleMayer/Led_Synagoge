@@ -21,8 +21,9 @@ Ausführliche Erklärung aller Modi: siehe [modi.md](modi.md).
 - Automatik-Profil (Uhrzeiten **und** Helligkeiten) fest in `config.h`, nur dort
   änderbar; die App zeigt es schreibgeschützt als Phasen-Übersicht (inkl. Balken
   „aktuelle Helligkeit")
-- Effekt-Helligkeit fest in `config.h` (`EFFECT_BRIGHTNESS`), nicht über die App
-  einstellbar
+- Regler (Links/Rechts/Logo) wirken in **allen** Modi (außer Automatik) als
+  Helligkeit; bei jedem Moduswechsel starten sie bei **90 %** und sind dann frei
+  verstellbar. `EFFECT_BRIGHTNESS` in `config.h` ist nur die interne Effekt-Grundstärke
 - App-Oberfläche mit **Hell-/Dunkel-Umschalter** und **Deutsch/Englisch**
   (Auswahl wird im Browser gespeichert)
 - WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback für lokalen Zugriff
@@ -130,10 +131,11 @@ Das System läuft nach einem Stromausfall ohne Eingriff vor Ort wieder an:
 
 ## Bedienung (Kurzüberblick)
 
-- **Modus** wählen und **Helligkeit** je Bereich (Links, Rechts, Logo) im Modus
-  *Statisch* regeln. Das **Automatik-Profil** (Uhrzeiten und Helligkeiten) ist
-  fest in `config.h` hinterlegt und in der App nur als schreibgeschützte
-  Übersicht sichtbar.
+- **Modus** wählen und **Helligkeit** je Bereich (Links, Rechts, Logo) regeln.
+  Die Regler wirken in **jedem** Modus (außer Automatik) und starten bei jedem
+  Moduswechsel wieder bei **90 %**. Das **Automatik-Profil** (Uhrzeiten und
+  Helligkeiten) ist fest in `config.h` hinterlegt und in der App nur als
+  schreibgeschützte Übersicht sichtbar; die Regler sind dort gesperrt.
 - Ein manueller Eingriff übersteuert die Automatik. Das System kehrt beim
   nächsten Zeitfenster-Übergang (z. B. Tag → Abend) selbsttätig in die Automatik
   zurück.
@@ -159,10 +161,12 @@ funktionieren davon unabhängig.
 ## Design & Codestil
 
 - **Oberfläche:** klinisch-reduziertes Design ohne erklärende Zusatztexte –
-  bewusst schlicht und übersichtlich. Über den Kopfzeilen-Knopf zwischen
-  **dunkel** (Standard, schwarz) und **hell** umschaltbar; ein zweiter Knopf
-  schaltet die Sprache zwischen **Deutsch und Englisch**. Beide Einstellungen
-  werden im Browser gespeichert.
+  bewusst schlicht und übersichtlich. Die Kopfzeile trägt **Logo und Schriftzug
+  „Museum Arbeitswelt Steyr"**. Über den Kopfzeilen-Knopf zwischen **dunkel**
+  (Standard, schwarz) und **hell** umschaltbar; ein zweiter Knopf schaltet die
+  Sprache zwischen **Deutsch und Englisch**. Beide Einstellungen werden im
+  Browser gespeichert. Im Modus **„Aus"** werden Modus-Karte und Aus-Button
+  deutlich **rot** markiert.
 - **Codestil:** bewusst einfach und anfängerfreundlich gehalten – benannte
   Funktionen statt anonymer Funktionen (Lambdas), klare `for`-Schleifen statt
   Array-Kniffe (`map`/`forEach`), kurze Funktionen und durchgehende Kommentare.

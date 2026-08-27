@@ -36,7 +36,7 @@ const simulator = `
 {
     let state = {
         mode: 3,
-        left: 80, right: 80, logo: 80, global: 80,
+        left: 90, right: 90, logo: 90, global: 80,
         autoBrightness: 0,
         rtc: true, ntp: true,
         ip: 'Demo', rssi: -55, wifi: true, ap: false,
@@ -141,6 +141,11 @@ const simulator = `
         if(typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 19)
         {
             state.mode = doc.mode;
+            // Bei jedem Wechsel (ausser Automatik) starten die Regler bei 90 %.
+            if(doc.mode !== 3)
+            {
+                state.left = 90; state.right = 90; state.logo = 90;
+            }
             if(doc.mode === 3)
             {
                 overrideActive = false;

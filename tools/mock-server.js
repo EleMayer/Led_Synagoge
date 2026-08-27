@@ -59,7 +59,7 @@ let pages = loadEmbeddedPages();
 // ---------------------------------------------------------------------------
 const state = {
     mode: 3,                         // 3 = Automatik
-    left: 80, right: 80, logo: 80,
+    left: 90, right: 90, logo: 90,
     global: 80,
     autoBrightness: 0,
     rtc: true, ntp: true,
@@ -147,6 +147,10 @@ function handleCommand(msg, socket) {
 
     if (typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 19) {
         state.mode = doc.mode;
+        // Bei jedem Wechsel (ausser Automatik) starten die Regler wieder bei 90 %.
+        if (state.mode !== 3) {
+            state.left = 90; state.right = 90; state.logo = 90;
+        }
         if (state.mode === 3) {
             overrideActive = false;
         } else {
