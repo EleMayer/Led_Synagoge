@@ -1,0 +1,45 @@
+@startuml Komponenten
+title LED-Fassadenbeleuchtung - Komponenten
+
+actor "Bediener" as User
+
+node "Smartphone / PC" {
+  [Bedien-App (PWA)] as App
+}
+
+cloud "WLAN (nur lokal)" as WLAN
+
+node "ESP32-Controller" {
+  [Webserver + WebSocket] as Web
+  [Modus-Logik] as Mode
+  [Automatik + Zeit] as Auto
+  [Fade-Engine] as Fade
+  [NVS (Flash)] as NVS
+  [FastLED / PWM] as Out
+}
+
+[DS3231 RTC] as RTC
+[Segment Links (WS2812)] as L
+[Segment Rechts (WS2812)] as R
+[Logo-LED (PWM)] as Logo
+
+User --> App
+App --> WLAN : HTTP / WebSocket
+WLAN --> Web
+Web --> Mode : Befehle (JSON)
+Mode --> Auto
+Mode --> Fade
+Mode --> NVS : Helligkeiten speichern
+Auto --> RTC : Uhrzeit (I2C)
+Fade --> Out
+Auto --> Out
+Out --> L : GPIO 23
+Out --> R : GPIO 13
+Out --> Logo : GPIO 14
+
+note bottom of Web
+  Der ESP32 laeuft eigenstaendig.
+  Die App ist nur Fernbedienung.
+end note
+
+@enduml

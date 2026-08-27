@@ -8,7 +8,7 @@ danach einmal bauen und flashen. Beispiel: der neue Modus bekommt die Nummer **2
 | --- | --- |
 | `include/config.h` | Enum-Wert (+ optionale Parameter) |
 | `src/main.cpp` | `render…()`-Funktion + `case` im `switch` |
-| `src/web_page.h` | Button + Name (DE/EN) |
+| `web/index.html` | Button + Name (DE/EN) |
 | `tools/mock-server.js` · `tools/build-demo.js` | Modus-Obergrenze anheben |
 
 ---
@@ -85,7 +85,7 @@ statt `setLogoRaw(...)` verwenden – nur so wirken die Regler auch in deinem Mo
 
 ---
 
-## Schritt 3 – `src/web_page.h`
+## Schritt 3 – `web/index.html`
 
 ### a) Button in der Modus-Karte (bei den anderen Buttons):
 
@@ -111,10 +111,11 @@ damit die Testumgebung den neuen Modus annimmt:
 if (typeof doc.mode === 'number' && doc.mode >= 0 && doc.mode <= 20) {   // war 19
 ```
 
-Danach die Demo neu erzeugen:
+Danach die Weboberfläche zusammenbauen und die Demo neu erzeugen:
 
 ```bash
-node tools/build-demo.js
+node tools/build-web.js     # web/*  ->  src/web_page.h
+node tools/build-demo.js    # aktualisiert die Demo
 ```
 
 ---

@@ -1,26 +1,44 @@
-@startuml Led
-title ESP32 LED Testprojekt
+@startuml Fassade
+title LED-Fassadenbeleuchtung - Ablauf
 
-actor User
-participant "ESP32" as ESP32
-participant "LED-Module" as LED
-participant "PlatformIO" as PIO
+actor "Bediener" as User
+participant "Bedien-App (PWA)\nBrowser im WLAN" as App
+participant "ESP32-Firmware" as ESP
+participant "DS3231 RTC" as RTC
+participant "NVS (Flash)" as NVS
+participant "LED-Segmente\n+ Logo" as LED
 
-User -> PIO: Projekt öffnen
-PIO -> ESP32: Code kompilieren
-PIO -> ESP32: Firmware hochladen
-ESP32 -> LED: Datenpin (GPIO 5)
-ESP32 -> LED: Stromversorgung (VCC/GND)
-ESP32 -> LED: LED ansteuern
+== Start (Power-On) ==
+ESP -> NVS: manuelle Helligkeiten laden
+ESP -> RTC: Uhrzeit lesen (sofort, ohne WLAN)
+ESP -> ESP: Modus = Automatik (definierter Start)
+ESP -> LED: Helligkeit passend zur Uhrzeit
+
+== Bedienung im Betrieb ==
+User -> App: Adresse oeffnen (http://<IP> im selben WLAN)
+App <-> ESP: WebSocket verbinden, Status empfangen
+User -> App: Modus waehlen / Regler bewegen
+App -> ESP: Befehl als JSON (ueber WebSocket)
+ESP -> LED: Modus rendern bzw. Helligkeit setzen
+ESP -> NVS: geaenderte Werte speichern
+ESP --> App: neuer Status
 LED --> User: Licht sichtbar
 
-note right of LED
-  Voraussetzung:
-  - richtige LED-Art (z.B. WS2812B / NeoPixel)
-  - GND gemeinsam
-  - VCC korrekt
-  - Datenleitung an GPIO 5
-  - ggf. 330Ω Widerstand
+== Automatik / Zeit ==
+ESP -> RTC: Uhrzeit (jede Sekunde)
+ESP -> ESP: Tageskurve berechnen (Nachtabschaltung ab 23:00)
+ESP -> LED: weiche Uebergaenge (Fade-Engine)
+note over ESP, RTC: NTP-Abgleich bei Internet;\nohne gueltige Zeit sicherer Grundzustand
+
+note right of ESP
+  Der ESP32 laeuft eigenstaendig -
+  die App ist nur Fernbedienung.
+
+  Anschluesse:
+  - Segment Links / Rechts: Daten GPIO 23 / 13
+  - Logo: PWM GPIO 14 (ueber MOSFET)
+  - RTC DS3231: I2C SDA 21 / SCL 22
+  - LED-Versorgung extern (5 V), gemeinsame Masse
 end note
 
 @enduml

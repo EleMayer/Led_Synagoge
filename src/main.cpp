@@ -2275,6 +2275,16 @@ void handleRoot(
     );
 }
 
+void handleStyle(
+    AsyncWebServerRequest *request
+) {
+    request->send(
+        200,
+        "text/css",
+        style_css
+    );
+}
+
 void handleManifest(
     AsyncWebServerRequest *request
 ) {
@@ -2517,6 +2527,12 @@ void setupWebServer() {
         "/",
         HTTP_GET,
         handleRoot
+    );
+
+    server.on(
+        "/style.css",
+        HTTP_GET,
+        handleStyle
     );
 
     server.on(

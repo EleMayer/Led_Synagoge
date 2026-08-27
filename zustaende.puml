@@ -1,0 +1,39 @@
+@startuml Zustaende
+title Betriebsmodi - Zustandsdiagramm
+
+[*] --> Automatik : Start / nach Stromausfall
+
+state Automatik {
+  Automatik : Helligkeit nach Uhrzeit (Tageskurve)
+  Automatik : Nachtabschaltung 23:00-06:00
+  Automatik : Regler gesperrt
+}
+
+state Statisch {
+  Statisch : feste Werte je Bereich (Regler)
+}
+
+state Effekt {
+  Effekt : Animation (Lauflicht, Welle, ...)
+  Effekt : Regler skalieren die Helligkeit
+}
+
+state Aus {
+  Aus : Segmente + Logo aus
+  Aus : Modus-Karte und Button rot
+}
+
+Automatik --> Statisch : Regler bewegt (Override)
+Automatik --> Effekt : Effekt gewaehlt
+Automatik --> Aus : "Aus" gewaehlt
+
+Statisch --> Automatik : naechster Zeitfenster-Wechsel
+Statisch --> Effekt : Modus gewechselt (Regler -> 90 %)
+Effekt --> Statisch : "Statisch" gewaehlt
+Effekt --> Aus : "Aus" gewaehlt
+
+Effekt --> Automatik : "Automatik" gewaehlt
+Aus --> Automatik : "Automatik" gewaehlt
+Statisch --> Aus : "Aus" gewaehlt
+
+@enduml

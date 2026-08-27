@@ -203,6 +203,10 @@ const server = http.createServer((req, res) => {
         res.setHeader('Content-Type', 'text/html');
         return res.end(pages.index_html || '<h1>web_page.h nicht gefunden</h1>');
     }
+    if (u.pathname === '/style.css') {
+        res.setHeader('Content-Type', 'text/css');
+        return res.end(pages.style_css || '');
+    }
     if (u.pathname === '/manifest.json') {
         res.setHeader('Content-Type', 'application/manifest+json');
         return res.end(pages.manifest_json || '{}');

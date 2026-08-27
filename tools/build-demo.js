@@ -13,14 +13,24 @@ const path = require('path');
 
 const WEB_PAGE_H = path.join(__dirname, '..', 'src', 'web_page.h');
 const OUT = path.join(__dirname, '..', 'src', 'web_page_demo.html');
+const OUT_CSS = path.join(__dirname, '..', 'src', 'style.css');
 
 const src = fs.readFileSync(WEB_PAGE_H, 'utf8');
-const m = /const char index_html\[\] PROGMEM = R"rawliteral\(([\s\S]*?)\)rawliteral";/.exec(src);
-if (!m) {
+function lit(name) {
+    const r = new RegExp('const char ' + name + '\\[\\] PROGMEM = R"rawliteral\\(([\\s\\S]*?)\\)rawliteral";');
+    const x = r.exec(src);
+    return x ? x[1] : null;
+}
+let html = lit('index_html');
+if (!html) {
     console.error('Fehler: index_html in web_page.h nicht gefunden.');
     process.exit(1);
 }
-let html = m[1];
+
+// Das CSS liegt in derselben style.css wie beim ESP - hier neben die Demo legen,
+// damit der <link rel="stylesheet" href="style.css"> auch lokal aufgeht.
+const css = lit('style_css');
+if (css) fs.writeFileSync(OUT_CSS, css.replace(/^\n/, ''));
 
 // Manifest/Icon verweisen auf den ESP32-Server -> in der lokalen Datei entfernen.
 html = html.replace(/<link rel="manifest"[^>]*>/g, '');

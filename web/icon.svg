@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512">
+
+<!-- Museum Arbeitswelt - Bildmarke (Zickzack mit hohem Balken rechts) -->
+<rect width="512" height="512" rx="96" fill="#ffffff"/>
+
+<polyline points="56,336 128,206 192,336 264,206 328,336 398,206 452,336 452,162"
+          fill="none" stroke="#111111" stroke-width="40"
+          stroke-linejoin="miter" stroke-miterlimit="10" stroke-linecap="butt"/>
+
+</svg>

@@ -43,17 +43,44 @@ Ausführliche Erklärung aller Modi: siehe [modi.md](modi.md).
 include/config.h    Konfiguration (Pins, LED-Anzahl, Grenzwerte, Modi)
 include/icons.h       PNG-Home-Screen-Icons als Byte-Arrays (generiert)
 src/main.cpp        Steuerlogik (Modi, Automatik, Netzwerk, OTA)
-src/web_page.h        Bedien-App (HTML/CSS/JS, PWA-Manifest, Icon) - Quelle der Wahrheit
+
+web/index.html        Bedien-App: HTML + JavaScript          ] Quelle der App
+web/style.css         das CSS der Bedien-App                 ] (getrennte Dateien,
+web/manifest.json     PWA-Manifest                           ] übersichtlich)
+web/icon.svg          App-Icon (SVG)                         ]
+src/web_page.h        aus web/ zusammengesetzt (generiert), wird vom ESP ausgeliefert
 src/web_page_demo.html  zweite Variante der App: laeuft ohne ESP32/Server (generiert)
+
+tools/build-web.js    fuegt web/* zu src/web_page.h zusammen
 tools/mock-server.js  PC-Testserver (simuliert die ESP32-API)
 tools/build-demo.js   erzeugt src/web_page_demo.html aus src/web_page.h
 tools/build-icons.js  erzeugt include/icons.h aus tools/icons/*.png
 tools/icons/          Home-Screen-Icons (icon-180/192/512.png)
+
 modi.md               Erklärung aller Betriebsmodi
 modus-hinzufuegen.md  Anleitung + Code-Schablone für einen neuen Modus
 dokumentation.md      Technische Dokumentation
 notfallplan.md        Notfälle, Sofortmaßnahmen, Störungstabelle, Kontakte
 ```
+
+## Weboberfläche bearbeiten
+
+Die Bedien-App liegt aus Übersichtlichkeit in **getrennten Dateien** im Ordner
+`web/` (`index.html`, `style.css`, `manifest.json`, `icon.svg`). Beim Bauen
+werden sie in `src/web_page.h` gebündelt – aber weiterhin getrennt: das CSS
+bleibt ein eigener Block (`style_css`) und wird vom ESP32 als eigene Datei
+`/style.css` ausgeliefert, auf die `index.html` per `<link>` zugreift (genauso
+wie die Demo). HTML und Styling bleiben also auch zur Laufzeit getrennt:
+
+```bash
+node tools/build-web.js    # web/*  ->  src/web_page.h
+node tools/build-demo.js   # aktualisiert die eigenständige Demo (optional)
+```
+
+`src/web_page.h` und `src/web_page_demo.html` sind also **generiert** – nicht von
+Hand editieren, sondern die Dateien in `web/` ändern und die Skripte erneut laufen
+lassen. `web/index.html` lässt sich zum schnellen Ansehen auch direkt im Browser
+öffnen (lädt `style.css` dann relativ).
 
 ## Zweite Variante: eigenstaendige Demo (ohne ESP32)
 
@@ -63,11 +90,12 @@ Testen der Oberflaeche im Browser, ganz ohne Hardware oder Server. Die Datei
 wird **automatisch** aus `src/web_page.h` erzeugt und nicht von Hand bearbeitet:
 
 ```bash
-node tools/build-demo.js       # erzeugt/aktualisiert src/web_page_demo.html
+node tools/build-web.js        # web/*  ->  src/web_page.h
+node tools/build-demo.js       # src/web_page.h  ->  src/web_page_demo.html
 ```
 
-Nach jeder Aenderung an `src/web_page.h` das Skript erneut ausfuehren, damit die
-Demo mit der echten App synchron bleibt.
+Nach jeder Aenderung in `web/` beide Skripte erneut ausfuehren, damit die
+Firmware-Seite und die Demo mit der Quelle synchron bleiben.
 
 ## WLAN einstellen
 
