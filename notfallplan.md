@@ -21,7 +21,7 @@ Bei Rauch, Feuer, Wasser, Funken, Geruch oder beschädigten Teilen **zuerst**:
 2. Bereich absichern, Personen fernhalten.
 3. Erst danach nach der Ursache sehen (Abschnitt 2).
 
-Standort der Sicherung/des Trennschalters: ____________________________
+Der Not-Aus erfolgt über die Sicherung bzw. den Trennschalter der 5-V-Versorgung.
 
 ---
 
@@ -70,27 +70,12 @@ Standort der Sicherung/des Trennschalters: ____________________________
 
 ## 5. Kontakte
 
-| Rolle | Name / Stelle | Erreichbar |
-| --- | --- | --- |
-| Technisch verantwortlich | ____________________ | ____________________ |
-| Elektrofachkraft / Firma (230 V) | ____________________ | ____________________ |
-| Haustechnik / Notfall vor Ort | ____________________ | ____________________ |
+Im Ernstfall zu verständigen: die/der **technisch Verantwortliche**, eine
+**Elektrofachkraft** für die 230-V-Seite sowie die **Haustechnik vor Ort**.
 
 ---
 
-## 6. Ereignis dokumentieren
-
-Jeden Notfall hier festhalten.
-
-| Datum/Uhrzeit | Ereignis | Sofortmaßnahme | Ursache / Behebung | Gemeldet an |
-| --- | --- | --- | --- | --- |
-|  |  |  |  |  |
-|  |  |  |  |  |
-|  |  |  |  |  |
-
----
-
-## 7. Ersatzteile (für die Behebung)
+## 6. Ersatzteile (für die Behebung)
 
 Empfohlener Grundvorrat:
 
