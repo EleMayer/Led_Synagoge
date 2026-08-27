@@ -50,6 +50,7 @@ tools/build-demo.js   erzeugt src/web_page_demo.html aus src/web_page.h
 tools/build-icons.js  erzeugt include/icons.h aus tools/icons/*.png
 tools/icons/          Home-Screen-Icons (icon-180/192/512.png)
 modi.md               Erklärung aller Betriebsmodi
+modus-hinzufuegen.md  Anleitung + Code-Schablone für einen neuen Modus
 dokumentation.md      Technische Dokumentation
 notfallplan.md        Notfälle, Sofortmaßnahmen, Störungstabelle, Kontakte
 ```

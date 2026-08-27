@@ -7,7 +7,7 @@
 //                                             fuer das App-Icon nur PNG, kein SVG)
 //    icon-192.png -> /icon-192.png          (Android/Manifest, Mindestgroesse)
 //    icon-512.png -> /icon-512.png          (Android/Manifest, Splash)
-//
+//<
 //  Die PNGs entstehen aus src/web_page.h (icon_svg), gerastert per Browser-
 //  Canvas. Wird das Icon geaendert, die PNGs neu rastern und dieses Skript
 //  erneut ausfuehren.
