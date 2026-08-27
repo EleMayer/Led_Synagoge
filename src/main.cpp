@@ -1,25 +1,7 @@
-// ---------------------------------------------------------------------------
-// LED-Fassadenbeleuchtung - ESP32-Firmware
-//
-// Ziel: Arduino-ESP32 Core 2.x (espressif32@7.0.1, gepinnt in platformio.ini)
-//
-// Steuert:
-//   - LED-Segment Links/Rechts über WS2812 + FastLED
-//   - Logo über PWM/MOSFET
-//   - Web-App über HTTP + WebSocket
-//   - DS3231 RTC, optional NTP-Synchronisation
-//   - NVS-Speicherung der manuellen Helligkeiten
-//   - OTA-Update
-//
-// WICHTIG:
-//   - Die Modus-IDs bleiben kompatibel mit config.h / web_page.h.
-//   - Automatik-Zeiten und Automatik-Helligkeiten kommen aus config.h.
-//   - Nur manuelle Helligkeitsänderungen während AUTOMATIC erzeugen einen
-//     zeitlich begrenzten Override.
-//   - Bewusst gewählte Effekt-/Stimmungsmodi werden NICHT beim nächsten
-//     Automatik-Zeitfenster ungefragt verlassen.
-//   - PWM ist für die Arduino-ESP32 Core 2.x LEDC-API umgesetzt.
-// ---------------------------------------------------------------------------
+// LED-Fassadenbeleuchtung - ESP32-Firmware.
+// Steuert zwei WS2812-Segmente und ein PWM-Logo, bedient über eine lokale Web-App
+// (HTTP/WebSocket). Zeit aus DS3231-RTC mit NTP-Abgleich, Konfig im NVS, OTA-Update.
+// Zielplattform: Arduino-ESP32 Core 2.x (in platformio.ini gepinnt).
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -39,9 +21,7 @@
 #include "web_page.h"
 #include "icons.h"
 
-// ---------------------------------------------------------------------------
 // Globale Zustände
-// ---------------------------------------------------------------------------
 
 OperatingMode currentMode = MODE_AUTOMATIC;
 
@@ -76,9 +56,7 @@ const int eveningEndBrightness   = AUTO_B_EVE_END;
 
 int currentAutoBrightness = 0;
 
-// ---------------------------------------------------------------------------
 // Fade-Engine
-// ---------------------------------------------------------------------------
 
 int targetLeft  = 0;
 int targetRight = 0;
@@ -95,9 +73,7 @@ const uint32_t RENDER_INTERVAL = 20;
 
 bool prevFrameEffect = false;
 
-// ---------------------------------------------------------------------------
 // Timing
-// ---------------------------------------------------------------------------
 
 uint16_t effectStep = 0;
 unsigned long lastEffectUpdate = 0;
@@ -115,9 +91,7 @@ const uint32_t NTP_CHECK_INTERVAL = 60000;
 unsigned long lastWifiReconnect = 0;
 const uint32_t WIFI_RECONNECT_INTERVAL = 30000;
 
-// ---------------------------------------------------------------------------
 // Hardware / Netzwerk
-// ---------------------------------------------------------------------------
 
 #define MAX_WS_MESSAGE_LEN 512
 
@@ -154,9 +128,7 @@ const char *NTP_SERVER_2 = "time.nist.gov";
 // Wien / Österreich:
 const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0";
 
-// ---------------------------------------------------------------------------
 // Vorwärtsdeklarationen
-// ---------------------------------------------------------------------------
 
 void broadcastStatus();
 void applyHardware();
@@ -178,9 +150,7 @@ void loadSettings();
 
 void updateOverrideReturn();
 
-// ---------------------------------------------------------------------------
 // Helligkeit
-// ---------------------------------------------------------------------------
 
 int clampBrightness(int value) {
     return clampPct(value);
@@ -199,15 +169,7 @@ CRGB whiteRaw(uint8_t v) {
     return CRGB(v, v, v);
 }
 
-// ---------------------------------------------------------------------------
-// Logo-PWM
-//
-// Arduino-ESP32 Core 2.x (LEDC-API):
-//   ledcSetup(channel, frequency, resolution)
-//   ledcAttachPin(pin, channel)
-//   ledcWrite(channel, duty)
-// ---------------------------------------------------------------------------
-
+// Logo-PWM über die Core-2.x-LEDC-API (ledcSetup/ledcAttachPin/ledcWrite).
 void setupLogoPWM() {
     pinMode(PIN_LOGO_PWM, OUTPUT);
 
@@ -260,9 +222,7 @@ void setLogoEffect(uint8_t base) {
     setLogoRaw(scale8(base, brightnessTo8Bit(brightnessLogo)));
 }
 
-// ---------------------------------------------------------------------------
 // NVS
-// ---------------------------------------------------------------------------
 
 void saveSettings() {
     preferences.begin("facelight", false);
@@ -329,9 +289,7 @@ void loadSettings() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // RTC / Zeit
-// ---------------------------------------------------------------------------
 
 // Sperrt/entsperrt den RTC-Mutex (rekursiv, damit sich die Funktionen
 // gegenseitig aufrufen duerfen). Vor der Mutex-Erzeugung sind es No-Ops.
@@ -422,9 +380,7 @@ String getDateString() {
     return String(buf);
 }
 
-// ---------------------------------------------------------------------------
 // Automatik
-// ---------------------------------------------------------------------------
 
 // Baut das aktuelle Automatik-Profil aus den config.h-Werten fuer die reine
 // Logik in auto_logic.h.
@@ -492,13 +448,11 @@ int calculateAutomaticBrightness() {
     return autoBrightnessAt(minutes, currentAutoProfile());
 }
 
-// ---------------------------------------------------------------------------
 // Optionaler Daemmerungssensor
 //
 // Nur aktiv bei USE_LIGHT_SENSOR == 1. Liefert die gemessene Umgebungshelligkeit
 // als 0..100 % (0 = dunkel, 100 = hell) und senkt damit die Automatik bei
 // Tageslicht ab. Ist der Sensor aus, bleibt der Automatikwert unveraendert.
-// ---------------------------------------------------------------------------
 
 #if USE_LIGHT_SENSOR
 
@@ -562,9 +516,7 @@ void applyAutomatic() {
     targetLogo = value;
 }
 
-// ---------------------------------------------------------------------------
 // Fade
-// ---------------------------------------------------------------------------
 
 float approach(float current, int target) {
     if (current < target) {
@@ -630,9 +582,7 @@ void applyStatic() {
     targetLogo = brightnessLogo;
 }
 
-// ---------------------------------------------------------------------------
 // Effekte
-// ---------------------------------------------------------------------------
 
 bool frameReady(uint32_t interval) {
     if (millis() - lastEffectUpdate < interval) {
@@ -692,9 +642,7 @@ uint8_t flickerLevel(
     );
 }
 
-// ---------------------------------------------------------------------------
 // Lauflicht
-// ---------------------------------------------------------------------------
 
 void applyEffect() {
     if (!frameReady(EFFECT_INTERVAL)) {
@@ -731,9 +679,7 @@ void applyEffect() {
     effectStep++;
 }
 
-// ---------------------------------------------------------------------------
 // Pulsieren / Atmen
-// ---------------------------------------------------------------------------
 
 void applyWave(
     uint8_t bpm,
@@ -773,9 +719,7 @@ void applyWave(
     setLogoEffect(brightnessTo8Bit(level));
 }
 
-// ---------------------------------------------------------------------------
 // Gemeinsame Ausgabe
-// ---------------------------------------------------------------------------
 
 void showAll(
     uint8_t vLinks,
@@ -799,9 +743,7 @@ void showAll(
     setLogoEffect(vLogo);
 }
 
-// ---------------------------------------------------------------------------
 // Stimmungsmodi
-// ---------------------------------------------------------------------------
 
 void renderDauerlicht() {
     if (!frameReady(RENDER_INTERVAL)) {
@@ -1040,9 +982,7 @@ void renderNachtlicht() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Sternenfunkeln
-// ---------------------------------------------------------------------------
 
 void renderSternenfunkeln() {
     if (!frameReady(RENDER_INTERVAL)) {
@@ -1118,9 +1058,7 @@ void renderSternenfunkeln() {
     ));
 }
 
-// ---------------------------------------------------------------------------
 // Treffpunkt
-// ---------------------------------------------------------------------------
 
 void renderTreffpunkt() {
     if (!frameReady(EFFECT_INTERVAL)) {
@@ -1163,9 +1101,7 @@ void renderTreffpunkt() {
     effectStep++;
 }
 
-// ---------------------------------------------------------------------------
 // Herzschlag
-// ---------------------------------------------------------------------------
 
 uint8_t heartBump(
     uint32_t t,
@@ -1237,9 +1173,7 @@ void renderHerzschlag() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Wechsellicht
-// ---------------------------------------------------------------------------
 
 void renderWechsellicht() {
     if (!frameReady(RENDER_INTERVAL)) {
@@ -1289,12 +1223,10 @@ void renderWechsellicht() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Ausstrahlung
 //
 // Eine langsame Welle laeuft vom Logo/Zentrum (Position 0 je Segment) nach
 // aussen. Beide Segmente zeigen dieselbe Welle, das Logo pulst im Ursprung mit.
-// ---------------------------------------------------------------------------
 
 void renderAusstrahlung() {
     if (!frameReady(RENDER_INTERVAL)) {
@@ -1325,12 +1257,10 @@ void renderAusstrahlung() {
     setLogoEffect(map(wLogo, 0, 255, floorLevel, base));
 }
 
-// ---------------------------------------------------------------------------
 // Wolkenzug
 //
 // Organische, unregelmaessige Helligkeit ueber Perlin-Rauschen (inoise8). Kein
 // sichtbares Muster - wirkt wie langsam vorbeiziehende Wolken.
-// ---------------------------------------------------------------------------
 
 void renderWolken() {
     if (!frameReady(RENDER_INTERVAL)) {
@@ -1364,12 +1294,10 @@ void renderWolken() {
     setLogoEffect(constrain(logo, floorLevel, base));
 }
 
-// ---------------------------------------------------------------------------
 // Leuchtturm
 //
 // Ein weiches Lichtband wandert langsam ueber die ganze Linie (beide Segmente
 // als eine Reihe) und kommt periodisch wieder. Dazwischen niedriges Grundniveau.
-// ---------------------------------------------------------------------------
 
 void renderLeuchtturm() {
     if (!frameReady(RENDER_INTERVAL)) {
@@ -1417,9 +1345,7 @@ void renderLeuchtturm() {
     setLogoEffect((uint8_t)logo);
 }
 
-// ---------------------------------------------------------------------------
 // Modus-Klassifizierung
-// ---------------------------------------------------------------------------
 
 bool isEffectMode(OperatingMode m) {
     return
@@ -1438,9 +1364,7 @@ bool isThematic(OperatingMode m) {
         m == MODE_NACHTLICHT;
 }
 
-// ---------------------------------------------------------------------------
 // Nachtabschaltung
-// ---------------------------------------------------------------------------
 
 bool isNightOff() {
     struct tm t;
@@ -1459,9 +1383,7 @@ bool isNightOff() {
         minutes < nightEndHour * 60;
 }
 
-// ---------------------------------------------------------------------------
 // Hardware-Dispatch
-// ---------------------------------------------------------------------------
 
 void applyHardware() {
     // Stimmungsmodi werden nachts abgeschaltet.
@@ -1561,9 +1483,7 @@ void applyHardware() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Override
-// ---------------------------------------------------------------------------
 
 void enterOverrideIfAutomatic() {
     if (currentMode != MODE_AUTOMATIC) {
@@ -1622,9 +1542,7 @@ void updateOverrideReturn() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // JSON Status
-// ---------------------------------------------------------------------------
 
 String createStatusJson() {
     JsonDocument doc;
@@ -1724,9 +1642,7 @@ void broadcastStatus() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // WebSocket
-// ---------------------------------------------------------------------------
 
 void onWebSocketEvent(
     AsyncWebSocket *serverPtr,
@@ -1795,9 +1711,7 @@ void onWebSocketEvent(
 
     bool changed = false;
 
-    // ---------------------------------------------------------
     // Modus
-    // ---------------------------------------------------------
 
     if (doc["mode"].is<int>()) {
 
@@ -1856,9 +1770,7 @@ void onWebSocketEvent(
         }
     }
 
-    // ---------------------------------------------------------
     // Manuelle Helligkeiten
-    // ---------------------------------------------------------
 
     if (doc["left"].is<int>()) {
 
@@ -1920,9 +1832,7 @@ void onWebSocketEvent(
     }
 }
 
-// ---------------------------------------------------------------------------
 // WLAN
-// ---------------------------------------------------------------------------
 
 void startAccessPoint() {
     WiFi.mode(WIFI_AP);
@@ -2053,9 +1963,7 @@ void updateWiFi() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // NTP
-// ---------------------------------------------------------------------------
 
 void setupNTP() {
     if (
@@ -2177,9 +2085,7 @@ void updateNTP() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // RTC
-// ---------------------------------------------------------------------------
 
 void setupRTC() {
     Wire.begin(
@@ -2227,9 +2133,7 @@ void setupRTC() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // LED Selbsttest
-// ---------------------------------------------------------------------------
 
 void ledSelfTest() {
 
@@ -2293,9 +2197,7 @@ void ledSelfTest() {
 #endif
 }
 
-// ---------------------------------------------------------------------------
 // LED Setup
-// ---------------------------------------------------------------------------
 
 void setupLEDs() {
 
@@ -2361,9 +2263,7 @@ void setupLEDs() {
     setLogoRaw(0);
 }
 
-// ---------------------------------------------------------------------------
 // Webserver
-// ---------------------------------------------------------------------------
 
 void handleRoot(
     AsyncWebServerRequest *request
@@ -2484,9 +2384,7 @@ void handleApiSchedule(
     );
 }
 
-// ---------------------------------------------------------------------------
 // OTA
-// ---------------------------------------------------------------------------
 
 void handleUpdateDone(
     AsyncWebServerRequest *request
@@ -2603,9 +2501,7 @@ void handleUpdateUpload(
     }
 }
 
-// ---------------------------------------------------------------------------
 // Webserver Setup
-// ---------------------------------------------------------------------------
 
 void setupWebServer() {
 
@@ -2700,9 +2596,7 @@ void setupWebServer() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Setup
-// ---------------------------------------------------------------------------
 
 void setup() {
 
@@ -2753,9 +2647,7 @@ void setup() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Statistik
-// ---------------------------------------------------------------------------
 
 // Leuchtet die Fassade gerade wirklich? (fuer die Leucht-Stunden-Zaehlung)
 bool lightsAreOn() {
@@ -2771,9 +2663,7 @@ bool lightsAreOn() {
     return true;
 }
 
-// ---------------------------------------------------------------------------
 // Hauptschleife
-// ---------------------------------------------------------------------------
 
 void loop() {
 

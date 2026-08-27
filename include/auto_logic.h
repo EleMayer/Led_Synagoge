@@ -1,14 +1,7 @@
 #pragma once
 
-// ---------------------------------------------------------------------------
-// Reine, hardwareunabhaengige Automatik-Logik (kein Arduino, FastLED oder RTC).
-//
-// Diese Funktionen berechnen nur mit Zahlen und werden von zwei Seiten genutzt:
-//   - src/main.cpp     (die echte Firmware)
-//   - test/            (die Unit-Tests, siehe test/test_auto_logic.cpp)
-//
-// So testen die Unit-Tests genau denselben Code, der auf dem Geraet laeuft.
-// ---------------------------------------------------------------------------
+// Reine Automatik-Logik ohne Hardware-Abhaengigkeiten. Wird von der Firmware
+// und den Unit-Tests (test/) genutzt - beide rechnen mit demselben Code.
 
 // Das Automatik-Tagesprofil: vier Uebergangs-Stunden (0..23) und vier
 // Helligkeiten (0..100 %). Muss aufsteigend sein: tMorning < tDay < tEvening < tNight.

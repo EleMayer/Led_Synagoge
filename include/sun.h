@@ -1,12 +1,10 @@
 #pragma once
 #include <math.h>
 
-// ---------------------------------------------------------------------------
 // Sonnenauf-/-untergang (Almanac-Algorithmus, 1990) - hardwareunabhaengig.
 // Wird von der optionalen Sonnenstand-Automatik genutzt und ist per Unit-Test
 // (test/) pruefbar. Rueckgabe von sunHour(): lokale Zeit in Stunden (0..24)
 // oder -1, wenn es an dem Tag kein Ereignis gibt (Polartag/-nacht).
-// ---------------------------------------------------------------------------
 
 inline double _sunD2R(double d) { return d * M_PI / 180.0; }
 inline double _sunR2D(double r) { return r * 180.0 / M_PI; }

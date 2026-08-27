@@ -736,7 +736,7 @@ Beispiel:
     "rssi": -58,
     "wifi": true,
     "ap": false,
-    "ssid": "Museum-Arbeitswelt",
+    "ssid": "<WLAN-Name>",
     "firmware": "2.4.3"
 }
 ```
@@ -1076,10 +1076,10 @@ lokale Bedienung, feste Zugangsdaten). Geändert werden sie in
 `include/config.h`:
 
 ```c
-#define WIFI_SSID     "Museum-Arbeitswelt"   // WLAN-Name
-#define WIFI_PASS     "willkommen"           // WLAN-Passwort
-#define SETUP_AP_SSID "Fassade-Setup"        // Notfall-Accesspoint (nur Zugriff)
-#define SETUP_AP_PASS "fassade2026"
+#define WIFI_SSID     "<WLAN-Name>"       // eigenes WLAN eintragen
+#define WIFI_PASS     "<WLAN-Passwort>"
+#define SETUP_AP_SSID "Fassade-Setup"     // Notfall-Accesspoint (nur Zugriff)
+#define SETUP_AP_PASS "<AP-Passwort>"
 ```
 
 Nach einer Änderung muss die Firmware neu aufgespielt werden:
@@ -1144,7 +1144,7 @@ akzeptiert Firmware nur mit den Zugangsdaten `OTA_USER`/`OTA_PASSWORD` aus
 `config.h`. Beispiel mit curl:
 
 ```bash
-curl --user admin:PASSWORT -F "update=@firmware.bin" http://led-fassade.local/update
+curl --user <benutzer>:<passwort> -F "update=@firmware.bin" http://led-fassade.local/update
 ```
 
 Vereinfachter Ablauf:

@@ -76,10 +76,10 @@ und werden nicht über die App geändert (rein lokale Bedienung, feste
 Zugangsdaten – Pflichtenheft Kap. 2/9):
 
 ```c
-#define WIFI_SSID     "Museum-Arbeitswelt"   // WLAN-Name
-#define WIFI_PASS     "willkommen"           // WLAN-Passwort
-#define SETUP_AP_SSID "Fassade-Setup"        // Notfall-Accesspoint (nur Zugriff)
-#define SETUP_AP_PASS "fassade2026"
+#define WIFI_SSID     "<WLAN-Name>"       // eigenes WLAN eintragen
+#define WIFI_PASS     "<WLAN-Passwort>"
+#define SETUP_AP_SSID "Fassade-Setup"     // Notfall-Accesspoint (nur Zugriff)
+#define SETUP_AP_PASS "<AP-Passwort>"
 ```
 
 SSID/Passwort dort ändern und die Firmware neu aufspielen:

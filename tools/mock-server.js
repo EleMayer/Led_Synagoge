@@ -65,7 +65,7 @@ const state = {
     rtc: true, ntp: true,
     ip: '127.0.0.1', rssi: -55,
     wifi: true, ap: false,
-    ssid: 'Museum-Arbeitswelt',
+    ssid: 'Demo-WLAN',
     firmware: '2.3.0-mock',
     onHours: 128.5, upHours: 140.2, kWh: 128.5 * 90 / 1000,
     sched: { tMorning: 6, tDay: 8, tEvening: 18, tNight: 23,

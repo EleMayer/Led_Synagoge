@@ -1,11 +1,9 @@
 # Notfallplan – LED-Fassadenbeleuchtung
 
-Bei Fragen kann sich jederzeit an Elena Mayer (elena@mayer.or.at) gewendet werden.
-
 Was im Stör- oder Gefahrenfall zu tun ist. Reihenfolge immer:
 **1. Personen schützen → 2. Sachschäden begrenzen → 3. Betrieb wiederherstellen.**
 
-Bei Fragen jederzeit an **Elena Mayer** (elena@mayer.or.at) wenden.
+Bei Fragen an die/den **technisch Verantwortliche(n)** wenden (siehe Kontakte, Abschnitt 5).
 
 > **Grundregel:** Im Zweifel zuerst die Anlage **spannungsfrei schalten**
 > (Not-Aus, Abschnitt 1) und eine Fachkraft verständigen. Nichts bei Nässe oder
@@ -31,7 +29,7 @@ Standort der Sicherung/des Trennschalters: ____________________________
 
 | Notfall | Sofortmaßnahme | Danach |
 | --- | --- | --- |
-| **Rauch, Brandgeruch, Feuer** | Not-Aus, Personen in Sicherheit, **Feuerwehr 122**. Elektrikbrand **nicht mit Wasser** löschen | Elena Mayer informieren, Anlage bis zur Prüfung aus lassen |
+| **Rauch, Brandgeruch, Feuer** | Not-Aus, Personen in Sicherheit, **Feuerwehr 122**. Elektrikbrand **nicht mit Wasser** löschen | Verantwortliche(n) informieren, Anlage bis zur Prüfung aus lassen |
 | **Wassereintritt / nasse Anlage** | **Nicht berühren**, Not-Aus (Sicherung, nicht das nasse Gerät) | Trocknen lassen, Elektrofachkraft prüfen lassen |
 | **Netzteil heiß, Geruch, Funken** | Not-Aus | Netzteil durch Fachkraft tauschen |
 | **Kabel/LED-Teile lose oder herabhängend** | Bereich absperren (Stromschlag-/Absturzgefahr), Not-Aus, nicht berühren | Fachkraft reparieren lassen |
@@ -66,7 +64,7 @@ Standort der Sicherung/des Trennschalters: ____________________________
 3. Der Controller startet selbsttätig im **Automatik-Modus**; nach kurzer Zeit
    sollte die Fassade wieder passend leuchten.
 4. Funktion in der App prüfen (Modus, Uhrzeit). Bleibt die Störung, Abschnitt 3
-   bzw. Elena Mayer kontaktieren.
+   bzw. die/den Verantwortliche(n) kontaktieren.
 
 ---
 
@@ -74,7 +72,7 @@ Standort der Sicherung/des Trennschalters: ____________________________
 
 | Rolle | Name / Stelle | Erreichbar |
 | --- | --- | --- |
-| Technisch verantwortlich | Elena Mayer | elena@mayer.or.at |
+| Technisch verantwortlich | ____________________ | ____________________ |
 | Elektrofachkraft / Firma (230 V) | ____________________ | ____________________ |
 | Haustechnik / Notfall vor Ort | ____________________ | ____________________ |
 

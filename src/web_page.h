@@ -286,7 +286,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 let socket = null;
 let reconnectTimer = null;
 
-// --- Sprache (Deutsch / Englisch) und Design (hell / dunkel) ---------------
+// Sprache (Deutsch/Englisch) und Design (hell/dunkel).
 
 // Modus-Namen je Sprache.
 const MODE_LABEL = {
@@ -723,7 +723,7 @@ for(let i = 0; i < sliderTypes.length; i++)
     });
 }
 
-// --- PWA-Installation ------------------------------------------------------
+// PWA-Installation.
 // Die App laesst sich auf Handy/Tablet/Desktop als eigenstaendige App ablegen.
 // Android/Desktop-Browser liefern dafuer das Event "beforeinstallprompt", das
 // wir aufheben und hinter dem Installieren-Button ausloesen. iOS/Safari kennt
