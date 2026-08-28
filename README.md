@@ -49,9 +49,9 @@ web/style.css         das CSS der Bedien-App                 ] (getrennte Dateie
 web/manifest.json     PWA-Manifest                           ] übersichtlich)
 web/icon.svg          App-Icon (SVG)                         ]
 src/web_page.h        aus web/ zusammengesetzt (generiert), wird vom ESP ausgeliefert
-src/web_page_demo.html  zweite Variante der App: laeuft ohne ESP32/Server (generiert)
+src/web_page_demo.html  zweite Variante der App: läuft ohne ESP32/Server (generiert)
 
-tools/build-web.js    fuegt web/* zu src/web_page.h zusammen
+tools/build-web.js    fügt web/* zu src/web_page.h zusammen
 tools/mock-server.js  PC-Testserver (simuliert die ESP32-API)
 tools/build-demo.js   erzeugt src/web_page_demo.html aus src/web_page.h
 tools/build-icons.js  erzeugt include/icons.h aus tools/icons/*.png
@@ -82,11 +82,11 @@ Hand editieren, sondern die Dateien in `web/` ändern und die Skripte erneut lau
 lassen. `web/index.html` lässt sich zum schnellen Ansehen auch direkt im Browser
 öffnen (lädt `style.css` dann relativ).
 
-## Zweite Variante: eigenstaendige Demo (ohne ESP32)
+## Zweite Variante: eigenständige Demo (ohne ESP32)
 
 `src/web_page_demo.html` ist dieselbe Bedien-App wie auf dem ESP32, aber mit
-einem eingebauten Simulator statt WebSocket-Verbindung – zum Vorfuehren und
-Testen der Oberflaeche im Browser, ganz ohne Hardware oder Server. Die Datei
+einem eingebauten Simulator statt WebSocket-Verbindung – zum Vorführen und
+Testen der Oberfläche im Browser, ganz ohne Hardware oder Server. Die Datei
 wird **automatisch** aus `src/web_page.h` erzeugt und nicht von Hand bearbeitet:
 
 ```bash
@@ -94,7 +94,7 @@ node tools/build-web.js        # web/*  ->  src/web_page.h
 node tools/build-demo.js       # src/web_page.h  ->  src/web_page_demo.html
 ```
 
-Nach jeder Aenderung in `web/` beide Skripte erneut ausfuehren, damit die
+Nach jeder Änderung in `web/` beide Skripte erneut ausführen, damit die
 Firmware-Seite und die Demo mit der Quelle synchron bleiben.
 
 ## WLAN einstellen

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LED-Fassade – Modus-Vorschau</title>
+
+<!--
+  Eigenstaendige Uebersicht ALLER Betriebsmodi der LED-Fassade mit einer kleinen
+  animierten "LED-Leiste" je Modus. Voll self-contained (CSS + JavaScript inline)
+  - einfach im Browser oeffnen, laeuft ohne ESP32, ohne Server und ohne weitere
+  Dateien.
+
+  Die Fassade leuchtet ausschliesslich WEISS; die Vorschau zeigt also die
+  Bewegung/Dynamik eines Modus, nicht eine Farbe. Die Muster sind vereinfachte
+  Nachbildungen der render...()-Funktionen der Firmware (src/main.cpp), keine
+  exakte Kopie - sie sollen den Charakter eines Modus auf einen Blick zeigen.
+-->
+
+<style>
+  :root{
+    --bg:#0a0b0d;
+    --card:#131619;
+    --line:#242830;
+    --line-strong:#333a44;
+    --fg:#e7ecf1;
+    --muted:#8b95a1;
+    --accent:#2bb6c4;
+    --strip:#0c0e11;          /* dunkle "Fassung" der LED-Leiste */
+    --chip-grund:#2f4858;
+    --chip-effekt:#264b53;
+    --chip-stimmung:#3a3350;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--fg);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:0 16px 40px;
+  }
+
+  header{max-width:1000px;margin:0 auto;padding:26px 4px 6px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brandmark{width:34px;height:17px;flex:none;display:block;color:var(--accent)}
+  h1{font-size:20px;margin:0;font-weight:650;letter-spacing:.01em}
+  .sub{color:var(--muted);font-size:13.5px;margin:10px 4px 0;max-width:760px}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin:16px 4px 0}
+  .chip{font-size:11.5px;font-weight:650;letter-spacing:.03em;
+    padding:4px 10px;border-radius:999px;color:var(--fg)}
+  .chip.grund{background:var(--chip-grund)}
+  .chip.effekt{background:var(--chip-effekt)}
+  .chip.stimmung{background:var(--chip-stimmung)}
+
+  main{max-width:1000px;margin:0 auto}
+  section{margin-top:26px}
+  section > h2{font-size:12px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.12em;font-weight:700;margin:0 4px 12px;
+    border-bottom:1px solid var(--line);padding-bottom:8px}
+  .note{color:var(--muted);font-size:12.5px;margin:-6px 4px 12px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+
+  .mode{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:13px 14px 14px;box-shadow:0 1px 2px rgba(0,0,0,.4)}
+  .mode .pv{display:block;width:100%;height:46px;border-radius:7px;
+    background:var(--strip);border:1px solid #05070a}
+  .mode .row{display:flex;align-items:center;gap:9px;margin-top:11px}
+  .mode .num{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12.5px;
+    min-width:20px;font-weight:600}
+  .mode .name{font-weight:600;font-size:15.5px;flex:1}
+  .mode .cat{font-size:10.5px;font-weight:700;letter-spacing:.03em;
+    padding:3px 8px;border-radius:999px;color:var(--fg)}
+  .mode .cat.grund{background:var(--chip-grund)}
+  .mode .cat.effekt{background:var(--chip-effekt)}
+  .mode .cat.stimmung{background:var(--chip-stimmung)}
+  .mode .desc{color:var(--muted);font-size:13px;margin:8px 1px 0;line-height:1.5}
+
+  footer{max-width:1000px;margin:28px auto 0;color:var(--muted);font-size:12px;
+    text-align:center;padding-top:18px;border-top:1px solid var(--line)}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <svg class="brandmark" viewBox="36 142 436 214" aria-hidden="true">
+      <polyline points="56,336 128,206 192,336 264,206 328,336 398,206 452,336 452,162"
+                fill="none" stroke="currentColor" stroke-width="40"
+                stroke-linejoin="miter" stroke-miterlimit="10" stroke-linecap="butt"/>
+    </svg>
+    <h1>LED-Fassade &ndash; Modus-Vorschau</h1>
+  </div>
+  <p class="sub">Alle 20 Betriebsmodi mit animierter Vorschau. Das Licht ist
+  ausschliesslich <b>weiss</b> &ndash; die Vorschau zeigt die Bewegung/Dynamik,
+  nicht eine Farbe. Vereinfachte Nachbildung der Firmware-Effekte.</p>
+  <div class="legend">
+    <span class="chip grund">Grundmodus</span>
+    <span class="chip effekt">Effekt</span>
+    <span class="chip stimmung">Stimmungs-Modus</span>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer>Museum Arbeitswelt Steyr &middot; Vorschau erzeugt lokal im Browser</footer>
+
+<script>
+// ===========================================================================
+//  Modus-Katalog
+//  Reihenfolge/Namen/Nummern wie in include/config.h (enum OperatingMode).
+//  cat: "grund" | "effekt" | "stimmung"
+// ===========================================================================
+const MODES = [
+    { mode:0,  name:"Aus",            cat:"grund",    desc:"Alle Bereiche aus. Der Controller bleibt im WLAN erreichbar." },
+    { mode:1,  name:"Statisch",       cat:"grund",    desc:"Konstantes, ruhiges Weiss - je Bereich ueber die Regler einstellbar." },
+    { mode:3,  name:"Automatik",      cat:"grund",    desc:"Tageszeitabhaengige Helligkeit nach fester Kurve (Standardmodus)." },
+
+    { mode:2,  name:"Lauflicht",      cat:"effekt",   desc:"Ein weicher Lichtschweif gleitet langsam ueber beide Segmente." },
+    { mode:4,  name:"Pulsieren",      cat:"effekt",   desc:"Ruhiges gemeinsames Auf- und Abschwellen, sackt nicht ins Dunkle." },
+    { mode:5,  name:"Atmen",          cat:"effekt",   desc:"Wie Pulsieren, aber sehr langsam - ruhiges Ein- und Ausatmen." },
+    { mode:10, name:"Welle",          cat:"effekt",   desc:"Eine Sinuswelle wandert raeumlich ueber den Streifen." },
+    { mode:13, name:"Sternenfunkeln", cat:"effekt",   desc:"Dezenter Grundglanz mit einzelnen, langsam verglimmenden Funken." },
+    { mode:14, name:"Treffpunkt",     cat:"effekt",   desc:"Zwei Lichter laufen von aussen nach innen und treffen sich in der Mitte." },
+    { mode:15, name:"Herzschlag",     cat:"effekt",   desc:"Zwei kurze Schlaege je Zyklus - ein ruhiges „lub-dub“ der Fassade." },
+    { mode:16, name:"Wechsellicht",   cat:"effekt",   desc:"Segment Links und Rechts schwellen langsam gegenlaeufig." },
+    { mode:17, name:"Ausstrahlung",   cat:"effekt",   desc:"Eine Welle laeuft vom Zentrum/Logo nach aussen ueber beide Segmente." },
+    { mode:18, name:"Wolkenzug",      cat:"effekt",   desc:"Organische, unregelmaessige Helligkeit wie langsam ziehende Wolken." },
+    { mode:19, name:"Leuchtturm",     cat:"effekt",   desc:"Ein weiches Lichtband wandert langsam ueber die ganze Linie." },
+
+    { mode:6,  name:"Dauerlicht",     cat:"stimmung", desc:"Gleichmaessiges, ganz langsam atmendes Licht auf hohem Niveau." },
+    { mode:7,  name:"Kerzenlicht",    cat:"stimmung", desc:"Zwei unabhaengig voneinander langsam schimmernde Lichter." },
+    { mode:8,  name:"Stufenlicht",    cat:"stimmung", desc:"Aufbau in acht Schritten von aussen nach innen, dann von vorn." },
+    { mode:9,  name:"Daemmerlicht",   cat:"stimmung", desc:"Sanfter, niedriger Abendglanz, der ganz langsam auf- und abschwillt." },
+    { mode:11, name:"Feuerschein",    cat:"stimmung", desc:"Ruhiges, warmes Lodern - langsam und wenig kontrastreich." },
+    { mode:12, name:"Nachtlicht",     cat:"stimmung", desc:"Ruhiger, niedriger Grundglanz, sehr langsam und kaum bewegt." }
+];
+
+const CAT_LABEL = { grund:"Grundmodus", effekt:"Effekt", stimmung:"Stimmung" };
+
+const PV_CELLS = 24;     // LED-Punkte je Vorschau-Leiste
+const PV_HIST  = 100;    // Laenge der Wellenform-Spur (Samples ueber die Zeit)
+let previews = [];       // je Karte: { mode, canvas, ctx, spark[], hist[] }
+let pvLast = 0;
+let pvResizeAt = 0;
+
+// --- Seite aufbauen: je Modus eine Karte mit Vorschau-Leiste --------------
+
+// Baut die drei Abschnitte (Grundmodi, Effekte, Stimmungs-Modi) mit Karten.
+function buildPage()
+{
+    let app = document.getElementById("app");
+
+    let groups = [
+        { cat:"grund",    title:"Grundmodi",       note:"Der normale Betrieb." },
+        { cat:"effekt",   title:"Effekte",         note:"Animierte Modi. Keine Nachtabschaltung; Helligkeit ueber die Regler." },
+        { cat:"stimmung", title:"Stimmungs-Modi",  note:"Feste Lichtstimmungen. Schalten sich zwischen 23:00 und 06:00 automatisch ab." }
+    ];
+
+    for(let g = 0; g < groups.length; g++)
+    {
+        let section = document.createElement("section");
+
+        let h2 = document.createElement("h2");
+        h2.textContent = groups[g].title;
+        section.appendChild(h2);
+
+        let note = document.createElement("p");
+        note.className = "note";
+        note.textContent = groups[g].note;
+        section.appendChild(note);
+
+        let grid = document.createElement("div");
+        grid.className = "grid";
+
+        for(let i = 0; i < MODES.length; i++)
+        {
+            if(MODES[i].cat !== groups[g].cat) continue;
+            grid.appendChild(buildCard(MODES[i]));
+        }
+
+        section.appendChild(grid);
+        app.appendChild(section);
+    }
+
+    resizePreviews();
+    requestAnimationFrame(pvFrame);
+}
+
+// Baut eine einzelne Modus-Karte (Vorschau-Leiste + Nummer, Name, Art, Text).
+function buildCard(m)
+{
+    let card = document.createElement("div");
+    card.className = "mode";
+
+    let canvas = document.createElement("canvas");
+    canvas.className = "pv";
+    card.appendChild(canvas);
+
+    let row = document.createElement("div");
+    row.className = "row";
+
+    let num = document.createElement("span");
+    num.className = "num";
+    num.textContent = m.mode;
+
+    let name = document.createElement("span");
+    name.className = "name";
+    name.textContent = m.name;
+
+    let cat = document.createElement("span");
+    cat.className = "cat " + m.cat;
+    cat.textContent = CAT_LABEL[m.cat];
+
+    row.appendChild(num);
+    row.appendChild(name);
+    row.appendChild(cat);
+    card.appendChild(row);
+
+    let desc = document.createElement("p");
+    desc.className = "desc";
+    desc.textContent = m.desc;
+    card.appendChild(desc);
+
+    // Funken-Zustand fuer Sternenfunkeln (je Punkt ein Wert).
+    let spark = [];
+    for(let k = 0; k < PV_CELLS; k++) spark.push(0);
+
+    // Verlauf der Gesamthelligkeit fuer die Wellenform-Spur.
+    let hist = [];
+    for(let k = 0; k < PV_HIST; k++) hist.push(0);
+
+    previews.push({ mode:m.mode, canvas:canvas, ctx:canvas.getContext("2d"), spark:spark, hist:hist });
+
+    return card;
+}
+
+// --- Vorschau-Engine -------------------------------------------------------
+
+// Passt die Canvas-Aufloesung an die reale Anzeigegroesse an (scharfe Punkte).
+// Idempotent: setzt die Groesse nur bei echter Aenderung (kein Flackern).
+function resizePreviews()
+{
+    let dpr = window.devicePixelRatio || 1;
+    for(let i = 0; i < previews.length; i++)
+    {
+        let c = previews[i].canvas;
+        let w = Math.round((c.clientWidth || 260) * dpr);
+        let h = Math.round((c.clientHeight || 34) * dpr);
+        if(c.width !== w || c.height !== h)
+        {
+            c.width = w;
+            c.height = h;
+        }
+    }
+}
+
+// Weiche Schwingung 0..1 mit der Periode periodMs.
+function pvOsc(t, periodMs)
+{
+    return 0.5 - 0.5 * Math.cos(2 * Math.PI * ((t % periodMs) / periodMs));
+}
+
+// Weiches Rausch-Signal 0..1 (fuer Kerze/Feuer/Wolken - ohne echtes Perlin).
+function pvNoise(x, t)
+{
+    let a = Math.sin(x * 1.7 + t * 0.0021);
+    let b = Math.sin(x * 0.9 - t * 0.0013 + 2.0);
+    return 0.5 + 0.5 * a * b;
+}
+
+// Dreiecks-"Schlag" 0..peak fuer den Herzschlag (0 ausserhalb der Breite).
+function pvBump(t, center, width, peak)
+{
+    let d = Math.abs(t - center);
+    if(d >= width) return 0;
+    return peak * (1 - d / width);
+}
+
+// Berechnet die Helligkeit (0..1) je LED-Punkt fuer einen Modus zum Zeitpunkt t.
+function pvValues(p, t)
+{
+    let N = PV_CELLS;
+    let half = N / 2;
+    let v = [];
+    let i;
+    for(i = 0; i < N; i++) v.push(0);
+
+    switch(p.mode)
+    {
+        case 0:   // Aus - komplett dunkel (flache Nulllinie)
+            break;
+
+        case 1:   // Statisch - konstant hell, keine Bewegung (flache Linie oben)
+            for(i = 0; i < N; i++) v[i] = 0.90;
+            break;
+
+        case 3:   // Automatik - ruhiger, mittlerer Dauerwert (zeitgesteuert)
+            for(i = 0; i < N; i++) v[i] = 0.60 + 0.06 * pvOsc(t, 14000);
+            break;
+
+        case 4:   // Pulsieren - deutlicher, zuegiger Puls der ganzen Flaeche
+        {
+            let lv = 0.35 + 0.65 * pvOsc(t, 1900);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 5:   // Atmen - sehr langsames, weites Ein-/Ausatmen
+        {
+            let lv = 0.22 + 0.73 * pvOsc(t, 7000);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 6:   // Dauerlicht - hoch, langsam und flach atmend
+        {
+            let lv = 0.74 + 0.16 * pvOsc(t, 9000);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 9:   // Daemmerlicht - niedriger Abendglanz, langsam schwellend
+        {
+            let lv = 0.16 + 0.28 * pvOsc(t, 6000);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 2:   // Lauflicht - heller Kopf mit ausklingendem Schweif
+        {
+            let pos = (t / 70) % N;
+            for(i = 0; i < N; i++)
+            {
+                let d = (pos - i + N) % N;
+                v[i] = Math.max(0.03, 1 - d * 0.22);
+            }
+            break;
+        }
+
+        case 14:  // Treffpunkt - zwei Koepfe laufen zur Mitte
+        {
+            let pos = (t / 85) % (half + 1);
+            let lp = pos;
+            let rp = (N - 1) - pos;
+            for(i = 0; i < N; i++)
+            {
+                let d = Math.min(Math.abs(i - lp), Math.abs(i - rp));
+                v[i] = Math.max(0.03, 1 - d * 0.30);
+            }
+            break;
+        }
+
+        case 10:  // Welle - mehrere raeumliche Wellen wandern (starker Kontrast)
+            for(i = 0; i < N; i++)
+                v[i] = 0.12 + 0.88 * (0.5 + 0.5 * Math.sin(i * 0.85 - t / 170));
+            break;
+
+        case 17:  // Ausstrahlung - symmetrische Welle aus der Mitte nach aussen
+        {
+            let c = (N - 1) / 2;
+            for(i = 0; i < N; i++)
+            {
+                let d = Math.abs(i - c);
+                v[i] = 0.12 + 0.88 * (0.5 + 0.5 * Math.sin(d * 0.75 - t / 190));
+            }
+            break;
+        }
+
+        case 16:  // Wechsellicht - Links/Rechts stark gegenlaeufig
+        {
+            let a = 0.12 + 0.88 * pvOsc(t, 5000);
+            let b = 0.12 + 0.88 * (1 - pvOsc(t, 5000));
+            for(i = 0; i < N; i++) v[i] = (i < half) ? a : b;
+            break;
+        }
+
+        case 7:   // Kerzenlicht - zwei Haelften schimmern sanft und unabhaengig
+            for(i = 0; i < N; i++)
+            {
+                let seed = (i < half) ? 0 : 40;
+                v[i] = 0.50 + 0.28 * pvNoise(i * 0.5 + seed, t * 0.7);
+            }
+            break;
+
+        case 11:  // Feuerschein - turbulentes, warmes Lodern (staerker bewegt)
+            for(i = 0; i < N; i++)
+            {
+                let f = pvNoise(i * 1.6 + 5, t * 2.0) * pvNoise(i * 0.7 + 12, t * 1.1);
+                v[i] = 0.45 + 0.55 * f;
+            }
+            break;
+
+        case 12:  // Nachtlicht - sehr niedriger, ruhiger Grundglanz
+            for(i = 0; i < N; i++) v[i] = 0.10 + 0.10 * pvNoise(i + 9, t * 0.6);
+            break;
+
+        case 18:  // Wolkenzug - grossflaechige, organische Helligkeitsinseln
+            for(i = 0; i < N; i++)
+            {
+                let n = 0.5 + 0.5 * Math.sin(i * 0.35 - t * 0.0011) * Math.sin(i * 0.13 + t * 0.0006 + 2);
+                v[i] = 0.15 + 0.85 * n;
+            }
+            break;
+
+        case 8:   // Stufenlicht - Aufbau in acht Schritten von aussen nach innen
+        {
+            let cycle = 7000;
+            let ph = (t % cycle) / cycle;
+            let steps = Math.min(8, Math.floor(ph * 9));
+            let lit = Math.round(steps / 8 * half);
+            for(i = 0; i < N; i++)
+            {
+                let fromOuter = (i < half) ? i : (N - 1 - i);
+                v[i] = (fromOuter < lit) ? 0.92 : 0.06;
+            }
+            break;
+        }
+
+        case 15:  // Herzschlag - kraeftiger Doppelschlag auf niedrigem Grund
+        {
+            let tt = t % 2000;
+            let b1 = pvBump(tt, 110, 150, 1.0);
+            let b2 = pvBump(tt, 380, 190, 0.8);
+            let lv = Math.max(0.14, Math.max(b1, b2));
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 19:  // Leuchtturm - ein helles Band wandert ueber niedrigem Grund
+        {
+            let period = 3800;
+            let pos = ((t % period) / period) * N;
+            let width = 3.2;
+            let floor = 0.14;
+            for(i = 0; i < N; i++)
+            {
+                let d = Math.abs(i - pos);
+                let lv = floor;
+                if(d < width) lv = floor + (1 - floor) * (width - d) / width;
+                v[i] = lv;
+            }
+            break;
+        }
+
+        case 13:  // Sternenfunkeln - dunkler Grund mit hellen, verglimmenden Funken
+        {
+            for(i = 0; i < N; i++)
+            {
+                p.spark[i] *= 0.86;
+                if(p.spark[i] < 0.10) p.spark[i] = 0.10;
+                v[i] = p.spark[i];
+            }
+            if(Math.random() < 0.22) p.spark[Math.floor(Math.random() * N)] = 1.0;
+            break;
+        }
+
+        default:
+            for(i = 0; i < N; i++) v[i] = 0.6;
+            break;
+    }
+
+    return v;
+}
+
+// Zeichnet eine Vorschau: oben die raeumliche LED-Leiste (warmweisse Punkte auf
+// dunkler Fassung), unten die Wellenform-Spur der Gesamthelligkeit ueber die Zeit.
+// So bekommt jeder Modus einen eindeutigen "Fingerabdruck" - raeumliche Modi
+// zeigen ihn oben, zeitliche (Pulsieren, Herzschlag, Stufenlicht ...) unten.
+function pvDraw(p, vals)
+{
+    let ctx = p.ctx;
+    let w = p.canvas.width;
+    let h = p.canvas.height;
+    let N = vals.length;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Aufteilung: oben LED-Leiste, unten Wellenform-Spur.
+    let stripH   = Math.round(h * 0.55);
+    let traceTop = Math.round(h * 0.64);
+    let traceH   = h - traceTop - Math.round(h * 0.06);
+    let baseY    = traceTop + traceH;
+
+    // --- LED-Leiste (raeumlich) ---
+    let gap = Math.max(1, w * 0.006);
+    let cw = (w - (N - 1) * gap) / N;
+    let pad = Math.round(stripH * 0.12);
+
+    for(let i = 0; i < N; i++)
+    {
+        let val = vals[i];
+        if(val < 0) val = 0;
+        if(val > 1) val = 1;
+
+        let x = i * (cw + gap);
+
+        // dunkle Fassung (immer sichtbar)
+        ctx.fillStyle = "rgba(255,245,230,0.05)";
+        ctx.fillRect(x, pad, cw, stripH - 2 * pad);
+
+        // leuchtender Punkt
+        if(val > 0.02)
+        {
+            ctx.fillStyle = "rgba(255,247,235," + (0.12 + 0.88 * val) + ")";
+            ctx.fillRect(x, pad, cw, stripH - 2 * pad);
+        }
+    }
+
+    // --- Wellenform-Spur (Gesamthelligkeit ueber die Zeit) ---
+    let hist = p.hist;
+    let L = hist.length;
+
+    // Grundlinie
+    ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    ctx.lineWidth = Math.max(1, h * 0.018);
+    ctx.beginPath();
+    ctx.moveTo(0, baseY);
+    ctx.lineTo(w, baseY);
+    ctx.stroke();
+
+    // Verlaufslinie (aelteste Werte links, neueste rechts)
+    ctx.strokeStyle = "rgba(120,220,232,0.95)";
+    ctx.lineWidth = Math.max(1.5, h * 0.05);
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    for(let i = 0; i < L; i++)
+    {
+        let x = (L > 1) ? (i / (L - 1)) * w : 0;
+        let val = hist[i];
+        if(val < 0) val = 0;
+        if(val > 1) val = 1;
+        let y = baseY - val * traceH;
+        if(i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+
+// Eine Animationsschleife fuer ALLE Vorschauen. ~30 fps; im Hintergrund (Tab
+// nicht sichtbar) wird nicht gezeichnet, um Akku zu sparen.
+function pvFrame(now)
+{
+    requestAnimationFrame(pvFrame);
+
+    if(document.hidden) return;
+
+    if(now - pvResizeAt > 500)
+    {
+        pvResizeAt = now;
+        resizePreviews();
+    }
+
+    if(now - pvLast < 33) return;
+    pvLast = now;
+
+    for(let i = 0; i < previews.length; i++)
+    {
+        let p = previews[i];
+        let vals = pvValues(p, now);
+
+        // Gesamthelligkeit dieses Frames in die Wellenform-Spur schieben.
+        let sum = 0;
+        for(let k = 0; k < vals.length; k++) sum += vals[k];
+        p.hist.push(sum / vals.length);
+        if(p.hist.length > PV_HIST) p.hist.shift();
+
+        pvDraw(p, vals);
+    }
+}
+
+window.addEventListener("resize", resizePreviews);
+window.addEventListener("load", buildPage);
+</script>
+
+</body>
+</html>

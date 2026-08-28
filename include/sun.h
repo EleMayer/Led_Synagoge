@@ -14,12 +14,16 @@ inline double _sunNorm(double v, double max) {
     return v;
 }
 
+// Gregorianisches Schaltjahr? Eine Stelle, von dayOfYear und _lastSunday genutzt.
+inline bool _isLeapYear(int y) {
+    return (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);
+}
+
 // Tag im Jahr (1..366).
 inline int dayOfYear(int y, int m, int d) {
     static const int cum[12] = {0,31,59,90,120,151,181,212,243,273,304,334};
     int n = cum[m - 1] + d;
-    bool leap = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);
-    if (leap && m > 2) n += 1;
+    if (_isLeapYear(y) && m > 2) n += 1;
     return n;
 }
 
@@ -27,7 +31,7 @@ inline int dayOfYear(int y, int m, int d) {
 inline int _lastSunday(int y, int m) {
     static const int mdays[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
     int dim = mdays[m - 1];
-    if (m == 2 && ((y % 4 == 0 && y % 100 != 0) || (y % 400 == 0))) dim = 29;
+    if (m == 2 && _isLeapYear(y)) dim = 29;
     static const int t[] = {0,3,2,5,0,3,5,1,4,6,2,4};   // Sakamoto
     int yy = y - (m < 3);
     int dow = (yy + yy/4 - yy/100 + yy/400 + t[m - 1] + dim) % 7;  // 0 = Sonntag

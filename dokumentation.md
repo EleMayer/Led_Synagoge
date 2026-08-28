@@ -9,7 +9,7 @@
 **Bedienung:** Weboberfläche als installierbare App (PWA)  
 **Zeitsteuerung:** Echtzeituhr (DS3231) mit NTP-Abgleich und NTP-Fallback  
 **LED-Steuerung:** Adressierbare LEDs (WS2812/WS2811), ausschließlich Weiß  
-**Betriebsmodi:** Grundmodi, Effekte (Lauflicht/Pulsieren/Atmen) und feste
+**Betriebsmodi:** Grundmodi, Effekte (Lauflicht/Pulsieren/Atmen/Welle u. a.) und
 feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)  
 **Netzwerk:** WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback,
 Zugriff auch über `http://led-fassade.local` (mDNS)  
@@ -436,7 +436,7 @@ Der Controller liefert dazu selbst aus:
 /icon.svg       App-Icon
 /api/status     Status als JSON (REST)
 /api/schedule   Automatik-Zeitprofil lesen (REST)
-/update         Firmware-Update (OTA, POST, passwortgeschuetzt)
+/update         Firmware-Update (OTA, POST, passwortgeschützt)
 /ws             WebSocket (Live-Bedienung: Modus, Helligkeiten)
 ```
 
@@ -533,7 +533,7 @@ die enthalten sind.
 
 | Parameter      | Typ    | Bedeutung                                   |
 | -------------- | ------ | ------------------------------------------- |
-| `mode`         | 0–9    | Betriebsmodus (siehe Tabelle in Kap. 4)     |
+| `mode`         | 0–19   | Betriebsmodus (siehe Tabelle in Kap. 4)     |
 | `left`         | 0–100  | Helligkeit Segment 1 (%)                    |
 | `right`        | 0–100  | Helligkeit Segment 2 (%)                    |
 | `logo`         | 0–100  | Helligkeit der einzelnen LED / Logo (%)     |
@@ -562,7 +562,7 @@ Beispiel:
     "left": 80,
     "right": 80,
     "logo": 80,
-    "global": 75,
+    "global": 80,
     "autoBrightness": 88,
     "rtc": true,
     "ntp": false,
@@ -618,24 +618,20 @@ Bestimmte Einstellungen werden dauerhaft gespeichert.
 Dazu kann der nichtflüchtige Speicher des Mikrocontrollers verwendet
 werden.
 
-Gespeichert werden beispielsweise:
+Gespeichert werden:
 
 ```text
-Segment 1 Helligkeit
-Segment 2 Helligkeit
-Einzelne LED Helligkeit
+Segment 1 Helligkeit (Links)
+Segment 2 Helligkeit (Rechts)
+Logo-Helligkeit
 
-Morgen-Helligkeit
-Tag-Helligkeit
-Abend-Helligkeit
-
-Startzeit Nacht
-Endzeit Nacht
+Betriebs-Statistik (Gesamtzeit, Leucht-Zeit, Zeit je Modus)
 ```
 
-Die WLAN-Zugangsdaten stehen dagegen **fest im Code** (`config.h`) und werden
-nicht im NVS gespeichert. Nach einem Neustart können alle übrigen Werte
-wieder geladen werden.
+Das **Automatik-Profil** (Uhrzeiten und Helligkeiten) und die
+**WLAN-Zugangsdaten** stehen dagegen **fest im Code** (`config.h`) und werden
+**nicht** im NVS gespeichert. Nach einem Neustart werden die gespeicherten
+Werte wieder geladen.
 
 **Entprelltes Speichern:** Beim Ziehen eines Reglers ändern sich die
 Werte sehr schnell hintereinander. Würde bei jeder Änderung sofort in
