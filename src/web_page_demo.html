@@ -231,6 +231,7 @@
   <div class="hstat">
     <span id="clock">--:--:--</span>
     <span id="modeBadge" class="badge">&ndash;</span>
+    <button id="navBtn" class="hbtn" onclick="toggleView()" title="Vorschau / Preview">Vorschau</button>
     <button id="themeBtn" class="hbtn" onclick="toggleTheme()" title="Hell / Dunkel">&#9788;</button>
     <button id="langBtn" class="hbtn" onclick="toggleLang()" title="Sprache / Language">EN</button>
   </div>
@@ -238,6 +239,7 @@
 
 <main>
 
+<div id="viewControl">
 
 <section class="card" id="installCard" style="display:none">
   <h2 data-i18n="install.title">Als App installieren</h2>
@@ -304,6 +306,16 @@
   <h2 data-i18n="system">System</h2>
   <div id="systemStatus" class="sys"></div>
 </section>
+
+</div><!-- /viewControl -->
+
+<div id="viewPreview" style="display:none">
+  <div class="pvhead">
+    <h2 id="pvTitle">Modus-Vorschau</h2>
+    <p id="pvIntro" class="pvintro"></p>
+  </div>
+  <div id="pvSections"></div>
+</div>
 
 </main>
 
@@ -411,6 +423,10 @@ function applyLanguage()
 
     // Knopf zeigt die jeweils andere Sprache an.
     document.getElementById("langBtn").textContent = (lang === "de") ? "EN" : "DE";
+
+    // Zweite Ansicht (Modus-Vorschau) mit umschalten.
+    updateNavButton();
+    if(pvBuilt) updatePreviewTexts();
 
     updateInstallHint();
     renderAutoPhases();
@@ -853,6 +869,580 @@ window.addEventListener("load", function()
 
 window.addEventListener("load", initPrefs);
 window.addEventListener("load", connect);
+
+// ===========================================================================
+//  Zweite Ansicht: Modus-Vorschau
+//
+//  Ueber den Navbar-Knopf erreichbar. Zeigt je Modus eine kleine animierte
+//  "LED-Leiste" (raeumlich) plus eine Wellenform-Spur (Gesamthelligkeit ueber
+//  die Zeit) - so bekommt jeder Modus einen eindeutigen Fingerabdruck. Reine
+//  Anzeige, schaltet keine Modi. Die Navigation laeuft ueber den URL-Hash
+//  (#vorschau), damit der Zurueck-Knopf des Browsers funktioniert.
+// ===========================================================================
+
+// Texte der zweiten Ansicht je Sprache.
+const PV_TXT = {
+  de:{ nav:"Vorschau", back:"‹ Steuerung",
+       title:"Modus-Vorschau",
+       intro:"Alle 20 Modi mit animierter Vorschau. Das Licht ist ausschließlich weiß – die Vorschau zeigt die Bewegung, nicht eine Farbe.",
+       grund:"Grundmodi", effekt:"Effekte", stimmung:"Stimmungs-Modi",
+       grundNote:"Der normale Betrieb.",
+       effektNote:"Animierte Modi. Keine Nachtabschaltung.",
+       stimmungNote:"Feste Lichtstimmungen. Abschaltung 23:00–06:00.",
+       catGrund:"Grundmodus", catEffekt:"Effekt", catStimmung:"Stimmung" },
+  en:{ nav:"Preview", back:"‹ Control",
+       title:"Mode preview",
+       intro:"All 20 modes with an animated preview. The light is white only – the preview shows the motion, not a colour.",
+       grund:"Basic modes", effekt:"Effects", stimmung:"Mood modes",
+       grundNote:"Normal operation.",
+       effektNote:"Animated modes. No night switch-off.",
+       stimmungNote:"Fixed light moods. Off between 23:00–06:00.",
+       catGrund:"Basic", catEffekt:"Effect", catStimmung:"Mood" }
+};
+
+// Kurzbeschreibung je Modus (Nummer -> Text) je Sprache.
+const PV_DESC = {
+  de:{ 0:"Alle Bereiche aus.", 1:"Konstantes Weiß je Bereich.", 3:"Tageszeitabhängige Helligkeit.",
+       2:"Ein Lichtschweif gleitet über die Segmente.", 4:"Ruhiges gemeinsames Auf- und Abschwellen.",
+       5:"Sehr langsames Ein- und Ausatmen.", 10:"Eine Sinuswelle wandert über den Streifen.",
+       13:"Grundglanz mit verglimmenden Funken.", 14:"Zwei Lichter treffen sich in der Mitte.",
+       15:"Ruhiger Doppelschlag der Fassade.", 16:"Links und Rechts gegenläufig.",
+       17:"Welle vom Zentrum nach außen.", 18:"Organische Helligkeit wie ziehende Wolken.",
+       19:"Ein Lichtband wandert über die Linie.", 6:"Gleichmäßig, langsam atmend (hoch).",
+       7:"Zwei langsam schimmernde Lichter.", 8:"Aufbau in acht Schritten.",
+       9:"Sanfter, niedriger Abendglanz.", 11:"Warmes, turbulentes Lodern.", 12:"Ruhiger, niedriger Grundglanz." },
+  en:{ 0:"All areas off.", 1:"Constant white per area.", 3:"Time-of-day brightness.",
+       2:"A light tail glides across the segments.", 4:"Calm shared swelling up and down.",
+       5:"Very slow breathing in and out.", 10:"A sine wave travels across the strip.",
+       13:"Faint glow with fading sparkles.", 14:"Two lights meet in the middle.",
+       15:"Calm double-beat of the facade.", 16:"Left and right in opposition.",
+       17:"A wave from the centre outward.", 18:"Organic brightness like drifting clouds.",
+       19:"A light band sweeps across the line.", 6:"Even, slowly breathing (high).",
+       7:"Two slowly shimmering lights.", 8:"Builds up in eight steps.",
+       9:"Soft, low evening glow.", 11:"Warm, turbulent flickering.", 12:"Calm, low base glow." }
+};
+
+// Reihenfolge und Gruppierung wie in modi.md.
+const PV_MODES = [
+  {mode:0,cat:"grund"},  {mode:1,cat:"grund"},  {mode:3,cat:"grund"},
+  {mode:2,cat:"effekt"}, {mode:4,cat:"effekt"}, {mode:5,cat:"effekt"},  {mode:10,cat:"effekt"},
+  {mode:13,cat:"effekt"},{mode:14,cat:"effekt"},{mode:15,cat:"effekt"}, {mode:16,cat:"effekt"},
+  {mode:17,cat:"effekt"},{mode:18,cat:"effekt"},{mode:19,cat:"effekt"},
+  {mode:6,cat:"stimmung"},{mode:7,cat:"stimmung"},{mode:8,cat:"stimmung"},
+  {mode:9,cat:"stimmung"},{mode:11,cat:"stimmung"},{mode:12,cat:"stimmung"}
+];
+
+const PV_CELLS = 24;     // LED-Punkte je Vorschau-Leiste
+const PV_HIST  = 100;    // Laenge der Wellenform-Spur (Samples ueber die Zeit)
+let pvItems = [];        // je Karte: { mode, cat, canvas, ctx, spark[], hist[], nameEl, catEl, descEl }
+let pvBuilt = false;
+let pvVisible = false;
+let pvLast = 0;
+let pvResizeAt = 0;
+
+// Baut die drei Abschnitte (Grundmodi, Effekte, Stimmungs-Modi) mit Karten.
+function buildPreview()
+{
+    let host = document.getElementById("pvSections");
+
+    let groups = [
+        { cat:"grund",    title:"grund",    note:"grundNote" },
+        { cat:"effekt",   title:"effekt",   note:"effektNote" },
+        { cat:"stimmung", title:"stimmung", note:"stimmungNote" }
+    ];
+
+    for(let g = 0; g < groups.length; g++)
+    {
+        let sec = document.createElement("div");
+        sec.className = "pvsec";
+
+        let h3 = document.createElement("h3");
+        h3.dataset.pv = groups[g].title;
+        sec.appendChild(h3);
+
+        let note = document.createElement("p");
+        note.className = "pvnote";
+        note.dataset.pv = groups[g].note;
+        sec.appendChild(note);
+
+        let grid = document.createElement("div");
+        grid.className = "pvgrid";
+
+        for(let k = 0; k < PV_MODES.length; k++)
+        {
+            if(PV_MODES[k].cat !== groups[g].cat) continue;
+            grid.appendChild(buildPvCard(PV_MODES[k]));
+        }
+
+        sec.appendChild(grid);
+        host.appendChild(sec);
+    }
+
+    updatePreviewTexts();
+}
+
+// Baut eine einzelne Vorschau-Karte (Leiste + Nummer, Name, Art, Text).
+function buildPvCard(m)
+{
+    let card = document.createElement("div");
+    card.className = "pvcard";
+
+    let canvas = document.createElement("canvas");
+    canvas.className = "pv";
+    card.appendChild(canvas);
+
+    let row = document.createElement("div");
+    row.className = "pvrow";
+
+    let num = document.createElement("span");
+    num.className = "pvnum";
+    num.textContent = m.mode;
+
+    let name = document.createElement("span");
+    name.className = "pvname";
+
+    let cat = document.createElement("span");
+    cat.className = "pvcat";
+
+    row.appendChild(num);
+    row.appendChild(name);
+    row.appendChild(cat);
+    card.appendChild(row);
+
+    let desc = document.createElement("p");
+    desc.className = "pvdesc";
+    card.appendChild(desc);
+
+    let spark = [];
+    for(let x = 0; x < PV_CELLS; x++) spark.push(0);
+    let hist = [];
+    for(let x = 0; x < PV_HIST; x++) hist.push(0);
+
+    pvItems.push({
+        mode:m.mode, cat:m.cat, canvas:canvas, ctx:canvas.getContext("2d"),
+        spark:spark, hist:hist, nameEl:name, catEl:cat, descEl:desc
+    });
+
+    return card;
+}
+
+// Setzt Titel/Notizen/Namen/Beschreibungen der Vorschau in der aktuellen Sprache.
+function updatePreviewTexts()
+{
+    let x = PV_TXT[lang];
+
+    let title = document.getElementById("pvTitle");
+    let intro = document.getElementById("pvIntro");
+    if(title) title.textContent = x.title;
+    if(intro) intro.textContent = x.intro;
+
+    let heads = document.querySelectorAll("[data-pv]");
+    for(let i = 0; i < heads.length; i++)
+    {
+        heads[i].textContent = x[heads[i].dataset.pv];
+    }
+
+    let catName = { grund:x.catGrund, effekt:x.catEffekt, stimmung:x.catStimmung };
+    for(let i = 0; i < pvItems.length; i++)
+    {
+        let it = pvItems[i];
+        it.nameEl.textContent = MODE_LABEL[lang][it.mode];
+        it.catEl.textContent = catName[it.cat];
+        it.descEl.textContent = PV_DESC[lang][it.mode];
+    }
+
+    updateNavButton();
+}
+
+// Passt die Canvas-Aufloesung an die reale Anzeigegroesse an (scharfe Punkte).
+function resizePreviews()
+{
+    let dpr = window.devicePixelRatio || 1;
+    for(let i = 0; i < pvItems.length; i++)
+    {
+        let c = pvItems[i].canvas;
+        let w = Math.round((c.clientWidth || 240) * dpr);
+        let h = Math.round((c.clientHeight || 46) * dpr);
+        if(w > 0 && (c.width !== w || c.height !== h))
+        {
+            c.width = w;
+            c.height = h;
+        }
+    }
+}
+
+// Weiche Schwingung 0..1 mit der Periode periodMs.
+function pvOsc(t, periodMs)
+{
+    return 0.5 - 0.5 * Math.cos(2 * Math.PI * ((t % periodMs) / periodMs));
+}
+
+// Weiches Rausch-Signal 0..1 (fuer Kerze/Feuer/Wolken - ohne echtes Perlin).
+function pvNoise(x, t)
+{
+    let a = Math.sin(x * 1.7 + t * 0.0021);
+    let b = Math.sin(x * 0.9 - t * 0.0013 + 2.0);
+    return 0.5 + 0.5 * a * b;
+}
+
+// Dreiecks-"Schlag" 0..peak fuer den Herzschlag (0 ausserhalb der Breite).
+function pvBump(t, center, width, peak)
+{
+    let d = Math.abs(t - center);
+    if(d >= width) return 0;
+    return peak * (1 - d / width);
+}
+
+// Berechnet die Helligkeit (0..1) je LED-Punkt fuer einen Modus zum Zeitpunkt t.
+function pvValues(p, t)
+{
+    let N = PV_CELLS;
+    let half = N / 2;
+    let v = [];
+    let i;
+    for(i = 0; i < N; i++) v.push(0);
+
+    switch(p.mode)
+    {
+        case 0:   // Aus
+            break;
+
+        case 1:   // Statisch - konstant hell, keine Bewegung
+            for(i = 0; i < N; i++) v[i] = 0.90;
+            break;
+
+        case 3:   // Automatik - ruhiger, mittlerer Dauerwert
+            for(i = 0; i < N; i++) v[i] = 0.60 + 0.06 * pvOsc(t, 14000);
+            break;
+
+        case 4:   // Pulsieren - deutlicher, zuegiger Puls der ganzen Flaeche
+        {
+            let lv = 0.35 + 0.65 * pvOsc(t, 1900);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 5:   // Atmen - sehr langsames, weites Ein-/Ausatmen
+        {
+            let lv = 0.22 + 0.73 * pvOsc(t, 7000);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 6:   // Dauerlicht - hoch, mit sichtbarem ruhigem Atmen
+        {
+            let lv = 0.70 + 0.20 * pvOsc(t, 8000);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 9:   // Daemmerlicht - niedriger Abendglanz, langsam schwellend
+        {
+            let lv = 0.16 + 0.28 * pvOsc(t, 6000);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 2:   // Lauflicht - heller Kopf mit ausklingendem Schweif
+        {
+            let pos = (t / 70) % N;
+            for(i = 0; i < N; i++)
+            {
+                let d = (pos - i + N) % N;
+                v[i] = Math.max(0.03, 1 - d * 0.22);
+            }
+            break;
+        }
+
+        case 14:  // Treffpunkt - zwei Koepfe laufen zur Mitte
+        {
+            let pos = (t / 85) % (half + 1);
+            let lp = pos;
+            let rp = (N - 1) - pos;
+            for(i = 0; i < N; i++)
+            {
+                let d = Math.min(Math.abs(i - lp), Math.abs(i - rp));
+                v[i] = Math.max(0.03, 1 - d * 0.30);
+            }
+            break;
+        }
+
+        case 10:  // Welle - mehrere raeumliche Wellen wandern
+            for(i = 0; i < N; i++)
+                v[i] = 0.12 + 0.88 * (0.5 + 0.5 * Math.sin(i * 0.85 - t / 170));
+            break;
+
+        case 17:  // Ausstrahlung - symmetrische Welle aus der Mitte nach aussen
+        {
+            let c = (N - 1) / 2;
+            for(i = 0; i < N; i++)
+            {
+                let d = Math.abs(i - c);
+                v[i] = 0.12 + 0.88 * (0.5 + 0.5 * Math.sin(d * 0.75 - t / 190));
+            }
+            break;
+        }
+
+        case 16:  // Wechsellicht - Links/Rechts stark gegenlaeufig
+        {
+            let a = 0.12 + 0.88 * pvOsc(t, 5000);
+            let b = 0.12 + 0.88 * (1 - pvOsc(t, 5000));
+            for(i = 0; i < N; i++) v[i] = (i < half) ? a : b;
+            break;
+        }
+
+        case 7:   // Kerzenlicht - zwei Flammen (Haelften) schimmern als Bloecke
+        {
+            let flameL = 0.52 + 0.30 * pvNoise(3,  t * 0.9);
+            let flameR = 0.52 + 0.30 * pvNoise(60, t * 0.9);
+            for(i = 0; i < N; i++)
+            {
+                let base = (i < half) ? flameL : flameR;
+                v[i] = base + 0.06 * pvNoise(i * 2.0, t * 1.6);
+            }
+            break;
+        }
+
+        case 11:  // Feuerschein - turbulentes Lodern mit einzelnen hellen Zungen
+            for(i = 0; i < N; i++)
+            {
+                let turb  = pvNoise(i * 1.9 + 5, t * 2.6) * pvNoise(i * 0.8 + 12, t * 1.5);
+                let flare = Math.pow(pvNoise(i * 3.1 + 20, t * 3.0), 3);
+                v[i] = 0.40 + 0.45 * turb + 0.35 * flare;
+            }
+            break;
+
+        case 12:  // Nachtlicht - gleichmaessiger, sehr niedriger Grundglanz
+        {
+            let lv = 0.10 + 0.06 * pvOsc(t, 11000);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 18:  // Wolkenzug - grosse, weiche Helligkeitsinseln ziehen langsam
+            for(i = 0; i < N; i++)
+            {
+                let n = 0.5 + 0.5 * Math.sin(i * 0.28 - t * 0.0009) * Math.sin(i * 0.10 + t * 0.0004 + 1.3);
+                v[i] = 0.18 + 0.82 * n;
+            }
+            break;
+
+        case 8:   // Stufenlicht - Aufbau in acht Schritten von aussen nach innen
+        {
+            let cycle = 7000;
+            let ph = (t % cycle) / cycle;
+            let steps = Math.min(8, Math.floor(ph * 9));
+            let lit = Math.round(steps / 8 * half);
+            for(i = 0; i < N; i++)
+            {
+                let fromOuter = (i < half) ? i : (N - 1 - i);
+                v[i] = (fromOuter < lit) ? 0.92 : 0.06;
+            }
+            break;
+        }
+
+        case 15:  // Herzschlag - kraeftiger Doppelschlag auf niedrigem Grund
+        {
+            let tt = t % 2000;
+            let b1 = pvBump(tt, 110, 150, 1.0);
+            let b2 = pvBump(tt, 380, 190, 0.8);
+            let lv = Math.max(0.14, Math.max(b1, b2));
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 19:  // Leuchtturm - ein helles Band wandert ueber niedrigem Grund
+        {
+            let period = 3800;
+            let pos = ((t % period) / period) * N;
+            let width = 3.2;
+            let floor = 0.14;
+            for(i = 0; i < N; i++)
+            {
+                let d = Math.abs(i - pos);
+                let lv = floor;
+                if(d < width) lv = floor + (1 - floor) * (width - d) / width;
+                v[i] = lv;
+            }
+            break;
+        }
+
+        case 13:  // Sternenfunkeln - dunkler Grund mit hellen, verglimmenden Funken
+        {
+            for(i = 0; i < N; i++)
+            {
+                p.spark[i] *= 0.86;
+                if(p.spark[i] < 0.10) p.spark[i] = 0.10;
+                v[i] = p.spark[i];
+            }
+            if(Math.random() < 0.22) p.spark[Math.floor(Math.random() * N)] = 1.0;
+            break;
+        }
+
+        default:
+            for(i = 0; i < N; i++) v[i] = 0.6;
+            break;
+    }
+
+    return v;
+}
+
+// Zeichnet oben die raeumliche LED-Leiste, unten die Wellenform-Spur.
+function pvDraw(p, vals)
+{
+    let ctx = p.ctx;
+    let w = p.canvas.width;
+    let h = p.canvas.height;
+    let N = vals.length;
+
+    ctx.clearRect(0, 0, w, h);
+
+    let stripH   = Math.round(h * 0.55);
+    let traceTop = Math.round(h * 0.64);
+    let traceH   = h - traceTop - Math.round(h * 0.06);
+    let baseY    = traceTop + traceH;
+
+    // LED-Leiste (raeumlich)
+    let gap = Math.max(1, w * 0.006);
+    let cw = (w - (N - 1) * gap) / N;
+    let pad = Math.round(stripH * 0.12);
+
+    for(let i = 0; i < N; i++)
+    {
+        let val = vals[i];
+        if(val < 0) val = 0;
+        if(val > 1) val = 1;
+
+        let x = i * (cw + gap);
+
+        ctx.fillStyle = "rgba(255,245,230,0.05)";
+        ctx.fillRect(x, pad, cw, stripH - 2 * pad);
+
+        if(val > 0.02)
+        {
+            ctx.fillStyle = "rgba(255,247,235," + (0.12 + 0.88 * val) + ")";
+            ctx.fillRect(x, pad, cw, stripH - 2 * pad);
+        }
+    }
+
+    // Wellenform-Spur (Gesamthelligkeit ueber die Zeit)
+    let hist = p.hist;
+    let L = hist.length;
+
+    ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    ctx.lineWidth = Math.max(1, h * 0.018);
+    ctx.beginPath();
+    ctx.moveTo(0, baseY);
+    ctx.lineTo(w, baseY);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(120,220,232,0.95)";
+    ctx.lineWidth = Math.max(1.5, h * 0.05);
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    for(let i = 0; i < L; i++)
+    {
+        let x = (L > 1) ? (i / (L - 1)) * w : 0;
+        let val = hist[i];
+        if(val < 0) val = 0;
+        if(val > 1) val = 1;
+        let y = baseY - val * traceH;
+        if(i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+
+// Eine Animationsschleife fuer ALLE Vorschauen. Zeichnet nur, wenn die
+// Vorschau-Ansicht sichtbar ist (~30 fps) - spart sonst Rechenzeit/Akku.
+function pvFrame(now)
+{
+    requestAnimationFrame(pvFrame);
+
+    if(!pvVisible || document.hidden) return;
+
+    if(now - pvResizeAt > 500)
+    {
+        pvResizeAt = now;
+        resizePreviews();
+    }
+
+    if(now - pvLast < 33) return;
+    pvLast = now;
+
+    for(let i = 0; i < pvItems.length; i++)
+    {
+        let p = pvItems[i];
+        let vals = pvValues(p, now);
+
+        let sum = 0;
+        for(let k = 0; k < vals.length; k++) sum += vals[k];
+        p.hist.push(sum / vals.length);
+        if(p.hist.length > PV_HIST) p.hist.shift();
+
+        pvDraw(p, vals);
+    }
+}
+
+// Aktualisiert die Beschriftung des Navbar-Knopfes (zeigt das jeweilige Ziel).
+function updateNavButton()
+{
+    let btn = document.getElementById("navBtn");
+    if(!btn) return;
+    let x = PV_TXT[lang];
+    btn.textContent = (location.hash === "#vorschau") ? x.back : x.nav;
+}
+
+// Zeigt die gewuenschte Ansicht ("control" oder "preview").
+function showView(name)
+{
+    let ctrl = document.getElementById("viewControl");
+    let prev = document.getElementById("viewPreview");
+
+    if(name === "preview")
+    {
+        if(!pvBuilt)
+        {
+            buildPreview();
+            pvBuilt = true;
+        }
+        ctrl.style.display = "none";
+        prev.style.display = "";
+        pvVisible = true;
+        resizePreviews();
+        try { window.scrollTo(0, 0); } catch(e) {}
+    }
+    else
+    {
+        prev.style.display = "none";
+        ctrl.style.display = "";
+        pvVisible = false;
+    }
+
+    updateNavButton();
+}
+
+// Liest den URL-Hash und schaltet die passende Ansicht.
+function router()
+{
+    showView((location.hash === "#vorschau") ? "preview" : "control");
+}
+
+// Navbar-Knopf: wechselt die Ansicht ueber den Hash (Browser-Zurueck moeglich).
+function toggleView()
+{
+    if(location.hash === "#vorschau") location.hash = "";
+    else location.hash = "vorschau";
+}
+
+window.addEventListener("hashchange", router);
+window.addEventListener("resize", function(){ if(pvVisible) resizePreviews(); });
+window.addEventListener("load", function()
+{
+    router();
+    requestAnimationFrame(pvFrame);
+});
 
 </script>
 
