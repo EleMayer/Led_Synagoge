@@ -91,6 +91,11 @@ const char index_html[] PROGMEM = R"rawliteral(
   </div>
 </section>
 
+<section class="card" id="previewCard">
+  <h2 data-i18n="preview">Vorschau</h2>
+  <canvas id="pvInline" class="pvinline"></canvas>
+</section>
+
 <section class="card">
   <h2 data-i18n="brightness">Helligkeit</h2>
   <div class="slider">
@@ -167,7 +172,7 @@ const T = {
     "install.hintDefault":"Diese Seite als App auf dem Startbildschirm ablegen – sie öffnet dann randlos wie eine gewohnte App.",
     "install.hintIOS":"Zum Installieren in Safari auf <b>Teilen</b> tippen und <b>„Zum Home-Bildschirm“</b> wählen.",
     "install.hintManual":"Als App ablegen: am Handy im Browser-Menü <b>„Zum Startbildschirm hinzufügen“</b>, am PC das <b>Installieren-Symbol in der Adressleiste</b> nutzen.",
-    "modus":"Modus","brightness":"Helligkeit",
+    "modus":"Modus","preview":"Vorschau","brightness":"Helligkeit",
     "auto":"Automatik","autoNow":"Aktuelle Helligkeit","system":"System",
     "footer":"lokale Steuerung",
     "seg.left":"Segment Links","seg.right":"Segment Rechts","seg.logo":"Logo",
@@ -186,7 +191,7 @@ const T = {
     "install.hintDefault":"Add this page to your home screen – it then opens full-screen like a normal app.",
     "install.hintIOS":"To install, tap <b>Share</b> in Safari and choose <b>“Add to Home Screen”</b>.",
     "install.hintManual":"Add as an app: on a phone use <b>“Add to Home screen”</b> in the browser menu, on a PC use the <b>install icon in the address bar</b>.",
-    "modus":"Mode","brightness":"Brightness",
+    "modus":"Mode","preview":"Preview","brightness":"Brightness",
     "auto":"Automatic","autoNow":"Current brightness","system":"System",
     "footer":"local control",
     "seg.left":"Segment left","seg.right":"Segment right","seg.logo":"Logo",
@@ -398,6 +403,7 @@ function updateUI(data)
     if(data.mode !== undefined)
     {
         document.getElementById("modeBadge").innerText = MODE_LABEL[lang][data.mode] || "–";
+        setInlineMode(data.mode);
     }
     document.getElementById("clock").innerText = data.time || "--:--:--";
 
@@ -1171,34 +1177,219 @@ function pvDraw(p, vals)
     ctx.stroke();
 }
 
-// Eine Animationsschleife fuer ALLE Vorschauen. Zeichnet nur, wenn die
-// Vorschau-Ansicht sichtbar ist (~30 fps) - spart sonst Rechenzeit/Akku.
+// Inline-Vorschau des AKTUELLEN Modus (Karte "Vorschau" in der Steuerung):
+// zeigt Segment Links | Logo | Segment Rechts als Live-Streifen plus die
+// Wellenform-Spur - so ist auch dort jeder Modus eindeutig erkennbar.
+let inlinePv = null;
+
+// Legt die Inline-Vorschau auf dem Canvas #pvInline an.
+function buildInlinePreview()
+{
+    let canvas = document.getElementById("pvInline");
+    if(!canvas) return;
+
+    let spark = [];
+    for(let k = 0; k < PV_CELLS; k++) spark.push(0);
+    let hist = [];
+    for(let k = 0; k < PV_HIST; k++) hist.push(0);
+
+    inlinePv = { mode:3, canvas:canvas, ctx:canvas.getContext("2d"), spark:spark, hist:hist };
+    resizeInline();
+}
+
+// Liest die aktuellen Regler-Werte (0..1) fuer die Inline-Vorschau. So geht die
+// Lichtstaerke im Vorschau-Streifen mit, wenn man die Regler bewegt.
+function inlineScales()
+{
+    function val(id)
+    {
+        let el = document.getElementById(id);
+        let n = el ? parseInt(el.value) : 100;
+        if(isNaN(n)) n = 100;
+        if(n < 0) n = 0;
+        if(n > 100) n = 100;
+        return n / 100;
+    }
+    return { left: val("leftSlider"), right: val("rightSlider"), logo: val("logoSlider") };
+}
+
+// Setzt den Modus der Inline-Vorschau (bei Wechsel Spur/Funken zuruecksetzen).
+function setInlineMode(m)
+{
+    if(!inlinePv || m === undefined || inlinePv.mode === m) return;
+    inlinePv.mode = m;
+    for(let i = 0; i < inlinePv.spark.length; i++) inlinePv.spark[i] = 0;
+    inlinePv.hist = [];
+    for(let i = 0; i < PV_HIST; i++) inlinePv.hist.push(0);
+}
+
+// Canvas-Aufloesung der Inline-Vorschau an die Anzeigegroesse anpassen.
+function resizeInline()
+{
+    if(!inlinePv) return;
+    let dpr = window.devicePixelRatio || 1;
+    let c = inlinePv.canvas;
+    let w = Math.round((c.clientWidth || 300) * dpr);
+    let h = Math.round((c.clientHeight || 64) * dpr);
+    if(w > 0 && (c.width !== w || c.height !== h))
+    {
+        c.width = w;
+        c.height = h;
+    }
+}
+
+// Zeichnet die Inline-Vorschau: zwei Segmente, Logo-Punkt in der Mitte, Spur.
+// vals sind bereits mit den Reglern skaliert; logoVal ist die Logo-Helligkeit.
+function pvDrawInline(p, vals, logoVal)
+{
+    let ctx = p.ctx;
+    let w = p.canvas.width;
+    let h = p.canvas.height;
+    let N = vals.length;
+    let half = Math.floor(N / 2);
+
+    ctx.clearRect(0, 0, w, h);
+
+    let stripH   = Math.round(h * 0.52);
+    let traceTop = Math.round(h * 0.62);
+    let traceH   = h - traceTop - Math.round(h * 0.05);
+    let baseY    = traceTop + traceH;
+
+    // Platz fuer den Logo-Punkt in der Mitte.
+    let dotR   = Math.round(stripH * 0.40);
+    let dotCx  = w / 2;
+    let dotCy  = Math.round(stripH / 2);
+    let dotGap = dotR * 2 + Math.round(w * 0.03);
+    let segW   = (w - dotGap) / 2;
+
+    let pad = Math.round(stripH * 0.16);
+    let gap = Math.max(1, segW * 0.012);
+    let cw  = (segW - (half - 1) * gap) / half;
+
+    function cell(x, val)
+    {
+        if(val < 0) val = 0;
+        if(val > 1) val = 1;
+        ctx.fillStyle = "rgba(255,245,230,0.05)";
+        ctx.fillRect(x, pad, cw, stripH - 2 * pad);
+        if(val > 0.02)
+        {
+            ctx.fillStyle = "rgba(255,247,235," + (0.12 + 0.88 * val) + ")";
+            ctx.fillRect(x, pad, cw, stripH - 2 * pad);
+        }
+    }
+
+    // linkes Segment (Zellen 0..half-1)
+    for(let i = 0; i < half; i++) cell(i * (cw + gap), vals[i]);
+    // rechtes Segment (Zellen half..N-1)
+    let rx = segW + dotGap;
+    for(let i = 0; i < half; i++) cell(rx + i * (cw + gap), vals[half + i]);
+
+    // Logo-Punkt = mit dem Logo-Regler skalierte Helligkeit.
+    let lv = logoVal;
+    if(lv < 0) lv = 0;
+    if(lv > 1) lv = 1;
+
+    ctx.beginPath();
+    ctx.arc(dotCx, dotCy, dotR, 0, 2 * Math.PI);
+    ctx.fillStyle = "rgba(255,245,230,0.06)";
+    ctx.fill();
+    if(lv > 0.02)
+    {
+        ctx.beginPath();
+        ctx.arc(dotCx, dotCy, dotR, 0, 2 * Math.PI);
+        ctx.fillStyle = "rgba(255,247,235," + (0.12 + 0.88 * lv) + ")";
+        ctx.fill();
+    }
+
+    // Wellenform-Spur (Gesamthelligkeit ueber die Zeit)
+    let hist = p.hist;
+    let L = hist.length;
+
+    ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    ctx.lineWidth = Math.max(1, h * 0.014);
+    ctx.beginPath();
+    ctx.moveTo(0, baseY);
+    ctx.lineTo(w, baseY);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(120,220,232,0.95)";
+    ctx.lineWidth = Math.max(1.5, h * 0.04);
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    for(let i = 0; i < L; i++)
+    {
+        let x = (L > 1) ? (i / (L - 1)) * w : 0;
+        let val = hist[i];
+        if(val < 0) val = 0;
+        if(val > 1) val = 1;
+        let y = baseY - val * traceH;
+        if(i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+
+// Eine Animationsschleife fuer alle Vorschauen (~30 fps, pausiert im Hintergrund):
+// auf der zweiten Seite die 20 Kacheln, sonst die Inline-Vorschau der Steuerung.
 function pvFrame(now)
 {
     requestAnimationFrame(pvFrame);
 
-    if(!pvVisible || document.hidden) return;
+    if(document.hidden) return;
+    if(now - pvLast < 33) return;
+    pvLast = now;
 
     if(now - pvResizeAt > 500)
     {
         pvResizeAt = now;
-        resizePreviews();
+        if(pvVisible) resizePreviews();
+        else resizeInline();
     }
 
-    if(now - pvLast < 33) return;
-    pvLast = now;
-
-    for(let i = 0; i < pvItems.length; i++)
+    if(pvVisible)
     {
-        let p = pvItems[i];
-        let vals = pvValues(p, now);
+        // Zweite Seite: alle 20 Kacheln.
+        for(let i = 0; i < pvItems.length; i++)
+        {
+            let p = pvItems[i];
+            let vals = pvValues(p, now);
 
+            let sum = 0;
+            for(let k = 0; k < vals.length; k++) sum += vals[k];
+            p.hist.push(sum / vals.length);
+            if(p.hist.length > PV_HIST) p.hist.shift();
+
+            pvDraw(p, vals);
+        }
+    }
+    else if(inlinePv)
+    {
+        // Steuerung: Inline-Vorschau des aktuellen Modus, mit den Reglern skaliert.
+        let p = inlinePv;
+        let vals = pvValues(p, now);
+        let sc = inlineScales();
+        let half = Math.floor(vals.length / 2);
+
+        // Muster je Segment mit dem passenden Regler (Links/Rechts) skalieren.
+        let patternSum = 0;
+        for(let k = 0; k < vals.length; k++)
+        {
+            patternSum += vals[k];
+            vals[k] = vals[k] * (k < half ? sc.left : sc.right);
+        }
+
+        // Logo folgt dem Logo-Regler (Grundhelligkeit = Muster-Durchschnitt).
+        let logoVal = (patternSum / vals.length) * sc.logo;
+
+        // Spur = tatsaechliche (skalierte) Gesamthelligkeit der Segmente.
         let sum = 0;
         for(let k = 0; k < vals.length; k++) sum += vals[k];
         p.hist.push(sum / vals.length);
         if(p.hist.length > PV_HIST) p.hist.shift();
 
-        pvDraw(p, vals);
+        pvDrawInline(p, vals, logoVal);
     }
 }
 
@@ -1254,9 +1445,10 @@ function toggleView()
 }
 
 window.addEventListener("hashchange", router);
-window.addEventListener("resize", function(){ if(pvVisible) resizePreviews(); });
+window.addEventListener("resize", function(){ if(pvVisible) resizePreviews(); else resizeInline(); });
 window.addEventListener("load", function()
 {
+    buildInlinePreview();
     router();
     requestAnimationFrame(pvFrame);
 });
@@ -1446,6 +1638,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 .pvcat{font-size:10px;font-weight:700;letter-spacing:.03em;padding:3px 8px;border-radius:999px;
   background:var(--accent-weak);color:var(--accent)}
 .pvdesc{color:var(--muted);font-size:12.5px;margin:7px 1px 0;line-height:1.45}
+
+/* Inline-Vorschau (aktueller Modus) in der Steuerung: Segmente + Logo + Spur */
+.pvinline{display:block;width:100%;height:64px;border-radius:8px;
+  background:#0c0e11;border:1px solid #05070a;margin-top:2px}
 )rawliteral";
 
 const char manifest_json[] PROGMEM = R"rawliteral(

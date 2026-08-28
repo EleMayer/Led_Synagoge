@@ -176,3 +176,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
 .pvcat{font-size:10px;font-weight:700;letter-spacing:.03em;padding:3px 8px;border-radius:999px;
   background:var(--accent-weak);color:var(--accent)}
 .pvdesc{color:var(--muted);font-size:12.5px;margin:7px 1px 0;line-height:1.45}
+
+/* Inline-Vorschau (aktueller Modus) in der Steuerung: Segmente + Logo + Spur */
+.pvinline{display:block;width:100%;height:64px;border-radius:8px;
+  background:#0c0e11;border:1px solid #05070a;margin-top:2px}

@@ -27,8 +27,10 @@ Die konkreten Werte stehen in [`include/config.h`](include/config.h)
 [`src/main.cpp`](src/main.cpp) (Pulsieren/Atmen).
 
 **Visuelle Vorschau:** Eine animierte Übersicht aller Modi gibt es in
-[`modi-vorschau.html`](modi-vorschau.html) (eigenständig im Browser) sowie direkt
-in der App über den Knopf **Vorschau** in der Kopfzeile.
+[`modi-vorschau.html`](modi-vorschau.html) (eigenständig im Browser) sowie in der
+App über den Knopf **Vorschau** in der Kopfzeile. Zusätzlich zeigt die
+**Vorschau-Karte** in der Steuerung den aktuell gewählten Modus live (mit den
+Reglern skaliert).
 
 ## Übersicht
 

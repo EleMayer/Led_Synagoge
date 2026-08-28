@@ -68,18 +68,22 @@ notfallplan.md        Notfälle, Sofortmaßnahmen, Störungstabelle, Kontakte
 
 ## Modus-Vorschau
 
-Eine animierte Übersicht **aller Modi** (eine kleine „LED-Leiste" je Modus plus
-Helligkeits-Verlauf über die Zeit) gibt es an zwei Stellen:
+Eine animierte Vorschau (kleine „LED-Leiste" plus Helligkeits-Verlauf über die
+Zeit) macht auf einen Blick erkennbar, was ein Modus tut. Es gibt sie an **drei**
+Stellen:
 
-- **In der App**: über den Knopf **Vorschau** in der Kopfzeile – eine zweite
-  Ansicht, aus der man mit demselben Knopf (bzw. dem Zurück-Knopf des Browsers)
-  wieder zur Steuerung wechselt. Reine Anzeige, schaltet keine Modi.
-- **Eigenständig**: [`modi-vorschau.html`](modi-vorschau.html) direkt im Browser
-  öffnen – läuft ohne ESP32, Server oder weitere Dateien.
+- **In der Steuerung** – die Karte **Vorschau** zeigt den *aktuell gewählten*
+  Modus als Live-Streifen (Segment Links · Logo · Segment Rechts). Die Lichtstärke
+  folgt dabei den **Reglern** (Links/Rechts/Logo): bewegt man einen Regler, dimmt
+  das zugehörige Segment bzw. das Logo sofort mit.
+- **Als zweite Seite in der App** – über den Knopf **Vorschau** in der Kopfzeile:
+  eine Übersicht **aller Modi** nebeneinander (zurück über denselben Knopf bzw.
+  den Zurück-Knopf des Browsers).
+- **Eigenständig** – [`modi-vorschau.html`](modi-vorschau.html) direkt im Browser
+  öffnen (alle Modi, läuft ohne ESP32, Server oder weitere Dateien).
 
-Die Vorschau ist eine vereinfachte, weiße Nachbildung der Modus-Effekte und dient
-dazu, auf einen Blick zu erkennen, was ein Modus macht. Erklärung aller Modi:
-siehe [modi.md](modi.md).
+Alle Vorschauen sind vereinfachte, weiße Nachbildungen der Modus-Effekte und
+schalten selbst keine Modi. Erklärung aller Modi: siehe [modi.md](modi.md).
 
 ## Weboberfläche bearbeiten
 

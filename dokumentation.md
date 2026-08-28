@@ -452,6 +452,9 @@ Funktionen:
   umschalten (Auswahl wird im Browser gespeichert)
 * aktuellen Modus anzeigen
 * Uhrzeit, RTC-/NTP-Status, WLAN-Status und IP anzeigen
+* **Vorschau-Karte** (in der Steuerung): zeigt den aktuell gewählten Modus als
+  Live-Streifen (Segment Links · Logo · Segment Rechts); die Lichtstärke folgt
+  den Reglern (Links/Rechts/Logo)
 * **Modus-Vorschau** als zweite Ansicht öffnen (Knopf „Vorschau" in der
   Kopfzeile): animierte Übersicht aller 20 Modi – reine Anzeige, schaltet keine
   Modi. Dieselbe Vorschau gibt es eigenständig als `modi-vorschau.html`
@@ -1065,7 +1068,7 @@ Bereits umgesetzt (siehe oben):
 * feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)
 * Zeitserver (NTP) inkl. automatischer Sommer-/Winterzeit
 * installierbare Bedien-App (PWA)
-* animierte Modus-Vorschau (zweite Ansicht in der App + eigenständige `modi-vorschau.html`)
+* animierte Modus-Vorschau (Karte in der Steuerung, zweite Ansicht in der App und eigenständige `modi-vorschau.html`)
 * WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback für lokalen Zugriff
 * Erreichbarkeit über Namen (`led-fassade.local`, mDNS)
 * Software-Strombegrenzung, entprelltes Speichern
