@@ -26,6 +26,10 @@ Die konkreten Werte stehen in [`include/config.h`](include/config.h)
 (Stimmungs-Modi und Effekt-Parameter) bzw. in den `applyWave(...)`-Aufrufen in
 [`src/main.cpp`](src/main.cpp) (Pulsieren/Atmen).
 
+**Visuelle Vorschau:** Eine animierte Übersicht aller Modi gibt es in
+[`modi-vorschau.html`](modi-vorschau.html) (eigenständig im Browser) sowie direkt
+in der App über den Knopf **Vorschau** in der Kopfzeile.
+
 ## Übersicht
 
 | Nr. | Modus | Art | Wirkung | Helligkeit |

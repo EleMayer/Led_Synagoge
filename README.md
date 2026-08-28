@@ -58,10 +58,26 @@ tools/build-icons.js  erzeugt include/icons.h aus tools/icons/*.png
 tools/icons/          Home-Screen-Icons (icon-180/192/512.png)
 
 modi.md               Erklärung aller Betriebsmodi
+modi-vorschau.html    eigenständige animierte Übersicht aller Modi (im Browser öffnen)
 modus-hinzufuegen.md  Anleitung + Code-Schablone für einen neuen Modus
 dokumentation.md      Technische Dokumentation
 notfallplan.md        Notfälle, Sofortmaßnahmen, Störungstabelle, Kontakte
 ```
+
+## Modus-Vorschau
+
+Eine animierte Übersicht **aller Modi** (eine kleine „LED-Leiste" je Modus plus
+Helligkeits-Verlauf über die Zeit) gibt es an zwei Stellen:
+
+- **In der App**: über den Knopf **Vorschau** in der Kopfzeile – eine zweite
+  Ansicht, aus der man mit demselben Knopf (bzw. dem Zurück-Knopf des Browsers)
+  wieder zur Steuerung wechselt. Reine Anzeige, schaltet keine Modi.
+- **Eigenständig**: [`modi-vorschau.html`](modi-vorschau.html) direkt im Browser
+  öffnen – läuft ohne ESP32, Server oder weitere Dateien.
+
+Die Vorschau ist eine vereinfachte, weiße Nachbildung der Modus-Effekte und dient
+dazu, auf einen Blick zu erkennen, was ein Modus macht. Erklärung aller Modi:
+siehe [modi.md](modi.md).
 
 ## Weboberfläche bearbeiten
 

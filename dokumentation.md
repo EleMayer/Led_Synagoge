@@ -452,15 +452,18 @@ Funktionen:
   umschalten (Auswahl wird im Browser gespeichert)
 * aktuellen Modus anzeigen
 * Uhrzeit, RTC-/NTP-Status, WLAN-Status und IP anzeigen
+* **Modus-Vorschau** als zweite Ansicht öffnen (Knopf „Vorschau" in der
+  Kopfzeile): animierte Übersicht aller 20 Modi – reine Anzeige, schaltet keine
+  Modi. Dieselbe Vorschau gibt es eigenständig als `modi-vorschau.html`
 
 Die Oberfläche ist in einem klinisch-reduzierten Design gehalten (dezent
 abgesetzte Karten, schlichte Linien, ein zurückhaltender Akzent, ohne
 erklärende Zusatztexte). Standard ist ein **dunkles (schwarzes)** Design; über
 einen Knopf in der Kopfzeile lässt sich auf **hell** umschalten, ein zweiter
 Knopf schaltet die **Sprache (Deutsch/Englisch)** um – beide Einstellungen
-werden im Browser gespeichert. Kopfzeile mit Verbindungspunkt, Uhr, aktuellem
-Modus und den beiden Umschaltern; darunter Karten für Modus-Auswahl,
-Helligkeiten, Automatik-Übersicht und System.
+werden im Browser gespeichert. Kopfzeile mit Uhr, aktuellem Modus und den
+Kopfzeilen-Knöpfen (**Vorschau**, Design, Sprache); darunter Karten für
+Modus-Auswahl, Helligkeiten, Automatik-Übersicht und System.
 
 Beispielhafte Oberfläche:
 
@@ -1062,6 +1065,7 @@ Bereits umgesetzt (siehe oben):
 * feste Stimmungs-Modi (Dauerlicht, Kerzenlicht, Stufenlicht, Dämmerlicht, Feuerschein, Nachtlicht)
 * Zeitserver (NTP) inkl. automatischer Sommer-/Winterzeit
 * installierbare Bedien-App (PWA)
+* animierte Modus-Vorschau (zweite Ansicht in der App + eigenständige `modi-vorschau.html`)
 * WLAN-Zugangsdaten fest im Code (`config.h`), Setup-Accesspoint als Fallback für lokalen Zugriff
 * Erreichbarkeit über Namen (`led-fassade.local`, mDNS)
 * Software-Strombegrenzung, entprelltes Speichern
