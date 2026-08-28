@@ -315,9 +315,9 @@ function pvValues(p, t)
             break;
         }
 
-        case 6:   // Dauerlicht - hoch, langsam und flach atmend
+        case 6:   // Dauerlicht - hoch, mit deutlich sichtbarem ruhigem Atmen
         {
-            let lv = 0.74 + 0.16 * pvOsc(t, 9000);
+            let lv = 0.70 + 0.20 * pvOsc(t, 8000);
             for(i = 0; i < N; i++) v[i] = lv;
             break;
         }
@@ -377,31 +377,39 @@ function pvValues(p, t)
             break;
         }
 
-        case 7:   // Kerzenlicht - zwei Haelften schimmern sanft und unabhaengig
+        case 7:   // Kerzenlicht - zwei Flammen (Haelften) schimmern als Bloecke
+        {
+            let flameL = 0.52 + 0.30 * pvNoise(3,  t * 0.9);
+            let flameR = 0.52 + 0.30 * pvNoise(60, t * 0.9);
             for(i = 0; i < N; i++)
             {
-                let seed = (i < half) ? 0 : 40;
-                v[i] = 0.50 + 0.28 * pvNoise(i * 0.5 + seed, t * 0.7);
+                let base = (i < half) ? flameL : flameR;
+                v[i] = base + 0.06 * pvNoise(i * 2.0, t * 1.6);   // leichtes Zittern
+            }
+            break;
+        }
+
+        case 11:  // Feuerschein - turbulentes Lodern mit einzelnen hellen Zungen
+            for(i = 0; i < N; i++)
+            {
+                let turb  = pvNoise(i * 1.9 + 5, t * 2.6) * pvNoise(i * 0.8 + 12, t * 1.5);
+                let flare = Math.pow(pvNoise(i * 3.1 + 20, t * 3.0), 3);
+                v[i] = 0.40 + 0.45 * turb + 0.35 * flare;
             }
             break;
 
-        case 11:  // Feuerschein - turbulentes, warmes Lodern (staerker bewegt)
+        case 12:  // Nachtlicht - gleichmaessiger, sehr niedriger Grundglanz (glatt)
+        {
+            let lv = 0.10 + 0.06 * pvOsc(t, 11000);
+            for(i = 0; i < N; i++) v[i] = lv;
+            break;
+        }
+
+        case 18:  // Wolkenzug - grosse, weiche Helligkeitsinseln ziehen langsam
             for(i = 0; i < N; i++)
             {
-                let f = pvNoise(i * 1.6 + 5, t * 2.0) * pvNoise(i * 0.7 + 12, t * 1.1);
-                v[i] = 0.45 + 0.55 * f;
-            }
-            break;
-
-        case 12:  // Nachtlicht - sehr niedriger, ruhiger Grundglanz
-            for(i = 0; i < N; i++) v[i] = 0.10 + 0.10 * pvNoise(i + 9, t * 0.6);
-            break;
-
-        case 18:  // Wolkenzug - grossflaechige, organische Helligkeitsinseln
-            for(i = 0; i < N; i++)
-            {
-                let n = 0.5 + 0.5 * Math.sin(i * 0.35 - t * 0.0011) * Math.sin(i * 0.13 + t * 0.0006 + 2);
-                v[i] = 0.15 + 0.85 * n;
+                let n = 0.5 + 0.5 * Math.sin(i * 0.28 - t * 0.0009) * Math.sin(i * 0.10 + t * 0.0004 + 1.3);
+                v[i] = 0.18 + 0.82 * n;
             }
             break;
 
